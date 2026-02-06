@@ -6,7 +6,6 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
 import dotenv from "dotenv";
@@ -71,7 +70,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
                 text: content
             }]
         };
-    } catch (error) {
+    } catch (_error) {
         throw new Error(`Resource not found: ${uri}`);
     }
 });

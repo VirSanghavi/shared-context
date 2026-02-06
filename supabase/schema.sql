@@ -2,22 +2,27 @@
 create extension if not exists vector;
 
 -- Projects table
-create table public.projects (
+create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  owner_id uuid references auth.users(id),
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+--   owner_id uuid references auth.users(id), -- Optional: Enable if using Supabase Auth
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(name)
 );
 
 -- Embeddings table
-create table public.embeddings (
+create table if not exists public.embeddings (
   id uuid primary key default gen_random_uuid(),
   project_id uuid references public.projects(id) on delete cascade not null,
   content text not null,
   embedding vector(1536), -- Dimension for text-embedding-3-small
-  metadata jsonb,
+  metadata jsonb default '{}'::jsonb,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Indexes for performance
+create index if not exists embeddings_project_id_idx on public.embeddings(project_id);
+create index if not exists embeddings_metadata_gin_idx on public.embeddings using gin (metadata);
 
 -- Search function
 create or replace function match_embeddings (
@@ -29,7 +34,8 @@ create or replace function match_embeddings (
 returns table (
   id uuid,
   content text,
-  similarity float
+  similarity float,
+  metadata jsonb
 )
 language plpgsql
 as $$
@@ -38,7 +44,8 @@ begin
   select
     embeddings.id,
     embeddings.content,
-    1 - (embeddings.embedding <=> query_embedding) as similarity
+    1 - (embeddings.embedding <=> query_embedding) as similarity,
+    embeddings.metadata
   from embeddings
   where 1 - (embeddings.embedding <=> query_embedding) > match_threshold
   and project_id = p_id
