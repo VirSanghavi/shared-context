@@ -1,0 +1,27 @@
+{
+  "name": "shared-context-mcp",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start:local": "bun run src/local/mcp-server.ts",
+    "start:server": "bun run src/local/server.ts",
+    "start:api": "bun run src/api/index.ts",
+    "cli": "bun run src/local/cli.ts",
+    "dev": "bun run --watch src/api/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "@types/express": "^5.0.6",
+    "async-mutex": "^0.5.0",
+    "commander": "^11.1.0",
+    "dotenv": "^16.3.1",
+    "express": "^5.2.1",
+    "hono": "^3.12.0",
+    "openai": "^4.24.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
