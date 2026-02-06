@@ -28,7 +28,7 @@ program
               await fs.access(filePath);
               console.log(`Skipping ${file} (already exists)`);
           } catch {
-              await fs.writeFile(filePath, `# ${file.replace('.md', '')}\n\nTODO: Add content`);
+              await fs.writeFile(filePath, `# ${file.replace('.md', '')}\n\nAdd content here.`);
               console.log(`Created ${file}`);
           }
       }

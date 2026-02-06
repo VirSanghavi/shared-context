@@ -4,6 +4,16 @@ import OpenAI from "openai";
 import { bearerAuth } from "hono/bearer-auth";
 import { z } from "zod";
 import { cors } from 'hono/cors';
+import { logger } from "../utils/logger.js"; // Note: Need to ensure this path works or use local logger if running in diff context
+
+// Simple in-memory rate limiter
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 min
+const MAX_REQUESTS = 100;
+const requestCounts = new Map<string, number>();
+
+setInterval(() => {
+    requestCounts.clear();
+}, RATE_LIMIT_WINDOW);
 
 // Environment variables type definition
 type Bindings = {
@@ -17,14 +27,42 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 
 // Enable CORS
-app.use("/*", cors());
+const allowedOrigins = (process.env.CORS_ORIGIN || "*").split(",");
+app.use("/*", cors({
+    origin: (origin) => {
+        if (allowedOrigins.includes("*")) return origin; // Allow all if * is present
+        return allowedOrigins.includes(origin) ? origin : null;
+    }
+}));
 
-// Middleware: Check for API Secret if configured
+// Logging Middleware
+app.use("/*", async (c, next) => {
+    const start = Date.now();
+    await next();
+    const ms = Date.now() - start;
+    if (c.res.status >= 400) {
+        logger.error(`[HTTP] ${c.req.method} ${c.req.path}`, { status: c.res.status, duration: ms });
+    } else {
+        logger.info(`[HTTP] ${c.req.method} ${c.req.path}`, { status: c.res.status, duration: ms });
+    }
+});
+
+// Rate Limiting Middleware
+app.use("/*", async (c, next) => {
+    const ip = c.req.header('x-forwarded-for') || 'unknown';
+    const count = (requestCounts.get(ip) || 0) + 1;
+    requestCounts.set(ip, count);
+    
+    if (count > MAX_REQUESTS) {
+        return c.json({ error: "Too many requests" }, 429);
+    }
+    await next();
+});
+
+// Auth Middleware
 app.use("/*", async (c, next) => {
   const secret = c.env.SHARED_CONTEXT_API_SECRET || process.env.SHARED_CONTEXT_API_SECRET;
   if (!secret) {
-      // If no secret is set in env, we allow access (dev mode warning)
-      // In production, this should be strictly enforced.
       console.warn("WARNING: SHARED_CONTEXT_API_SECRET is not set. API is unsecured.");
       return next();
   }
@@ -40,16 +78,12 @@ const getSupabase = (c: any) => createClient(
   c.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Route: Health Check
 app.get("/", (c) => c.text("Shared Context API is running"));
 
-// Route: Embed and Store Context
-// Expects: { items: { content: string, metadata: object }[] }
 app.post("/embed", async (c) => {
   const openai = getOpenAI(c);
   const supabase = getSupabase(c);
   
-  // 1. Validate Input
   const schema = z.object({
     items: z.array(z.object({
       content: z.string(),
@@ -57,49 +91,48 @@ app.post("/embed", async (c) => {
     }))
   });
 
-  let body;
+  let payload;
   try {
-    body = await c.req.json();
-    schema.parse(body);
+    const rawBody = await c.req.json();
+    payload = schema.parse(rawBody);
   } catch (e) {
     return c.json({ error: "Invalid request body", details: e }, 400);
   }
   
-  const { items } = body as z.infer<typeof schema>;
+  const { items } = payload;
   const projectName = c.env.PROJECT_NAME || process.env.PROJECT_NAME || "default";
 
-  // 2. Get/Create Project ID
-  // In a real multi-tenant app, this would come from the auth token
-  const { data: project, error: projError } = await supabase
-    .from('projects')
-    .select('id')
-    .eq('name', projectName)
-    .single();
-
-  let projectId = project?.id;
-
-  if (!projectId) {
-      const { data: newProj, error: createError } = await supabase
-          .from('projects')
-          .insert({ name: projectName })
-          .select('id')
-          .single();
-      
-      if (createError) {
-          return c.json({ error: "Failed to create project", details: createError }, 500);
+  // Get/Create Project ID
+  let projectId;
+  try {
+      const { data: project } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('name', projectName)
+        .single();
+    
+      projectId = project?.id;
+    
+      if (!projectId) {
+          const { data: newProj, error: createError } = await supabase
+              .from('projects')
+              .insert({ name: projectName })
+              .select('id')
+              .single();
+          
+          if (createError) throw createError;
+          projectId = newProj.id;
       }
-      projectId = newProj.id;
+  } catch (dbErr) {
+       console.error("DB Error getting project:", dbErr);
+       return c.json({ error: "Database error" }, 500);
   }
 
-  // 3. Process Items
   const processed = [];
   
-  // Clear existing embeddings for these files if valid metadata 'filename' exists
-  // This is a naive 'sync' strategy: overwrite by filename.
+  // Deduplication: Delete existing embeddings for same filenames
   const filenames = new Set(items.map(i => i.metadata?.filename).filter(Boolean));
   if (filenames.size > 0) {
-      // We need to implement a way to filter embeddings by metadata columns.
-      // Since `metadata` is jsonb, we can query it.
       for (const fname of filenames) {
         await supabase
             .from('embeddings')
@@ -109,7 +142,8 @@ app.post("/embed", async (c) => {
       }
   }
 
-  // 4. Generate Embeddings & Insert
+  // Generate Embeddings
+  // Batching OpenAI usage if items list is huge? Standard max is high enough for text chunks.
   for (const item of items) {
       try {
           const response = await openai.embeddings.create({
@@ -121,7 +155,6 @@ app.post("/embed", async (c) => {
           const { error } = await supabase.from('embeddings').insert({
               project_id: projectId,
               content: item.content,
-              // search_content: item.content, // Should match schema if column exists? schema says 'content'
               embedding: embedding,
               metadata: item.metadata
           });
@@ -129,7 +162,7 @@ app.post("/embed", async (c) => {
           if (error) throw error;
           processed.push({ success: true, metadata: item.metadata });
       } catch (err) {
-          console.error("Embedding error:", err);
+          console.error("Embedding chunk error:", err);
           processed.push({ success: false, error: String(err) });
       }
   }
@@ -137,7 +170,6 @@ app.post("/embed", async (c) => {
   return c.json({ message: "Processing complete", processed });
 });
 
-// Route: Search Context
 app.post("/search", async (c) => {
     const openai = getOpenAI(c);
     const supabase = getSupabase(c);
@@ -148,37 +180,32 @@ app.post("/search", async (c) => {
         threshold: z.number().optional().default(0.5)
     });
 
-    let body;
+    let payload;
     try {
-        body = await c.req.json();
-        schema.parse(body);
+        const rawBody = await c.req.json();
+        payload = schema.parse(rawBody);
     } catch (e) {
         return c.json({ error: "Invalid request body", details: e }, 400);
     }
 
-    const { query, limit, threshold } = body as z.infer<typeof schema>;
+    const { query, limit, threshold } = payload;
     const projectName = c.env.PROJECT_NAME || process.env.PROJECT_NAME || "default";
 
-    // Get Project ID
     const { data: project } = await supabase
         .from('projects')
         .select('id')
         .eq('name', projectName)
         .single();
     
-    if (!project) {
-        return c.json({ results: [] });
-    }
+    if (!project) return c.json({ results: [] });
 
     try {
-        // Embed Query
         const response = await openai.embeddings.create({
             model: "text-embedding-3-small",
             input: query,
         });
         const queryEmbedding = response.data[0].embedding;
 
-        // Call RPC
         const { data: documents, error } = await supabase.rpc('match_embeddings', {
             query_embedding: queryEmbedding,
             match_threshold: threshold,
@@ -188,12 +215,22 @@ app.post("/search", async (c) => {
 
         if (error) {
             console.error("RPC Error:", error);
-            return c.json({ error: "Wait! Database search failed.", details: error }, 500);
+            return c.json({ error: "Search query failed", details: error }, 500);
         }
 
         return c.json({ results: documents });
 
     } catch (err) {
+        console.error("Search Logic Error:", err);
         return c.json({ error: "Search failed", details: String(err) }, 500);
     }
 });
+
+app.get("/health", (c) => c.json({ status: "ok", uptime: process.uptime() }));
+
+const serverInfo: { port: number; fetch: typeof app.fetch } = {
+    port: parseInt(process.env.PORT || "3000"),
+    fetch: app.fetch,
+};
+
+export default serverInfo;

@@ -10,8 +10,6 @@ import express from "express";
 import dotenv from "dotenv";
 import { ContextManager } from "./context-manager.js";
 import { NerveCenter } from "./nerve-center.js";
-import { randomUUID } from "crypto";
-import { z } from "zod";
 
 // Load environment variables
 dotenv.config({ path: ".env.local" });
@@ -22,6 +20,40 @@ const manager = new ContextManager(
 );
 
 const nerveCenter = new NerveCenter(manager);
+
+// --- File System Operations (Checklist #9) ---
+const REQUIRED_DIRS = ["agent-instructions", "history"];
+async function ensureFileSystem() {
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    
+    for (const d of REQUIRED_DIRS) {
+        const dirPath = path.join(process.cwd(), d);
+        try {
+            await fs.access(dirPath);
+        } catch {
+             console.log(`Creating required directory: ${d}`);
+             await fs.mkdir(dirPath, { recursive: true });
+             if (d === "agent-instructions") {
+                 // Create default files
+                 await fs.writeFile(path.join(dirPath, "context.md"), "# Project Context\n\n");
+                 await fs.writeFile(path.join(dirPath, "conventions.md"), "# Coding Conventions\n\n");
+                 await fs.writeFile(path.join(dirPath, "activity.md"), "# Activity Log\n\n");
+             }
+        }
+    }
+}
+
+// Initialize state
+(async () => {
+    try {
+        await ensureFileSystem();
+        await nerveCenter.init();
+        console.log("NerveCenter initialized successfully.");
+    } catch (err) {
+        console.error("Failed to init NerveCenter:", err);
+    }
+})();
 
 const app = express();
 const port = 3001;
@@ -117,14 +149,40 @@ app.get("/sse", async (req, res) => {
               // --- Job Board (Task Orchestration) ---
               {
                   name: "post_job",
-                  description: "Post a new job/ticket for any available agent to pick up.",
+                  description: "Post a new job/ticket. Supports priority and dependencies.",
                   inputSchema: { 
                       type: "object", 
                       properties: { 
                         title: { type: "string" },
-                        description: { type: "string" }
+                        description: { type: "string" },
+                        priority: { type: "string", enum: ["low", "medium", "high", "critical"] },
+                        dependencies: { type: "array", items: { type: "string" } }
                       }, 
                       required: ["title", "description"] 
+                  }
+              },
+              {
+                  name: "cancel_job",
+                  description: "Cancel a job that is no longer needed.",
+                  inputSchema: { 
+                      type: "object", 
+                      properties: { 
+                        jobId: { type: "string" },
+                        reason: { type: "string" }
+                      }, 
+                      required: ["jobId", "reason"] 
+                  }
+              },
+              {
+                  name: "force_unlock",
+                  description: "Admin tool to forcibly remove a lock from a file.",
+                  inputSchema: { 
+                      type: "object", 
+                      properties: { 
+                        filePath: { type: "string" },
+                        reason: { type: "string" }
+                      }, 
+                      required: ["filePath", "reason"] 
                   }
               },
               {
@@ -183,8 +241,18 @@ app.get("/sse", async (req, res) => {
 
             // Job Board
             if (name === "post_job") {
-                const { title, description } = args as any;
-                const result = await nerveCenter.postJob(title, description);
+                const { title, description, priority, dependencies } = args as any;
+                const result = await nerveCenter.postJob(title, description, priority, dependencies);
+                return { content: [{ type: "text", text: JSON.stringify(result) }] };
+            }
+            if (name === "cancel_job") {
+                const { jobId, reason } = args as any;
+                const result = await nerveCenter.cancelJob(jobId, reason);
+                return { content: [{ type: "text", text: JSON.stringify(result) }] };
+            }
+            if (name === "force_unlock") {
+                const { filePath, reason } = args as any;
+                const result = await nerveCenter.forceUnlock(filePath, reason);
                 return { content: [{ type: "text", text: JSON.stringify(result) }] };
             }
             if (name === "claim_next_job") {

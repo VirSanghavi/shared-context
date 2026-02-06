@@ -59,10 +59,61 @@ The key to this system is that **you (the human) should never manually edit the 
 
 The "Notebook" manages itself.
 
-### Architecture
+### Production & Deployment
+
+**Docker**:
+```bash
+docker-compose up --build -d
+```
+Access the Nerve Center (HTTP) at `http://localhost:3001` and SSE at `http://localhost:3001/sse`.
+
+**Local Integration (MCP)**
+Configure your IDE (Claude Desktop, Cursor, etc.) to point to the local server script:
+```json
+{
+  "mcpServers": {
+    "shared-context": {
+      "command": "bun",
+      "args": ["run", "/absolute/path/to/shared-context/src/local/mcp-server.ts"]
+    }
+  }
+}
+```
+
+## Troubleshooting
+
+- **Permissions**: Ensure `chmod +x src/local/mcp-server.ts` or that `bun` is in your PATH.
+- **Directories**: On first run, the system will auto-create `history/` and `agent-instructions/`. Ensure write permissions.
+- **Locking Issues**: If a file is permanently locked due to a crash, use the `force_unlock` tool via any agent or delete `history/nerve-center-state.json`.
+
+## Architecture
 
 - **Active Orchestrator (`src/local/server.ts`)**: A single-process HTTP/SSE server that holds memorystate.
 - **Job Board**: In-memory task registry.
 - **RAG Memory**: Vector embeddings of all past decisions and prompts.
+
+## Production & Deployment
+
+### Docker
+The server is fully containerized. To build and run:
+```bash
+docker-compose up url --build
+```
+This starts the `nerve-center` on port 3001.
+
+### Testing
+We maintain a suite of Unit and Load tests.
+```bash
+# Run Unit Tests
+bun test
+
+# Run Load/Concurrency Verification
+bun tests/load-test.ts
+```
+
+### Security & Robustness
+- **Rate Limiting**: In-memory rate limiter protects endpoints.
+- **Persistence**: State is saved to `history/nerve-center-state.json` to survive restarts.
+- **Concurrency**: `AsyncMutex` ensures atomic operations on the Job Board and File Locks.
 
 ## Setup
