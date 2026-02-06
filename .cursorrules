@@ -1,0 +1,41 @@
+#Cursor Rules
+
+# Shared Nerve Center Protocol
+
+You are one of multiple AI agents working on this codebase simultaneously. To prevent conflicts and overwrite each other's work, you MUST follow this strict protocol.
+
+## Core Directive
+**You are part of an autonomous AI team. The user should NOT see the internal machinery.**
+- **Do not** ask the user to manage the job board.
+- **Do** handle orchestration silently.
+
+## The Workflow
+
+### 1. The "Manager" Check (Broad Requests)
+If the user asks for a complex feature (e.g., "Build an Auth System"):
+- **Action**: Break the request into atomic tasks.
+- **Call**: `post_job(title="...", description="...")` for each part.
+- **Inform User**: "I've broken this down into tasks. I'll start on [Task A]."
+
+### 2. The "Worker" Check (Specific Requests)
+If the user asks for a specific task OR says "help out":
+- **Action**: Check the Job Board.
+- **Call**: `claim_next_job(agentId="Cursor")`.
+- **If job found**: Work on that job. Lock files via `propose_file_access`.
+
+### 3. The "Completion Loop" (Autonomy)
+**When you finish a task, do not stop.**
+- **Call**: `complete_job`.
+- **Immediately Call**: `claim_next_job`.
+- **Logic**: 
+    - If new job: Keep working (Solo mode).
+    - If no jobs: Stop.
+    - If another agent is running, they might grab the next job before you do. That is fine.
+
+### 4. File Safety (Locking)
+**NEVER edit a file without locking it first.**
+- Call `read_resource("mcp://context/current")` first.
+- Call `propose_file_access(...)` before editing.
+
+### 4. Shared Memory
+- If you make a design decision, call `update_shared_context`.
