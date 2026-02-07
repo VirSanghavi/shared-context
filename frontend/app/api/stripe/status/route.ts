@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
 
         // TEMPORARY BYPASS: Force Pro for user email variations while debugging
         const normalizedEmail = session.email.toLowerCase().trim();
+        const targetEmail = (normalizedEmail === 'virrsanghavi@gmail.com') ? 'virsanghavi@gmail.com' : session.email;
         const isSuperUser = normalizedEmail === 'virsanghavi@gmail.com' || normalizedEmail === 'virrsanghavi@gmail.com';
 
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('subscription_status, stripe_customer_id, current_period_end, has_seen_retention')
-            .ilike('email', session.email)
+            .ilike('email', targetEmail)
             .single();
 
         if ((profileError || !profile) && !isSuperUser) {
@@ -44,8 +45,12 @@ export async function GET(req: NextRequest) {
         console.log(`[Stripe Status] Final Decision: ${session.email} is ${isPro ? 'pro' : 'free'}`);
 
         let stripeData = null;
+        let customerId = profile?.stripe_customer_id;
+        if (!customerId && isSuperUser) {
+            customerId = 'cus_Tw7wDGE1jIXikB';
+        }
 
-        if (profile?.stripe_customer_id) {
+        if (customerId) {
             const stripeKey = process.env.STRIPE_SECRET_KEY;
             if (stripeKey) {
                 const stripe = new Stripe(stripeKey, {
@@ -53,7 +58,7 @@ export async function GET(req: NextRequest) {
                 });
 
                 const subscriptions = await stripe.subscriptions.list({
-                    customer: profile.stripe_customer_id as string,
+                    customer: customerId as string,
                     status: 'all',
                     limit: 1,
                     expand: ['data.discounts']
