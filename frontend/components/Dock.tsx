@@ -142,13 +142,25 @@ export default function Dock({
     baseItemSize?: number;
 }) {
     const mouseX = useMotionValue(Infinity);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const effectiveMagnification = isMobile ? baseItemSize : magnification;
 
     return (
-        <div className="dock-outer" onPointerLeave={() => mouseX.set(Infinity)}>
+        <div className={`dock-outer ${isMobile ? 'dock-mobile' : 'dock-desktop'}`} onPointerLeave={() => mouseX.set(Infinity)}>
             <motion.div
-                onPointerMove={(e) => mouseX.set(e.pageX)}
+                onPointerMove={(e) => !isMobile && mouseX.set(e.pageX)}
                 className={`dock-panel ${className}`}
-                style={{ height: panelHeight }}
+                style={{ height: isMobile ? panelHeight - 10 : panelHeight }}
                 role="toolbar"
                 aria-label="Application dock"
             >
@@ -159,12 +171,12 @@ export default function Dock({
                         className={item.className}
                         mouseX={mouseX}
                         spring={spring}
-                        distance={distance}
-                        magnification={magnification}
-                        baseItemSize={baseItemSize}
+                        distance={isMobile ? 0 : distance}
+                        magnification={effectiveMagnification}
+                        baseItemSize={isMobile ? baseItemSize - 4 : baseItemSize}
                     >
                         <DockIcon>{item.icon}</DockIcon>
-                        <DockLabel>{item.label}</DockLabel>
+                        {!isMobile && <DockLabel>{item.label}</DockLabel>}
                     </DockItem>
                 ))}
             </motion.div>

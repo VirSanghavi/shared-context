@@ -89,13 +89,11 @@ export default function Navbar() {
     }, [isAuthenticated, router, handleLogout]);
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+        <header className="z-50 pointer-events-none">
             <form action="/api/auth/logout" method="POST" ref={logoutFormRef} className="hidden">
                 <button type="submit">logout</button>
             </form>
-            <div className="max-w-7xl mx-auto px-6">
-                <Dock items={navItems} />
-            </div>
+            <Dock items={navItems} />
         </header>
     );
 }

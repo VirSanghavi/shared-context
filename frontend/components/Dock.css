@@ -3,34 +3,40 @@
     display: flex;
     max-width: 100%;
     align-items: center;
-    position: relative;
-    top: 0;
+    position: fixed;
+    /* Changed to fixed for layout control */
     left: 0;
     right: 0;
     justify-content: center;
     z-index: 100;
 }
 
+.dock-desktop {
+    top: 1rem;
+}
+
+.dock-mobile {
+    bottom: 2rem;
+    top: auto;
+}
+
 .dock-panel {
     position: relative;
-    top: 1rem;
     display: flex;
     align-items: center;
-    /* Centered vertically since we don't animate dock height anymore */
     width: fit-content;
     gap: 0.5rem;
     border-radius: 9999px;
-    /* Pill shape for premium feel */
-    background-color: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    /* Minimal border for high-end look */
+    background-color: rgba(10, 10, 10, 0.4);
+    /* Darker for better contrast in Axis dark theme */
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 0.4rem;
     pointer-events: auto;
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.06),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+        0 12px 40px rgba(0, 0, 0, 0.4),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .dock-item {
@@ -55,12 +61,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #1a1a1a;
+    color: rgba(255, 255, 255, 0.7);
     transition: color 0.2s, transform 0.2s;
 }
 
 .dock-item:hover .dock-icon {
-    color: #000;
+    color: #fff;
 }
 
 .dock-label {
