@@ -327,6 +327,7 @@ var NerveCenter = class {
       status: record.status,
       assignedTo: record.assigned_to || void 0,
       dependencies: record.dependencies || void 0,
+      completionKey: record.completion_key || void 0,
       createdAt: Date.parse(record.created_at),
       updatedAt: Date.parse(record.updated_at)
     };
@@ -440,6 +441,7 @@ var NerveCenter = class {
   async postJob(title, description, priority = "medium", dependencies = []) {
     return await this.mutex.runExclusive(async () => {
       let id = `job-${Date.now()}-${Math.floor(Math.random() * 1e3)}`;
+      const completionKey = Math.random().toString(36).substring(2, 10).toUpperCase();
       if (this.useSupabase && this.supabase && this._projectId) {
         const { data, error } = await this.supabase.from("jobs").insert({
           project_id: this._projectId,
@@ -447,7 +449,8 @@ var NerveCenter = class {
           description,
           priority,
           status: "todo",
-          dependencies
+          dependencies,
+          completion_key: completionKey
         }).select("id").single();
         if (data?.id) id = data.id;
         if (error) logger.error("Failed to post job to Supabase", error);
@@ -458,7 +461,8 @@ var NerveCenter = class {
             title,
             description,
             priority,
-            dependencies
+            dependencies,
+            completion_key: completionKey
           });
           if (data?.id) id = data.id;
         } catch (e) {
@@ -474,18 +478,34 @@ var NerveCenter = class {
           dependencies,
           status: "todo",
           createdAt: Date.now(),
-          updatedAt: Date.now()
+          updatedAt: Date.now(),
+          completionKey
         };
       }
       const depText = dependencies.length ? ` (Depends on: ${dependencies.join(", ")})` : "";
       const logEntry = `
 - [JOB POSTED] [${priority.toUpperCase()}] ${title} (ID: ${id})${depText}`;
       await this.appendToNotepad(logEntry);
-      return { jobId: id, status: "POSTED" };
+      return { jobId: id, status: "POSTED", completionKey };
     });
   }
   async claimNextJob(agentId) {
     return await this.mutex.runExclusive(async () => {
+      if (this.useSupabase && this.supabase && this._projectId) {
+        const { data, error } = await this.supabase.rpc("claim_next_job", {
+          p_project_id: this._projectId,
+          p_agent_id: agentId
+        });
+        if (error) {
+          logger.error("Failed to claim job via RPC", error);
+        } else if (data && data.status === "CLAIMED") {
+          const job = this.jobFromRecord(data.job);
+          await this.appendToNotepad(`
+- [JOB CLAIMED] Agent '${agentId}' picked up: ${job.title}`);
+          return { status: "CLAIMED", job };
+        }
+        return { status: "NO_JOBS_AVAILABLE", message: "Relax. No open tickets (or dependencies not met)." };
+      }
       const priorities = ["critical", "high", "medium", "low"];
       const allJobs = await this.listJobs();
       const jobsById = new Map(allJobs.map((job) => [job.id, job]));
@@ -502,15 +522,7 @@ var NerveCenter = class {
         return { status: "NO_JOBS_AVAILABLE", message: "Relax. No open tickets (or dependencies not met)." };
       }
       const candidate = availableJobs[0];
-      if (this.useSupabase && this.supabase) {
-        const { data, error } = await this.supabase.from("jobs").update({ status: "in_progress", assigned_to: agentId, updated_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", candidate.id).eq("status", "todo").select().single();
-        if (!error && data) {
-          const job = this.jobFromRecord(data);
-          await this.appendToNotepad(`
-- [JOB CLAIMED] Agent '${agentId}' picked up: ${job.title}`);
-          return { status: "CLAIMED", job };
-        }
-      } else if (this.contextManager.apiUrl) {
+      if (this.contextManager.apiUrl) {
         try {
           const data = await this.callCoordination("jobs", "POST", {
             action: "update",
@@ -540,91 +552,53 @@ var NerveCenter = class {
   }
   async cancelJob(jobId, reason) {
     return await this.mutex.runExclusive(async () => {
-      if (this.useSupabase && this.supabase) {
-        const { data, error } = await this.supabase.from("jobs").update({ status: "cancelled", cancel_reason: reason, updated_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", jobId).select("id,title");
-        if (!error && data && data.length > 0) {
-          await this.appendToNotepad(`
-- [JOB CANCELLED] ${data[0].title} (ID: ${jobId}). Reason: ${reason}`);
-          return { status: "CANCELLED" };
-        }
-        return { error: "Job not found or update failed" };
-      }
-      if (this.contextManager.apiUrl) {
+      if (this.useSupabase && this.supabase && this._projectId) {
+        await this.supabase.from("jobs").update({ status: "cancelled", cancel_reason: reason, updated_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", jobId);
+      } else if (this.contextManager.apiUrl) {
         try {
-          await this.callCoordination("jobs", "POST", {
-            action: "update",
-            jobId,
-            status: "cancelled",
-            cancel_reason: reason
-          });
-          await this.appendToNotepad(`
-- [JOB CANCELLED] (ID: ${jobId}). Reason: ${reason}`);
-          return { status: "CANCELLED" };
+          await this.callCoordination("jobs", "POST", { action: "update", jobId, status: "cancelled", cancel_reason: reason });
         } catch (e) {
           logger.error("Failed to cancel job via API", e);
         }
       }
-      const job = this.state.jobs[jobId];
-      if (!job) return { error: "Job not found" };
-      job.status = "cancelled";
-      job.updatedAt = Date.now();
+      if (this.state.jobs[jobId]) {
+        this.state.jobs[jobId].status = "cancelled";
+        this.state.jobs[jobId].updatedAt = Date.now();
+        await this.saveState();
+      }
       await this.appendToNotepad(`
-- [JOB CANCELLED] ${job.title} (ID: ${jobId}). Reason: ${reason}`);
-      return { status: "CANCELLED" };
+- [JOB CANCELLED] ID: ${jobId}. Reason: ${reason}`);
+      return "Job cancelled.";
     });
   }
-  async forceUnlock(filePath, adminReason) {
-    return await this.mutex.runExclusive(async () => {
-      if (this.useSupabase && this.supabase && this._projectId) {
-        const { error } = await this.supabase.from("locks").delete().eq("project_id", this._projectId).eq("file_path", filePath);
-        if (error) return { error: "DB Error" };
-        await this.appendToNotepad(`
-- [ADMIN] Force unlocked '${filePath}'. Reason: ${adminReason}`);
-        return { status: "UNLOCKED" };
-      }
-      if (this.contextManager.apiUrl) {
-        try {
-          await this.callCoordination("locks", "POST", {
-            action: "unlock",
-            filePath
-          });
-          await this.appendToNotepad(`
-- [ADMIN] Force unlocked '${filePath}'. Reason: ${adminReason}`);
-          return { status: "UNLOCKED" };
-        } catch (e) {
-          logger.error("Failed to unlock via API", e);
-        }
-      }
-      const lock = this.state.locks[filePath];
-      if (!lock) return { message: "File was not locked." };
-      delete this.state.locks[filePath];
-      await this.appendToNotepad(`
-- [ADMIN] Force unlocked '${filePath}'. Reason: ${adminReason}`);
-      return { status: "UNLOCKED", previousOwner: lock.agentId };
-    });
-  }
-  async completeJob(agentId, jobId, outcome) {
+  async completeJob(agentId, jobId, outcome, completionKey) {
     return await this.mutex.runExclusive(async () => {
       if (this.useSupabase && this.supabase) {
-        const { data, error } = await this.supabase.from("jobs").select("id,title,assigned_to").eq("id", jobId).single();
+        const { data, error } = await this.supabase.from("jobs").select("id,title,assigned_to,completion_key").eq("id", jobId).single();
         if (error || !data) return { error: "Job not found" };
-        if (data.assigned_to !== agentId) return { error: "You don't own this job." };
-        const { error: updateError } = await this.supabase.from("jobs").update({ status: "done", updated_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", jobId).eq("assigned_to", agentId);
+        const isOwner2 = data.assigned_to === agentId;
+        const isKeyValid2 = completionKey && data.completion_key === completionKey;
+        if (!isOwner2 && !isKeyValid2) {
+          return { error: "You don't own this job and provided no valid key." };
+        }
+        const { error: updateError } = await this.supabase.from("jobs").update({ status: "done", updated_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", jobId);
         if (updateError) return { error: "Failed to complete job" };
         await this.appendToNotepad(`
-- [JOB DONE] ${data.title} by ${agentId}. Outcome: ${outcome}`);
+- [JOB DONE] Agent '${agentId}' finished: ${data.title}
+  Outcome: ${outcome}`);
         return { status: "COMPLETED" };
-      }
-      if (this.contextManager.apiUrl) {
+      } else if (this.contextManager.apiUrl) {
         try {
           await this.callCoordination("jobs", "POST", {
             action: "update",
             jobId,
             status: "done",
-            assigned_to: agentId
+            assigned_to: agentId,
+            completion_key: completionKey
           });
           await this.appendToNotepad(`
-- [JOB DONE] (ID: ${jobId}) by ${agentId}. Outcome: ${outcome}`);
+- [JOB DONE] Agent '${agentId}' finished: ${jobId}
+  Outcome: ${outcome}`);
           return { status: "COMPLETED" };
         } catch (e) {
           logger.error("Failed to complete job via API", e);
@@ -632,30 +606,45 @@ var NerveCenter = class {
       }
       const job = this.state.jobs[jobId];
       if (!job) return { error: "Job not found" };
-      if (job.assignedTo !== agentId) {
-        return { error: `You don't own this job (ID: ${jobId}).` };
+      const isOwner = job.assignedTo === agentId;
+      const isKeyValid = completionKey && job.completionKey === completionKey;
+      if (!isOwner && !isKeyValid) {
+        return { error: "You don't own this job and provided no valid key." };
       }
       job.status = "done";
       job.updatedAt = Date.now();
       await this.appendToNotepad(`
-- [JOB DONE] ${job.title} by ${agentId}. Outcome: ${outcome}`);
+- [JOB DONE] Agent '${agentId}' finished: ${job.title}
+  Outcome: ${outcome}`);
       return { status: "COMPLETED" };
     });
   }
-  // --- Core State Management ---
-  async getLiveContext() {
-    const locks = await this.getLocks();
-    const lockSummary = locks.map(
-      (l) => `- [LOCKED] ${l.filePath} by ${l.agentId}
-  Intent: ${l.intent}
-  Prompt: "${l.userPrompt?.substring(0, 100)}..."`
-    ).join("\n");
+  async forceUnlock(filePath, reason) {
+    return await this.mutex.runExclusive(async () => {
+      if (this.useSupabase && this.supabase && this._projectId) {
+        await this.supabase.from("locks").delete().eq("project_id", this._projectId).eq("file_path", filePath);
+      } else if (this.contextManager.apiUrl) {
+        try {
+          await this.callCoordination("locks", "POST", { action: "unlock", filePath, reason });
+        } catch (e) {
+          logger.error("Failed to force unlock via API", e);
+        }
+      }
+      if (this.state.locks[filePath]) {
+        delete this.state.locks[filePath];
+        await this.saveState();
+      }
+      await this.appendToNotepad(`
+- [FORCE UNLOCK] ${filePath} unlocked by admin. Reason: ${reason}`);
+      return `File ${filePath} has been forcibly unlocked.`;
+    });
+  }
+  async getCoreContext() {
     const jobs = await this.listJobs();
-    const jobSummary = jobs.map(
-      (j) => `- [${j.status.toUpperCase()}] ${j.title} ${j.assignedTo ? "(" + j.assignedTo + ")" : "(Open)"}
-  ID: ${j.id}`
-    ).join("\n");
+    const locks = await this.getLocks();
     const notepad = await this.getNotepad();
+    const jobSummary = jobs.filter((j) => j.status !== "done" && j.status !== "cancelled").map((j) => `- [${j.status.toUpperCase()}] ${j.title} (ID: ${j.id}, Priority: ${j.priority}${j.assignedTo ? `, Assigned: ${j.assignedTo}` : ""})`).join("\n");
+    const lockSummary = locks.map((l) => `- ${l.filePath} (Locked by: ${l.agentId}, Intent: ${l.intent})`).join("\n");
     return `# Active Session Context
 
 ## Job Board (Active Orchestration)
@@ -670,6 +659,36 @@ ${notepad}`;
   // --- Decision & Orchestration ---
   async proposeFileAccess(agentId, filePath, intent, userPrompt) {
     return await this.mutex.runExclusive(async () => {
+      if (this.useSupabase && this.supabase && this._projectId) {
+        const { data, error } = await this.supabase.rpc("try_acquire_lock", {
+          p_project_id: this._projectId,
+          p_file_path: filePath,
+          p_agent_id: agentId,
+          p_intent: intent,
+          p_user_prompt: userPrompt,
+          p_timeout_seconds: Math.floor(this.lockTimeout / 1e3)
+        });
+        if (error) {
+          logger.error("Failed to acquire lock via RPC", error);
+          return { status: "ERROR", message: "Database error" };
+        }
+        if (data.status === "GRANTED") {
+          await this.appendToNotepad(`
+- [LOCK] ${agentId} locked ${filePath}
+  Intent: ${intent}`);
+          return { status: "GRANTED", message: `Access granted for ${filePath}` };
+        }
+        return {
+          status: "REQUIRES_ORCHESTRATION",
+          message: `Conflict: File '${filePath}' is currently locked by '${data.owner_id}'`,
+          currentLock: {
+            agentId: data.owner_id,
+            filePath,
+            intent: data.intent,
+            timestamp: Date.parse(data.updated_at)
+          }
+        };
+      }
       const locks = await this.getLocks();
       const existing = locks.find((l) => l.filePath === filePath);
       if (existing) {
@@ -682,16 +701,7 @@ ${notepad}`;
           };
         }
       }
-      if (this.useSupabase && this.supabase && this._projectId) {
-        await this.supabase.from("locks").upsert({
-          project_id: this._projectId,
-          file_path: filePath,
-          agent_id: agentId,
-          intent,
-          user_prompt: userPrompt,
-          updated_at: (/* @__PURE__ */ new Date()).toISOString()
-        });
-      } else if (this.contextManager.apiUrl) {
+      if (this.contextManager.apiUrl) {
         try {
           await this.callCoordination("locks", "POST", {
             action: "lock",
@@ -989,7 +999,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
         contents: [{
           uri,
           mimeType: "text/markdown",
-          text: await nerveCenter.getLiveContext()
+          text: await nerveCenter.getCoreContext()
         }]
       };
     }
@@ -1179,7 +1189,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             agentId: { type: "string" },
             jobId: { type: "string" },
-            outcome: { type: "string" }
+            outcome: { type: "string" },
+            completionKey: { type: "string", description: "Optional key to authorize completion if not the assigned agent." }
           },
           required: ["agentId", "jobId", "outcome"]
         }
@@ -1320,8 +1331,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   }
   if (name === "complete_job") {
-    const { agentId, jobId, outcome } = args;
-    const result = await nerveCenter.completeJob(agentId, jobId, outcome);
+    const { agentId, jobId, outcome, completionKey } = args;
+    const result = await nerveCenter.completeJob(agentId, jobId, outcome, completionKey);
     return { content: [{ type: "text", text: JSON.stringify(result) }] };
   }
   throw new Error(`Tool not found: ${name}`);

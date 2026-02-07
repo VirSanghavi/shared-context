@@ -39,6 +39,12 @@ interface SessionRecord {
   created_at: string;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
 interface SubscriptionData {
   subscription_status: string;
   stripe?: {
@@ -78,7 +84,8 @@ export default function Dashboard() {
   const [usageData, setUsageData] = useState<{ day: string; requests: number }[]>([]);
   const [subData, setSubData] = useState<SubscriptionData | null>(null);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
-  const [activeTab, setActiveTab] = useState<'keys' | 'usage' | 'sessions'>('keys');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [activeTab, setActiveTab] = useState<'keys' | 'usage' | 'sessions' | 'projects'>('keys');
   const [session, setSession] = useState<{ email: string; id: string } | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
 
@@ -127,6 +134,7 @@ export default function Dashboard() {
     fetchUsage();
     fetchSubStatus();
     fetchSessions();
+    fetchProjects();
   }, []);
 
   async function fetchActivity(userId: string) {
@@ -158,6 +166,18 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json();
         setSessions(data.sessions || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function fetchProjects() {
+    try {
+      const res = await fetch('/api/v1/projects');
+      if (res.ok) {
+        const data = await res.json();
+        setProjects(data.projects || []);
       }
     } catch (e) {
       console.error(e);
@@ -283,6 +303,7 @@ export default function Dashboard() {
                 <button onClick={() => setActiveTab('keys')} className={cn("pb-2 text-[11px] font-mono uppercase tracking-wider", activeTab === 'keys' ? "text-black border-b-2 border-black" : "text-neutral-400")}>api keys</button>
                 <button onClick={() => setActiveTab('usage')} className={cn("pb-2 text-[11px] font-mono uppercase tracking-wider", activeTab === 'usage' ? "text-black border-b-2 border-black" : "text-neutral-400")}>usage</button>
                 <button onClick={() => setActiveTab('sessions')} className={cn("pb-2 text-[11px] font-mono uppercase tracking-wider", activeTab === 'sessions' ? "text-black border-b-2 border-black" : "text-neutral-400")}>sessions</button>
+                <button onClick={() => setActiveTab('projects')} className={cn("pb-2 text-[11px] font-mono uppercase tracking-wider", activeTab === 'projects' ? "text-black border-b-2 border-black" : "text-neutral-400")}>projects</button>
               </div>
 
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -360,6 +381,28 @@ export default function Dashboard() {
                             <span className="text-[10px] font-mono text-neutral-400">{new Date(s.created_at).toLocaleDateString()}</span>
                           </div>
                           <p className="text-[11px] text-neutral-500 leading-relaxed">{s.summary}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'projects' && (
+                  <div className="space-y-3">
+                    {projects.length === 0 ? (
+                      <div className="text-center py-10 opacity-40 font-mono text-[11px]">no projects detected yet</div>
+                    ) : (
+                      projects.map(p => (
+                        <div key={p.id} className="bg-white border border-neutral-200 rounded-lg p-4 hover:border-neutral-900 transition-all group">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="text-[14px] font-medium text-neutral-900 group-hover:text-blue-600 transition-colors">{p.name}</div>
+                              <div className="text-[10px] font-mono text-neutral-400 mt-1 uppercase tracking-tighter">
+                                created {new Date(p.created_at).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <div className="text-[9px] font-mono px-2 py-1 bg-neutral-100 rounded text-neutral-500 uppercase">active</div>
+                          </div>
                         </div>
                       ))
                     )}
