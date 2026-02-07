@@ -38,17 +38,50 @@ app.use("/*", cors({
     }
 }));
 
-// Logging Middleware
+// Auth Middleware with Subscription Check
 app.use("/*", async (c, next) => {
-    const start = Date.now();
-    await next();
-    const ms = Date.now() - start;
-    if (c.res.status >= 400) {
-        logger.error(`[HTTP] ${c.req.method} ${c.req.path}`, { status: c.res.status, duration: ms });
-    } else {
-        logger.info(`[HTTP] ${c.req.method} ${c.req.path}`, { status: c.res.status, duration: ms });
+    // Skip public endpoints if any (e.g. health)
+    if (c.req.path === '/health') return next();
+
+    const authHeader = c.req.header("Authorization");
+    if (!authHeader) {
+        return c.json({ error: "Unauthorized: Missing Authorization header" }, 401);
     }
+
+    const token = authHeader.replace("Bearer ", "");
+    // Reuse Supabase client or create new one with bindings
+    const supabaseUrl = process.env.SUPABASE_URL || c.env?.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || c.env?.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+        return c.json({ error: "Server Configuration Error" }, 500);
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Validate Token
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+         // Fallback: Check if it's a shared-context-api-key (custom logic)
+         if (token === (process.env.SHARED_CONTEXT_API_SECRET || c.env?.SHARED_CONTEXT_API_SECRET)) {
+             return next();
+         }
+         return c.json({ error: "Unauthorized: Invalid Token" }, 401);
+    }
+    
+    // Check subscription
+    const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('id', user.id).single();
+    
+    if (profile?.subscription_status !== 'active' && profile?.subscription_status !== 'pro') {
+         return c.json({ error: "Payment Required: Please subscribe to continue." }, 402);
+    }
+
+    // Attach user to context
+    c.set('user', user);
+    await next();
 });
+
 
 // Rate Limiting Middleware
 app.use("/*", async (c, next) => {
