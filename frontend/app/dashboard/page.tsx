@@ -2,13 +2,34 @@
 
 import { useState, useEffect } from 'react';
 import { MotionConfig, motion, AnimatePresence } from 'framer-motion';
-import { Key, trash2, Check, Copy, Plus, Trash2, Shield, CreditCard, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import Link from 'next/link';
 
 // Helper for classes
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
+}
+
+// Simple bar chart component for usage
+function UsageChart({ data }: { data: { day: string; requests: number }[] }) {
+  const max = Math.max(...data.map(d => d.requests), 1);
+  
+  return (
+    <div className="h-24 flex items-end gap-1">
+      {data.map((d, i) => (
+        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+          <motion.div 
+            initial={{ height: 0 }}
+            animate={{ height: `${(d.requests / max) * 100}%` }}
+            transition={{ duration: 0.5, delay: i * 0.05 }}
+            className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t min-h-[2px]"
+          />
+          <span className="text-[8px] text-neutral-400 font-mono">{d.day}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function Dashboard() {
@@ -16,12 +37,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [newKeyName, setNewKeyName] = useState('');
   const [createdKey, setCreatedKey] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [usageData, setUsageData] = useState<{ day: string; requests: number }[]>([]);
+  const [usageLoading, setUsageLoading] = useState(true);
 
   useEffect(() => {
-    // Determine user from session? Not easily exposed to client without an endpoint
-    // Just fetch keys for now which validates auth
     fetchKeys();
+    fetchUsage();
   }, []);
 
   async function fetchKeys() {
@@ -30,12 +51,31 @@ export default function Dashboard() {
       const res = await fetch('/api/keys');
       if (res.ok) {
         const data = await res.json();
-        setKeys(data.keys);
+        setKeys(data.keys || []);
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchUsage() {
+    setUsageLoading(true);
+    try {
+      const res = await fetch('/api/usage');
+      if (res.ok) {
+        const data = await res.json();
+        setUsageData(data.usage || []);
+      } else {
+        // Fallback to empty data
+        setUsageData([]);
+      }
+    } catch (e) {
+      console.error(e);
+      setUsageData([]);
+    } finally {
+      setUsageLoading(false);
     }
   }
 
@@ -69,99 +109,179 @@ export default function Dashboard() {
     }
   }
 
+  const totalRequests = usageData.reduce((sum, d) => sum + d.requests, 0);
+
   return (
-    <div className="container-custom py-20 max-w-5xl">
-      <div className="flex justify-between items-end mb-12">
-        <div>
-           <h1 className="text-4xl font-mono mb-2">Dashboard</h1>
-           <p className="text-[var(--muted)]">Manage your API keys and billing.</p>
+    <div className="min-h-screen bg-[#050505] text-white selection:bg-white/10 tracking-tight lowercase">
+      {/* Avalanche background */}
+      <div className="bg-avalanche" />
+      
+      {/* Minimal inline navbar */}
+      <nav className="w-full fixed top-0 z-50 py-6 px-8 flex items-center justify-between">
+        <Link href="/" className="font-bold text-lg tracking-tight">axis</Link>
+        <div className="flex items-center gap-6 text-[11px] font-medium tracking-[0.2em] opacity-60">
+          <Link href="/feedback" className="hover:text-white transition-colors">thoughts?</Link>
+          <Link href="https://github.com/VirSanghavi/shared-context" className="hover:text-white transition-colors">github</Link>
+          <form action="/api/auth/logout" method="POST">
+            <button type="submit" className="hover:text-white transition-colors">logout</button>
+          </form>
         </div>
-      </div>
+      </nav>
 
-      <div className="grid gap-8 md:grid-cols-3">
-        {/* Sidebar / Stats */}
-        <div className="space-y-6">
-           <div className="border border-[var(--border)] rounded-lg p-6 bg-[#1a1a1a]/50">
-              <div className="flex items-center gap-3 mb-4 text-[var(--fg)]">
-                <Shield className="w-5 h-5"/>
-                <h2 className="font-bold">Subscription</h2>
-              </div>
-              <div className="mb-6">
-                <div className="text-2xl font-mono">Pro Plan</div>
-                <div className="text-sm text-[var(--muted)]">Active until Mar 01, 2026</div>
-              </div>
-              <form action="/api/stripe/portal" method="POST">
-                 <button className="btn-secondary w-full flex items-center justify-center gap-2">
-                    <CreditCard className="w-4 h-4"/>
-                    Manage Billing
-                 </button>
-              </form>
-           </div>
-        </div>
+      {/* White modal container */}
+      <main className="pt-32 pb-20 px-6 relative z-10">
+        <div className="max-w-4xl mx-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 text-neutral-900 max-h-[85vh] overflow-hidden flex flex-col">
+          <div className="flex justify-between items-end mb-6">
+            <div>
+              <h1 className="text-3xl font-medium tracking-tight mb-2">dashboard</h1>
+              <p className="text-[11px] text-neutral-500 uppercase tracking-[0.2em]">manage your api keys and context governance.</p>
+            </div>
+          </div>
 
-        {/* Main Content */}
-        <div className="md:col-span-2 space-y-8">
-           
-           {/* Create Key */}
-           <section className="border border-[var(--border)] rounded-lg p-6">
-              <h2 className="text-xl font-bold mb-4">API Keys</h2>
-              
-              <AnimatePresence>
-              {createdKey && (
-                <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mb-6 bg-green-900/20 border border-green-800 rounded p-4 overflow-hidden"
+          <div className="grid gap-8 md:grid-cols-12 flex-1 min-h-0">
+            {/* Main Content */}
+            <div className="md:col-span-7 flex flex-col min-h-0">
+              <section className="flex flex-col min-h-0 flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-[11px] font-bold tracking-[0.3em] uppercase text-neutral-600">your api keys</h2>
+                  <button 
+                    onClick={() => setCreatedKey(null)}
+                    className="text-[10px] font-mono text-neutral-400 hover:text-neutral-900 transition-colors uppercase tracking-widest"
+                  >
+                    create new key
+                  </button>
+                </div>
+
+                {/* Create key form - always visible at top */}
+                <motion.form 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  onSubmit={createKey} 
+                  className="mb-3 flex gap-2"
                 >
-                    <div className="text-green-400 text-sm mb-2 font-bold">New Key Generated (Copy immediately, it won't be shown again)</div>
-                    <div className="flex gap-2">
-                        <code className="flex-1 bg-black/30 p-2 rounded font-mono text-sm break-all">{createdKey}</code>
-                        <button onClick={() => navigator.clipboard.writeText(createdKey)} className="p-2 hover:bg-white/10 rounded"><Copy className="w-4 h-4"/></button>
-                    </div>
-                </motion.div>
-              )}
-              </AnimatePresence>
-
-              <form onSubmit={createKey} className="flex gap-3 mb-8">
-                 <input 
-                    type="text" 
-                    placeholder="e.g. CI/CD Agent" 
-                    className="flex-1 bg-transparent border border-[var(--border)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--fg)]"
+                  <input
+                    type="text"
+                    placeholder="key name (e.g. production)"
+                    className="flex-1 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 outline-none focus:border-neutral-400 text-[12px] font-mono tracking-wider text-neutral-900"
                     value={newKeyName}
-                    onChange={e => setNewKeyName(e.target.value)}
-                 />
-                 <button type="submit" className="btn-primary flex items-center gap-2" disabled={!newKeyName}>
-                    <Plus className="w-4 h-4"/>
-                    Create Key
-                 </button>
-              </form>
+                    onChange={(e) => setNewKeyName(e.target.value)}
+                  />
+                  <button 
+                    type="submit" 
+                    className="bg-neutral-900 text-white px-4 py-2 rounded text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-neutral-800 transition-colors"
+                  >
+                    create
+                  </button>
+                </motion.form>
 
-              <div className="space-y-3">
-                 {loading ? (
-                    <div className="flex justify-center py-8 text-[var(--muted)]"><Loader2 className="w-6 h-6 animate-spin"/></div>
-                 ) : keys.length === 0 ? (
-                    <div className="text-center py-8 text-[var(--muted)] text-sm">No API keys found.</div>
-                 ) : (
-                    keys.map(key => (
-                        <div key={key.id} className="flex items-center justify-between p-3 border border-[var(--border)] rounded bg-[#1a1a1a]/30">
-                            <div>
-                                <div className="font-bold text-sm">{key.name}</div>
-                                <div className="text-xs text-[var(--muted)] font-mono">sk_sc_...{key.id.slice(0,4)}</div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <span className="text-xs text-[var(--muted)]">Created {new Date(key.created_at).toLocaleDateString()}</span>
-                                <button onClick={() => deleteKey(key.id)} className="text-[var(--muted)] hover:text-red-500 transition-colors">
-                                    <Trash2 className="w-4 h-4"/>
-                                </button>
-                            </div>
+                {/* Fixed height scrollable container for keys */}
+                <div className="h-28 overflow-y-auto space-y-2 pr-1 border border-neutral-100 rounded-lg p-1.5 bg-neutral-50/50">
+                  {/* Show the newly created key at top of scroll area */}
+                  {createdKey && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }} 
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-emerald-50 border border-emerald-200 rounded-lg p-4"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-emerald-700">key created</h3>
+                        <button 
+                          onClick={() => setCreatedKey(null)}
+                          className="text-[9px] font-mono text-emerald-500 hover:text-emerald-700 transition-colors uppercase tracking-widest"
+                        >
+                          dismiss
+                        </button>
+                      </div>
+                      <p className="text-[9px] text-emerald-600 mb-2">
+                        copy now—you won't see it again.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 bg-white border border-emerald-200 rounded px-2 py-1.5 text-[10px] font-mono text-neutral-800 select-all break-all">
+                          {createdKey}
+                        </code>
+                        <button 
+                          onClick={() => navigator.clipboard.writeText(createdKey)}
+                          className="bg-emerald-600 text-white px-2 py-1.5 rounded text-[9px] font-bold tracking-[0.1em] uppercase hover:bg-emerald-700 transition-colors"
+                        >
+                          copy
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {loading ? (
+                    <div className="font-mono text-[11px] text-neutral-400 uppercase tracking-[0.3em] py-4 text-center">loading...</div>
+                  ) : keys.length === 0 && !createdKey ? (
+                    <div className="font-mono text-[11px] text-neutral-400 uppercase tracking-[0.3em] py-4 text-center">no keys yet</div>
+                  ) : (
+                    keys.map((key) => (
+                      <div key={key.id} className="bg-white border border-neutral-200 rounded-lg p-3 flex items-center justify-between group transition-all hover:bg-neutral-100">
+                        <div>
+                          <div className="text-[12px] font-medium tracking-tight mb-0.5">{key.name}</div>
+                          <div className="font-mono text-[10px] text-neutral-400 tracking-wider">
+                            {key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : 'never used'}
+                          </div>
                         </div>
+                        <button 
+                          onClick={() => deleteKey(key.id)}
+                          className="text-neutral-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
                     ))
-                 )}
+                  )}
+                </div>
+
+                {/* Usage Graph */}
+                <div className="mt-4 pt-4 border-t border-neutral-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-[10px] font-bold tracking-[0.3em] uppercase text-neutral-600">usage this week</h3>
+                    <span className="text-[11px] font-mono text-neutral-500">{totalRequests.toLocaleString()} requests</span>
+                  </div>
+                  <UsageChart data={usageData} />
+                </div>
+              </section>
+            </div>
+
+            {/* Sidebar */}
+            <div className="md:col-span-5 space-y-4">
+              <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-5">
+                <h3 className="text-[9px] font-mono text-neutral-500 uppercase tracking-[0.3em] mb-3">subscription</h3>
+                <div className="mb-4">
+                  <div className="text-[16px] font-medium tracking-tight mb-0.5">pro plan</div>
+                  <div className="text-[10px] font-mono text-neutral-400 tracking-wider">active until march 2026</div>
+                </div>
+                <Link 
+                  href="/billing"
+                  className="block w-full bg-neutral-900 text-white py-2.5 rounded text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-neutral-800 transition-colors text-center"
+                >
+                  manage billing
+                </Link>
               </div>
-           </section>
+
+              <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-5">
+                <h3 className="text-[9px] font-mono text-neutral-500 uppercase tracking-[0.3em] mb-2">support</h3>
+                <p className="text-[10px] text-neutral-500 leading-relaxed normal-case mb-3">
+                  need help with mcp headers or context governance?
+                </p>
+                <Link href="/support" className="text-[9px] font-mono text-neutral-400 hover:text-neutral-900 transition-colors uppercase tracking-widest">
+                  contact support ↗
+                </Link>
+              </div>
+
+              {/* Docs button */}
+              <Link 
+                href="/docs" 
+                className="block w-full bg-neutral-900 text-white py-2.5 rounded text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-neutral-800 transition-colors text-center"
+              >
+                view docs
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

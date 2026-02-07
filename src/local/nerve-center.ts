@@ -38,8 +38,8 @@ interface JobRecord {
 }
 
 interface NerveCenterState {
-    locks: Record<string, FileLock>;
-    jobs: Record<string, Job>;
+    locks: Record<string, FileLock>; // Fallback local locks
+    jobs: Record<string, Job>; // Fallback local jobs
     liveNotepad: string;
 }
 
@@ -67,7 +67,7 @@ export class NerveCenter {
     private supabase?: SupabaseClient;
     private projectId?: string;
     private projectName: string;
-    private useSupabaseJobs: boolean;
+    private useSupabase: boolean;
 
     /**
      * @param contextManager - Instance of ContextManager for legacy operations
@@ -81,12 +81,14 @@ export class NerveCenter {
         this.projectName = options.projectName || process.env.PROJECT_NAME || "default";
         const supabaseUrl = options.supabaseUrl || process.env.SUPABASE_URL;
         const supabaseKey = options.supabaseServiceRoleKey || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
         if (supabaseUrl && supabaseKey) {
             this.supabase = createClient(supabaseUrl, supabaseKey);
-            this.useSupabaseJobs = true;
+            this.useSupabase = true;
         } else {
-            this.useSupabaseJobs = false;
+            this.useSupabase = false;
         }
+
         this.state = {
             locks: {},
             jobs: {},
@@ -95,10 +97,10 @@ export class NerveCenter {
     }
 
     async init() {
-         await this.loadState();
-         if (this.useSupabaseJobs) {
-             await this.ensureProjectId();
-         }
+        await this.loadState();
+        if (this.useSupabase) {
+            await this.ensureProjectId();
+        }
     }
 
     private async ensureProjectId() {
@@ -148,8 +150,10 @@ export class NerveCenter {
         };
     }
 
+    // --- Data Access Layers (Hybrid: Supabase > Local) ---
+
     private async listJobs(): Promise<Job[]> {
-        if (!this.useSupabaseJobs || !this.supabase || !this.projectId) {
+        if (!this.useSupabase || !this.supabase || !this.projectId) {
             return Object.values(this.state.jobs);
         }
 
@@ -164,6 +168,39 @@ export class NerveCenter {
         }
 
         return data.map((record) => this.jobFromRecord(record as JobRecord));
+    }
+
+    private async getLocks(): Promise<FileLock[]> {
+        if (!this.useSupabase || !this.supabase || !this.projectId) {
+            // Local Fallback
+            return Object.values(this.state.locks);
+        }
+
+        try {
+            // Lazy clean
+            await this.supabase.rpc('clean_stale_locks', {
+                p_project_id: this.projectId,
+                p_timeout_seconds: Math.floor(this.lockTimeout / 1000)
+            });
+
+            const { data, error } = await this.supabase
+                .from('locks')
+                .select('*')
+                .eq('project_id', this.projectId);
+
+            if (error) throw error;
+
+            return (data || []).map((row: any) => ({
+                agentId: row.agent_id,
+                filePath: row.file_path,
+                intent: row.intent,
+                userPrompt: row.user_prompt,
+                timestamp: Date.parse(row.updated_at)
+            }));
+        } catch (e) {
+            logger.warn("Failed to fetch locks from DB, falling back to local memory", e as any);
+            return Object.values(this.state.locks);
+        }
     }
 
     private async saveState() {
@@ -187,17 +224,11 @@ export class NerveCenter {
 
     // --- Job Board Protocol (Active Orchestration) ---
 
-    /**
-     * Posts a new job to the Job Board.
-     * @param title - Short concise title of the task
-     * @param description - Detailed instructions
-     * @param priority - Urgency level (default: medium)
-     * @param dependencies - Array of Job IDs that must be completed first
-     */
     async postJob(title: string, description: string, priority: Job["priority"] = "medium", dependencies: string[] = []) {
         return await this.mutex.runExclusive(async () => {
             let id = `job-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-            if (this.useSupabaseJobs && this.supabase && this.projectId) {
+
+            if (this.useSupabase && this.supabase && this.projectId) {
                 const now = new Date().toISOString();
                 const { data, error } = await this.supabase
                     .from("jobs")
@@ -242,9 +273,6 @@ export class NerveCenter {
 
     async claimNextJob(agentId: string) {
         return await this.mutex.runExclusive(async () => {
-            // Find first unassigned todo job
-            // Priority: Critical > High > Medium > Low
-            // Then check dependencies
             const priorities = ["critical", "high", "medium", "low"];
             const allJobs = await this.listJobs();
             const jobsById = new Map(allJobs.map((job) => [job.id, job]));
@@ -265,7 +293,7 @@ export class NerveCenter {
                 return { status: "NO_JOBS_AVAILABLE", message: "Relax. No open tickets (or dependencies not met)." };
             }
 
-            if (this.useSupabaseJobs && this.supabase) {
+            if (this.useSupabase && this.supabase) {
                 for (const candidate of availableJobs) {
                     const now = new Date().toISOString();
                     const { data, error } = await this.supabase
@@ -292,7 +320,6 @@ export class NerveCenter {
                         return { status: "CLAIMED", job };
                     }
                 }
-
                 return { status: "NO_JOBS_AVAILABLE", message: "All available jobs were just claimed." };
             }
 
@@ -305,16 +332,13 @@ export class NerveCenter {
             logger.info(`Job claimed`, { jobId: job.id, agentId });
             await this.saveState();
 
-            return {
-                status: "CLAIMED",
-                job
-            };
+            return { status: "CLAIMED", job };
         });
     }
 
     async cancelJob(jobId: string, reason: string) {
         return await this.mutex.runExclusive(async () => {
-            if (this.useSupabaseJobs && this.supabase) {
+            if (this.useSupabase && this.supabase) {
                 const { data, error } = await this.supabase
                     .from("jobs")
                     .update({ status: "cancelled", cancel_reason: reason, updated_at: new Date().toISOString() })
@@ -343,12 +367,25 @@ export class NerveCenter {
 
     async forceUnlock(filePath: string, adminReason: string) {
         return await this.mutex.runExclusive(async () => {
+            if (this.useSupabase && this.supabase && this.projectId) {
+                const { error } = await this.supabase
+                    .from('locks')
+                    .delete()
+                    .eq('project_id', this.projectId)
+                    .eq('file_path', filePath);
+
+                if (error) return { error: "DB Error" };
+
+                this.state.liveNotepad += `\n- [ADMIN] Force unlocked '${filePath}'. Reason: ${adminReason}`;
+                await this.saveState();
+                return { status: "UNLOCKED" };
+            }
+
             const lock = this.state.locks[filePath];
             if (!lock) return { message: "File was not locked." };
 
             delete this.state.locks[filePath];
             this.state.liveNotepad += `\n- [ADMIN] Force unlocked '${filePath}'. Reason: ${adminReason}`;
-            logger.warn(`Force unlock`, { filePath, reason: adminReason });
             await this.saveState();
             return { status: "UNLOCKED", previousOwner: lock.agentId };
         });
@@ -356,7 +393,7 @@ export class NerveCenter {
 
     async completeJob(agentId: string, jobId: string, outcome: string) {
         return await this.mutex.runExclusive(async () => {
-            if (this.useSupabaseJobs && this.supabase) {
+            if (this.useSupabase && this.supabase) {
                 const { data, error } = await this.supabase
                     .from("jobs")
                     .select("id,title,assigned_to")
@@ -388,11 +425,6 @@ export class NerveCenter {
             job.status = "done";
             job.updatedAt = Date.now();
             this.state.liveNotepad += `\n- [JOB DONE] ${job.title} by ${agentId}. Outcome: ${outcome}`;
-
-            // Auto-release locks held by this agent?
-            // Optional but good practice. For now manual release via finalize or explicit unlock is safer.
-
-            logger.info(`Job completed`, { jobId: job.id, agentId });
             await this.saveState();
 
             return { status: "COMPLETED" };
@@ -401,29 +433,13 @@ export class NerveCenter {
 
     // --- Core State Management ---
 
-    private cleanStaleLocks() {
-        const now = Date.now();
-        let changed = false;
-        for (const [path, lock] of Object.entries(this.state.locks)) {
-            if (now - lock.timestamp > this.lockTimeout) {
-                delete this.state.locks[path];
-                this.state.liveNotepad += `\n- [SYSTEM] Lock expired for '${path}' (held by ${lock.agentId})`;
-                logger.warn(`Lock expired`, { filePath: path, agentId: lock.agentId });
-                changed = true;
-            }
-        }
-        return changed;
-    }
-
     async getLiveContext(): Promise<string> {
-        // Cleaning stale locks on read is lazy expiration
-        const changed = this.cleanStaleLocks();
-        if (changed) await this.saveState();
+        const locks = await this.getLocks();
 
-        const lockSummary = Object.values(this.state.locks).map(l => 
-            `- [LOCKED] ${l.filePath} by ${l.agentId}\n  Intent: ${l.intent}\n  Prompt: "${l.userPrompt.substring(0, 100)}..."`
+        const lockSummary = locks.map(l =>
+            `- [LOCKED] ${l.filePath} by ${l.agentId}\n  Intent: ${l.intent}\n  Prompt: "${l.userPrompt?.substring(0, 100)}..."`
         ).join("\n");
-        
+
         const jobs = await this.listJobs();
         const jobSummary = jobs.map(j =>
             `- [${j.status.toUpperCase()}] ${j.title} ${j.assignedTo ? '(' + j.assignedTo + ')' : '(Open)'}\n  ID: ${j.id}`
@@ -434,29 +450,72 @@ export class NerveCenter {
 
     // --- Decision & Orchestration ---
 
-    /**
-     * Attempts to acquire a lock on a specific file.
-     * @param agentId - The identity of the requesting agent
-     * @param filePath - The project-relative path to the file
-     * @param intent - "read" or "edit" (informative only)
-     * @param userPrompt - The semantic intent/prompt causing this lock request
-     * @returns GRANTED or REQUIRES_ORCHESTRATION status
-     */
     async proposeFileAccess(agentId: string, filePath: string, intent: string, userPrompt: string) {
         return await this.mutex.runExclusive(async () => {
-            this.cleanStaleLocks();
-            const currentLock = this.state.locks[filePath];
+            // Supabase Logic
+            if (this.useSupabase && this.supabase && this.projectId) {
+                // 1. Check existing lock
+                const { data: existing } = await this.supabase
+                    .from('locks')
+                    .select('*')
+                    .eq('project_id', this.projectId)
+                    .eq('file_path', filePath)
+                    .single();
 
-            // Check if locked by someone else
+                // 2. If locked, check if it's stale (lazy) or different agent
+                if (existing) {
+                    const updatedAt = new Date(existing.updated_at).getTime();
+                    const isStale = (Date.now() - updatedAt) > this.lockTimeout;
+
+                    if (!isStale && existing.agent_id !== agentId) {
+                        return {
+                            status: "REQUIRES_ORCHESTRATION",
+                            message: `Conflict: File '${filePath}' is currently locked by agent '${existing.agent_id}'`,
+                            currentLock: existing
+                        };
+                    }
+                }
+
+                // 3. Upsert Lock
+                const { error } = await this.supabase
+                    .from('locks')
+                    .upsert({
+                        project_id: this.projectId,
+                        file_path: filePath,
+                        agent_id: agentId,
+                        intent,
+                        user_prompt: userPrompt,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'project_id,file_path' });
+
+                if (error) {
+                    logger.error("Lock upsert failed", error);
+                    return { status: "ERROR", message: "Database lock failed." };
+                }
+
+                this.state.liveNotepad += `\n\n### [${agentId}] Locked '${filePath}'\n**Intent:** ${intent}\n**Prompt:** "${userPrompt}"`;
+                await this.saveState();
+                return { status: "GRANTED", message: `Access granted for ${filePath}` };
+            }
+
+            // Fallback: Local Logic
+            const now = Date.now();
+            // Clean stale local
+            for (const [path, lock] of Object.entries(this.state.locks)) {
+                if (now - lock.timestamp > this.lockTimeout) {
+                    delete this.state.locks[path];
+                }
+            }
+
+            const currentLock = this.state.locks[filePath];
             if (currentLock && currentLock.agentId !== agentId) {
-                 return {
+                return {
                     status: "REQUIRES_ORCHESTRATION",
-                    message: `Conflict: File '${filePath}' is currently locked by agent '${currentLock.agentId}' who is working on: "${currentLock.userPrompt}".`,
+                    message: `Conflict: File '${filePath}' is currently locked by agent '${currentLock.agentId}'`,
                     currentLock
                 };
             }
 
-            // Grant Lock
             this.state.locks[filePath] = {
                 agentId,
                 filePath,
@@ -465,10 +524,7 @@ export class NerveCenter {
                 timestamp: Date.now()
             };
 
-            // Log intention AND Prompt to Notepad automatically
             this.state.liveNotepad += `\n\n### [${agentId}] Locked '${filePath}'\n**Intent:** ${intent}\n**Prompt:** "${userPrompt}"`;
-            logger.info(`Lock granted`, { agentId, filePath });
-            
             await this.saveState();
 
             return {
@@ -481,80 +537,47 @@ export class NerveCenter {
 
     async updateSharedContext(text: string, agentId: string) {
         return await this.mutex.runExclusive(async () => {
-             this.state.liveNotepad += `\n- [${agentId}] ${text}`;
-             await this.saveState();
-             return "Notepad updated.";
+            this.state.liveNotepad += `\n- [${agentId}] ${text}`;
+            await this.saveState();
+            return "Notepad updated.";
         });
     }
-
-    // --- Permanent Memory ---
 
     async finalizeSession() {
         return await this.mutex.runExclusive(async () => {
             const content = this.state.liveNotepad;
             const filename = `session-${new Date().toISOString().replace(/[:.]/g, '-')}.md`;
             const historyPath = path.join(process.cwd(), "history", filename);
-            
-            // 1. Archive to disk
+
             await fs.writeFile(historyPath, content);
-            
-            // 2. Index for RAG
-            let ragStatus = "RAG Indexing Skipped";
-            try {
-                // Chunking Strategy: Split by Agent Actions (###)
-                const chunks = content.split('###').filter(c => c.trim().length > 0).map(c => '###' + c);
-                
-                const items = chunks.map((chunk, index) => ({
-                    content: chunk.trim(),
-                    metadata: {
-                        filename: filename,
-                        source: "nerve-center-history",
-                        chunkIndex: index,
-                        timestamp: new Date().toISOString()
-                    }
-                }));
 
-                if (items.length > 0 && this.contextManager.embedContent) {
-                    await this.contextManager.embedContent(items);
-                    ragStatus = `Indexed ${items.length} chunks to Vector DB.`;
-                }
-            } catch (e) {
-                ragStatus = `Indexing Error: ${e}`;
-                logger.error("RAG indexing failed", e);
-            }
-
-            // 3. Clear State
+            // Clear State
             this.state.liveNotepad = "Session Start: " + new Date().toISOString() + "\n";
             this.state.locks = {};
-            if (this.useSupabaseJobs && this.supabase && this.projectId) {
+            if (this.useSupabase && this.supabase && this.projectId) {
+                // Clear done jobs
                 await this.supabase
                     .from("jobs")
                     .delete()
                     .eq("project_id", this.projectId)
                     .in("status", ["done", "cancelled"]);
+
+                // Clear all locks for this project? Maybe.
+                await this.supabase
+                    .from("locks")
+                    .delete()
+                    .eq("project_id", this.projectId);
             } else {
-                // Move finished jobs to history (delete from active)
-                // But keep todo/in_progress? Or clear all? "Session" implies a sprint usually.
-                // Let's clear done/cancelled. Keep todo.
                 this.state.jobs = Object.fromEntries(
                     Object.entries(this.state.jobs).filter(([_, j]) => j.status !== "done" && j.status !== "cancelled")
                 );
-            }
-            
-            // Backup mechanism (Item 9)
-            const backupPath = this.stateFilePath + ".backup";
-            try {
-                await fs.copyFile(this.stateFilePath, backupPath);
-            } catch (e) {
-                logger.warn("Backup failed during finalize", e);
             }
 
             await this.saveState();
 
             return {
                 status: "SESSION_FINALIZED",
-                archivePath: historyPath,
-                ragStatus
+                archivePath: historyPath
             };
         });
     }
@@ -569,7 +592,52 @@ export class NerveCenter {
         } catch (_e) {
             soul += "\n(Could not read local context files)";
         }
-        
         return soul;
+    }
+
+    // --- Billing & Usage ---
+
+    async getSubscriptionStatus(email: string) {
+        if (!this.useSupabase || !this.supabase) {
+            return { error: "Supabase not configured." };
+        }
+
+        const { data: profile, error } = await this.supabase
+            .from("profiles")
+            .select("subscription_status, stripe_customer_id, current_period_end")
+            .eq("email", email)
+            .single();
+
+        if (error || !profile) {
+            return { status: "unknown", message: "Profile not found." };
+        }
+
+        const isActive = profile.subscription_status === 'pro' || 
+            (profile.current_period_end && new Date(profile.current_period_end) > new Date());
+
+        return {
+            email,
+            plan: isActive ? "Pro" : "Free",
+            status: profile.subscription_status || "free",
+            validUntil: profile.current_period_end
+        };
+    }
+
+    async getUsageStats(email: string) {
+         if (!this.useSupabase || !this.supabase) {
+            return { error: "Supabase not configured." };
+        }
+        
+        const { data: profile } = await this.supabase
+            .from("profiles")
+            .select("usage_count")
+            .eq("email", email)
+            .single();
+
+        return {
+            email,
+            usageCount: profile?.usage_count || 0,
+            limit: 1000 // Hardcoded placeholder limit
+        };
     }
 }

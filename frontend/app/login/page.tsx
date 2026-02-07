@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
   const next = search.get("next") || "/dashboard";
@@ -31,61 +33,77 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-mesh px-6 py-20">
-      <div className="mx-auto flex max-w-lg flex-col gap-8">
-        <div className="glass rounded-3xl p-10">
-          <div className="space-y-4">
-            <p className="font-display text-sm uppercase tracking-[0.2em] text-[var(--accent)]">
-              Shared Context
-            </p>
-            <h1 className="font-display text-4xl leading-tight text-[var(--ink)]">
-              Sign in to continue
-            </h1>
-            <p className="text-[var(--muted)]">
-              Use your access email and password to manage the shared context workspace.
-            </p>
-          </div>
-          <form className="mt-8 space-y-5" onSubmit={submit}>
-            <div className="space-y-2">
-              <label className="text-sm text-[var(--muted)]">Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                placeholder="you@company.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm text-[var(--muted)]">Password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                placeholder="••••••••"
-              />
-            </div>
-            {error ? (
-              <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
-                {error}
-              </p>
-            ) : null}
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-[var(--ink)] px-4 py-3 font-display text-white transition hover:translate-y-[-1px]"
-              disabled={loading}
-            >
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-          </form>
-        </div>
-        <p className="text-center text-xs text-[var(--muted)]">
-          Need access? Ask your admin for credentials.
-        </p>
+    <div className="w-full max-w-[400px]">
+      <div className="text-center mb-12 mix-blend-difference drop-shadow-[0_2px_40px_rgba(0,0,0,1)]">
+        <h1 className="text-3xl font-medium tracking-tight mb-2 lowercase">welcome back</h1>
+        <p className="text-[11px] text-white/70 font-semibold uppercase tracking-[0.2em] lowercase">access your axis context</p>
       </div>
+
+      <div className="bg-[#0D0D0D]/40 backdrop-blur-xl border border-white/5 p-8 rounded">
+        <form onSubmit={submit} className="space-y-6">
+          <div>
+            <label className="block text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] mb-2 lowercase opacity-40">email address</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-white/[0.02] border border-white/5 rounded px-4 py-3 outline-none focus:border-white/10 transition-colors text-sm lowercase"
+              placeholder="name@company.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] mb-2 lowercase opacity-40">password</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-white/[0.02] border border-white/5 rounded px-4 py-3 outline-none focus:border-white/10 transition-colors text-sm"
+              placeholder="••••••••"
+            />
+          </div>
+
+          {error && (
+            <div className="text-rose-500 text-[12px] font-mono bg-rose-500/5 border border-rose-500/10 p-3 rounded">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full btn-nia-primary !tracking-[0.3em] uppercase py-4 lowercase font-bold"
+          >
+            {loading ? 'signing in...' : 'sign in'}
+          </button>
+        </form>
+
+        <div className="mt-8 pt-8 border-t border-white/5 text-center relative z-20">
+          <p className="text-[12px] text-white/30 lowercase">
+            don't have an account?{' '}
+            <Link href="/signup" className="text-white hover:underline lowercase relative z-30 pointer-events-auto">
+              create one
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen bg-[#050505] text-white selection:bg-white/10 tracking-tight lowercase">
+      <div className="bg-avalanche pointer-events-none fixed inset-0 z-[0]" />
+      <Navbar />
+      <main className="pt-40 flex flex-col items-center justify-center px-6 relative z-10 lowercase">
+        <div className="absolute inset-0 z-[-1] bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.4)_0%,transparent_70%)] pointer-events-none" />
+        <Suspense fallback={<div className="font-mono text-[10px] text-white/20 uppercase tracking-[0.3em] lowercase">loading session...</div>}>
+          <LoginForm />
+        </Suspense>
+      </main>
     </div>
   );
 }

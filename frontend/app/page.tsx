@@ -1,137 +1,252 @@
 'use client';
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import Navbar from "@/components/Navbar";
 
 export default function Home() {
-  return (
-    <div className="flex flex-col items-center overflow-hidden">
-      {/* Background Mesh */}
-      <div className="absolute inset-0 z-[-1] opacity-20 pointer-events-none">
-          <div className="absolute top-[-20%] left-[20%] w-[600px] h-[600px] bg-sky-900 rounded-full blur-[120px] mix-blend-screen animate-pulse duration-[4s]" />
-          <div className="absolute top-[10%] right-[10%] w-[500px] h-[500px] bg-emerald-900 rounded-full blur-[100px] mix-blend-screen" />
-      </div>
+    const [mounted, setMounted] = useState(false);
+    const [query, setQuery] = useState("");
+    const [isSearching, setIsSearching] = useState(false);
+    const [answer, setAnswer] = useState<string | null>(null);
 
-      {/* Hero */}
-      <section className="pt-32 pb-20 px-4 text-center max-w-5xl mx-auto relative">
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-        >
-            <h1 className="text-5xl md:text-7xl font-mono mb-8 tracking-tighter">
-              context for <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">ai agents</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-[var(--muted)] mb-12 max-w-3xl mx-auto font-light leading-relaxed">
-              An API and MCP layer that gives agents continuously updated context from libraries,
-              research papers, and docs. <span className="text-[var(--fg)]">Eliminate hallucinations.</span>
-            </p>
-        </motion.div>
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
-        {/* Console / Demo */}
-        <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="bg-[#0a0a0a] border border-[#333] rounded-xl p-1 mb-12 shadow-2xl mx-auto w-full max-w-2xl overflow-hidden"
-        >
-          <div className="bg-[#111] px-4 py-2 flex items-center gap-2 border-b border-[#333]">
-              <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50"/>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"/>
-                  <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"/>
-              </div>
-              <div className="text-xs text-[var(--muted)] ml-2 font-mono">search-context — agent-v1</div>
-          </div>
-          <div className="p-6 text-left font-mono text-sm md:text-base h-[200px] flex flex-col">
-             <div className="text-[var(--muted)] mb-2">$ agent ask "how does Auth work in Shared Context?"</div>
-             <div className="flex-1 text-emerald-400">
-                <Typewriter text={"> Searching indexed docs... found 4 references.\n> Analyzing 'lib/auth.ts'...\n> The system uses generic JWTs signed with APP_SESSION_SECRET.\n> Middleware intercepts requests to check for 'sc_session' cookie.\n> \n> Context loaded. Ready to implement."} />
-             </div>
-             <div className="mt-4 flex justify-between items-center text-xs text-[var(--muted)] border-t border-[#333] pt-3">
-                 <span>4 sources indexed</span>
-                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"/> System Online</span>
-             </div>
-          </div>
-        </motion.div>
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!query.trim()) return;
 
-        <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="flex flex-col md:flex-row gap-4 justify-center"
-        >
-          <Link href="/login" className="btn-primary text-lg px-8 py-3 rounded-full">
-            Get Started
-          </Link>
-          <div className="flex items-center gap-3 bg-[#1a1a1a] px-6 py-3 rounded-full border border-[var(--border)] font-mono text-sm group cursor-pointer hover:border-[var(--fg)] transition-colors">
-             <span className="text-[var(--muted)]">$</span> npx shared-context-wizard@latest
-             <CopyIcon className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity ml-2"/>
-          </div>
-        </motion.div>
-      </section>
+        setIsSearching(true);
+        setAnswer(null);
 
-      {/* Pricing / Features */}
-      <section className="py-20 w-full border-t border-[var(--border)] bg-[#0a0a0a]/50 backdrop-blur-sm">
-        <div className="container-custom">
-            <h2 className="text-2xl font-mono mb-16 text-center tracking-widest text-[var(--muted)]">PRICING</h2>
-            
-            <motion.div 
-                whileHover={{ y: -5 }}
-                className="max-w-md mx-auto border border-[var(--border)] p-8 rounded-2xl bg-[#0a0a0a] relative overflow-hidden group"
-            >
-                <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"/>
-                
-                <div className="relative z-10">
-                    <div className="flex justify-between items-baseline mb-4">
-                        <h3 className="text-xl font-bold">Pro</h3>
-                        <div className="text-4xl font-mono"><span className="text-sm text-[var(--muted)]">/mo</span></div>
-                    </div>
-                    <p className="text-[var(--muted)] mb-8">Everything you need to give your agents infinite context.</p>
-                    <ul className="space-y-4 mb-4 text-sm">
-                        {['Unlimited indexing', 'Unlimited queries', 'Deep research enabled', 'MCP Server Access', 'Priority Support'].map(item => (
-                            <li key={item} className="flex gap-3 items-center">
-                                <span className="bg-emerald-900/50 text-emerald-400 rounded-full p-1"><CheckIcon className="w-3 h-3"/></span>
-                                {item}
-                            </li>
-                        ))}
-                    </ul>
-                    <form action="/api/stripe/checkout" method="POST" className="mt-8">
-                    <button type="submit" className="w-full btn-primary py-3 rounded-lg font-bold">Subscribe</button>
-                    </form>
-                </div>
-            </motion.div>
-        </div>
-      </section>
-    </div>
-  );
-}
+        try {
+            const res = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query }),
+            });
+            const data = await res.json();
+            if (data.answer) {
+                setAnswer(data.answer);
+            } else if (data.error) {
+                setAnswer(data.error);
+            }
+        } catch (err) {
+            setAnswer("axis intelligence: internal connection bridge failed. ensure env keys are present.");
+        } finally {
+            setIsSearching(false);
+        }
+    };
 
-// Simple Typewriter Component
-function Typewriter({ text }: { text: string }) {
+    if (!mounted) return null;
+
     return (
-        <motion.div
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-        >
-            {text.split('\n').map((line, i) => (
-                <motion.div 
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.8, duration: 0.5 }}
+        <div className="relative min-h-screen font-sans selection:bg-white/5 tracking-tight lowercase overflow-x-hidden text-white bg-black">
+
+            {/* global spatial effect */}
+            <div className="bg-avalanche pointer-events-none fixed inset-0 z-[0]" />
+
+            {/* section 1: hero (clean / clear background) */}
+            <section className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center z-10 transition-colors duration-1000 bg-transparent">
+                {/* dark anchor for hero text transparency */}
+                <div className="absolute inset-0 z-[-1] bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.4)_0%,transparent_70%)] pointer-events-none" />
+
+                {/* navigation */}
+                <Navbar />
+
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, ease: [0.19, 1, 0.22, 1] }}
+                    className="max-w-4xl relative"
                 >
-                    {line}
+                    <h1 className="text-[52px] md:text-[84px] font-medium tracking-tighter mb-8 text-white leading-[1.05] drop-shadow-[0_4px_80px_rgba(0,0,0,1)] mix-blend-difference">
+                        context <br />governance
+                    </h1>
+                    <p className="text-[17px] md:text-[19px] text-white/95 max-w-xl mx-auto leading-relaxed mb-12 font-medium drop-shadow-[0_2px_40px_rgba(0,0,0,1)] mix-blend-difference">
+                        axis mirrors your project structure and streams high-fidelity context directly into agent prompts.
+                    </p>
                 </motion.div>
-            ))}
-        </motion.div>
-    )
-}
 
-function CheckIcon(props: any) {
-    return <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-}
+                {/* demo search - premium interaction */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.8 }}
+                    className="w-full max-w-2xl search-container rounded-lg overflow-hidden border border-white/10 relative z-20"
+                >
+                    <form onSubmit={handleSearch} className="relative">
+                        <input
+                            type="text"
+                            placeholder="ask axis anything..."
+                            className="w-full bg-black/40 p-6 pr-32 outline-none text-[15px] font-mono placeholder:text-white/40 text-white mix-blend-difference drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                            <button
+                                type="submit"
+                                disabled={isSearching}
+                                className="bg-white/5 text-white/40 px-5 py-2 rounded text-[10px] font-bold tracking-widest uppercase hover:bg-white/10 transition-all border border-white/5"
+                            >
+                                {isSearching ? "..." : "run"}
+                            </button>
+                        </div>
+                    </form>
 
-function CopyIcon(props: any) {
-    return <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    <AnimatePresence>
+                        {answer && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                className="border-t border-white/5 p-8 text-left font-mono text-[13px] leading-relaxed text-white bg-black/20"
+                            >
+                                <div className="flex gap-4 mix-blend-difference drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]">
+                                    <span className="text-white/60 italic shrink-0">axis:</span>
+                                    <div className="max-h-52 overflow-y-auto pr-2 custom-scrollbar w-full">
+                                        <div className="prose prose-invert prose-xs max-w-none">
+                                            <ReactMarkdown 
+                                                components={{
+                                                    p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
+                                                    ol: ({ children }) => <ol className="list-decimal pl-4 mb-3 space-y-1">{children}</ol>,
+                                                    ul: ({ children }) => <ul className="list-disc pl-4 mb-3 space-y-1">{children}</ul>,
+                                                    li: ({ children }) => <li className="mb-0">{children}</li>,
+                                                    strong: ({ children }) => <strong className="font-bold text-white/90">{children}</strong>,
+                                                    code: ({ children }) => <code className="bg-white/10 px-1 rounded text-emerald-400">{children}</code>
+                                                }}
+                                            >
+                                                {answer}
+                                            </ReactMarkdown>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
+
+                <div className="absolute bottom-12 left-1/2 -translate-x-1/2 opacity-20 hidden md:block">
+                    <div className="w-[1px] h-12 bg-gradient-to-b from-white to-transparent" />
+                </div>
+            </section>
+
+            {/* section 2: value & pricing (stealth dark) */}
+            <section className="relative pt-48 pb-12 px-6 z-10 overflow-hidden text-neutral-900 border-t border-white/10 shadow-[0_-50px_100px_rgba(0,0,0,0.8)] bg-avalanche2">
+                <div className="absolute inset-0 bg-white/10 pointer-events-none" />
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-center">
+
+                        {/* protocol card */}
+                        <motion.div
+                            initial={{ opacity: 0, rotate: 0, x: -10 }}
+                            whileInView={{ opacity: 1, rotate: -2, x: 0 }}
+                            viewport={{ once: true }}
+                            className="bg-white/95 backdrop-blur-xl p-10 rounded-2xl min-h-[480px] flex flex-col justify-between shadow-2xl text-neutral-900 border border-neutral-200"
+                        >
+                            <div className="space-y-10">
+                                <h3 className="text-[12px] font-mono text-neutral-500 uppercase tracking-[0.4em] font-bold">protocol</h3>
+                                <div className="space-y-8">
+                                    <div>
+                                        <div className="text-[13px] text-rose-600 font-mono mb-3 uppercase tracking-widest font-extrabold underline decoration-2 decoration-rose-600/30 underline-offset-4">hallucination</div>
+                                        <p className="text-[15px] text-neutral-800 leading-relaxed font-bold">agents lack structured recall. context windows are wasted on noise.</p>
+                                    </div>
+                                    <div>
+                                        <div className="text-[13px] text-emerald-600 font-mono mb-3 uppercase tracking-widest font-extrabold underline decoration-2 decoration-emerald-600/30 underline-offset-4">governance</div>
+                                        <p className="text-[15px] text-black leading-relaxed font-black">axis enforces strict context maps, ensuring your agents only see what they need.</p>
+                                    </div>
+                                    <div>
+                                        <div className="text-[13px] text-amber-600 font-mono mb-3 uppercase tracking-widest font-extrabold underline decoration-2 decoration-amber-600/30 underline-offset-4">context drift</div>
+                                        <p className="text-[15px] text-black leading-relaxed font-black">real-time synchronization prevents stale reads. what you see is what the agent knows.</p>
+                                    </div>
+                                    <div>
+                                        <div className="text-[13px] text-blue-600 font-mono mb-3 uppercase tracking-widest font-extrabold underline decoration-2 decoration-blue-600/30 underline-offset-4">security</div>
+                                        <p className="text-[15px] text-black leading-relaxed font-black">granular file locking protocols prevent race conditions in multi-agent environments.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        {/* pricing center */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="bg-white/98 backdrop-blur-2xl p-12 rounded-3xl text-center shadow-[0_32px_120px_rgba(0,0,0,0.15)] z-20 min-h-[540px] flex flex-col justify-between border-2 border-neutral-100"
+                        >
+                            <div className="flex flex-col flex-1 h-full">
+                                <h2 className="text-[14px] font-mono tracking-[0.5em] text-neutral-900 mb-10 font-black uppercase">tier pro</h2>
+                                <div className="flex items-baseline justify-center gap-2 mb-12">
+                                    <span className="text-8xl font-black tracking-tighter text-neutral-900 leading-none">$5</span>
+                                    <span className="text-neutral-400 text-sm font-mono tracking-[0.3em]">/month</span>
+                                </div>
+                                <div className="space-y-6 mb-10 text-left px-4">
+                                    {[
+                                        "live context streaming",
+                                        "zero manual ingestion",
+                                        "unlimited mcp connectors",
+                                        "priority agent recall",
+                                        "audit trails"
+                                    ].map((feature, i) => (
+                                        <div key={i} className="flex items-center gap-4 text-[14px] text-black font-extrabold lowercase">
+                                            <div className="w-2 h-2 rounded-full bg-neutral-900" />
+                                            {feature}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="mt-auto">
+                                <Link href="/signup" className="block w-full bg-neutral-900 text-white py-5 rounded-xl text-[12px] font-black tracking-[0.4em] uppercase hover:bg-black transition-all shadow-xl scale-105">
+                                    deploy axis
+                                </Link>
+                                <p className="mt-10 text-[10px] text-neutral-500 font-mono tracking-widest uppercase font-black">no trials. zero friction.</p>
+                            </div>
+                        </motion.div>
+
+                        {/* engine card */}
+                        <motion.div
+                            initial={{ opacity: 0, rotate: 0, x: 10 }}
+                            whileInView={{ opacity: 1, rotate: 2, x: 0 }}
+                            viewport={{ once: true }}
+                            className="bg-white/95 backdrop-blur-xl p-10 rounded-2xl min-h-[480px] flex flex-col justify-between shadow-2xl text-neutral-900 border border-neutral-200"
+                        >
+                            <div className="space-y-10">
+                                <h3 className="text-[12px] font-mono text-neutral-500 uppercase tracking-[0.4em] font-bold">engine</h3>
+                                <div className="space-y-8 text-left">
+                                    {[
+                                        { t: "mcp native", d: "seamless integration with the model context protocol." },
+                                        { t: "live mirroring", d: "real-time synchronization with your filesystem." },
+                                        { t: "audit trails", d: "verify agent context usage at a granular level." },
+                                        { t: "cli first", d: "initialize any project with npx axis-init in seconds." }
+                                    ].map((f, i) => (
+                                        <div key={i}>
+                                            <div className="text-[15px] text-black font-black mb-1.5 lowercase">{f.t}</div>
+                                            <div className="text-[12px] text-neutral-800 leading-relaxed font-bold lowercase">{f.d}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+
+                    </div>
+                </div>
+
+                <div className="mt-28 bg-black/80 backdrop-blur-md border-t border-white/5 w-full py-12 px-10 flex flex-col sm:flex-row items-center justify-between gap-10 opacity-70 text-[10px] font-mono tracking-widest uppercase font-bold text-white relative z-20 mb-8 rounded-xl max-w-[calc(100%-48px)] mx-auto shadow-2xl">
+                    <div className="flex gap-10 items-center">
+                        <span>© 2026 axis intelligence</span>
+                        <div className="w-8 h-[1px] bg-white/10" />
+                        <Link href="/docs" className="hover:text-white transition-colors">docs</Link>
+                        <Link href="https://github.com/VirSanghavi/shared-context" className="hover:text-white transition-colors">github</Link>
+                    </div>
+                    <div className="flex gap-10">
+                        <Link href="/privacy" className="hover:text-white transition-colors">privacy</Link>
+                        <Link href="/terms" className="hover:text-white transition-colors">terms</Link>
+                    </div>
+                </div>
+            </section>
+        </div>
+    );
 }
