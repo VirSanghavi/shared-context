@@ -44,9 +44,8 @@ export async function GET(req: NextRequest) {
         console.log(`[Stripe Status] Final Decision: ${session.email} is ${isPro ? 'pro' : 'free'}`);
 
         let stripeData = null;
-        // isPro is already defined above
 
-        if (profile.stripe_customer_id) {
+        if (profile?.stripe_customer_id) {
             const stripeKey = process.env.STRIPE_SECRET_KEY;
             if (stripeKey) {
                 const stripe = new Stripe(stripeKey, {
@@ -93,7 +92,7 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({
             subscription_status: isPro ? 'pro' : 'free',
-            current_period_end: profile.current_period_end,
+            current_period_end: profile?.current_period_end,
             stripe: stripeData
         });
 
