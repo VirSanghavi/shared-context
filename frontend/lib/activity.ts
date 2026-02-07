@@ -9,7 +9,7 @@ export async function logActivity(
     userId: string,
     type: string,
     target: string,
-    metadata: any = {},
+    metadata: Record<string, unknown> = {},
     status: string = "success"
 ) {
     try {

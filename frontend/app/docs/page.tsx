@@ -292,7 +292,7 @@ function OrchestrationSection() {
                     <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-4">distributed shared memory</h3>
                     <p className="mb-4">axis provides a real-time <strong>live notepad</strong> that synchronizes state across disparate agent processes. this allows agents to share context, logic scores, and intent in sub-100ms.</p>
                     <ul className="list-disc pl-5 space-y-2 text-neutral-600">
-                        <li><strong>real-time sync</strong>: agent A's thought logs are instantly visible to agent B.</li>
+                        <li><strong>real-time sync</strong>: agent A&apos;s thought logs are instantly visible to agent B.</li>
                         <li><strong>session persistence</strong>: automatic archiving of swarm interactions for future retrieval.</li>
                     </ul>
                 </div>

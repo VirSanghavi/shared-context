@@ -6,7 +6,10 @@ export async function GET() {
         const session = await getSessionFromCookies();
         return NextResponse.json({
             authenticated: !!session,
-            user: session ? { email: session.email, id: session.sub || (session as any).id || (session as any).userId } : null
+            user: session ? {
+                email: session.email,
+                id: session.sub || (session as { id?: string }).id || (session as { userId?: string }).userId
+            } : null
         });
     } catch {
         return NextResponse.json({ authenticated: false, user: null });

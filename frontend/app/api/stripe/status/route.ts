@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
                         plan_name: 'pro',
                         has_retention_offer: (sub.discount?.coupon?.id === 'CvcPuGJs') ||
                             (sub.discounts && Array.isArray(sub.discounts) &&
-                                sub.discounts.some((d: any) => d.coupon?.id === 'CvcPuGJs'))
+                                sub.discounts.some((d) => typeof d !== 'string' && d.coupon?.id === 'CvcPuGJs'))
                     };
                 }
             }

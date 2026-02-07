@@ -244,7 +244,7 @@ Axis exposes a standardized toolset via the **Model Context Protocol**:
                                     </div>
                                     <div>
                                         <div className="text-[13px] text-amber-600 font-mono mb-3 uppercase tracking-widest font-extrabold underline decoration-2 decoration-amber-600/30 underline-offset-4">short-term memory</div>
-                                        <p className="text-[15px] text-black leading-relaxed font-black">the live notepad synchronizes "thoughts" across agents, enabling collective reasoning in real-time.</p>
+                                        <p className="text-[15px] text-black leading-relaxed font-black">the live notepad synchronizes &quot;thoughts&quot; across agents, enabling collective reasoning in real-time.</p>
                                     </div>
                                     <div>
                                         <div className="text-[13px] text-blue-600 font-mono mb-3 uppercase tracking-widest font-extrabold underline decoration-2 decoration-blue-600/30 underline-offset-4">conflict avoidance</div>
