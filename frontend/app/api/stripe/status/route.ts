@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('email', session.email)
+            .ilike('email', session.email)
             .single();
 
         if (profileError || !profile) {

@@ -43,7 +43,7 @@ export async function POST(req: Request) {
                             stripe_customer_id: customerId,
                             subscription_status: 'pro'
                         })
-                        .eq("email", email);
+                        .ilike("email", email);
                 }
                 break;
             }
@@ -51,7 +51,13 @@ export async function POST(req: Request) {
             case "customer.subscription.updated": {
                 const subscription = event.data.object as Stripe.Subscription;
                 const customerId = subscription.customer as string;
-                const status = (subscription.status === 'active' || subscription.status === 'trialing') ? 'pro' : 'free';
+                // Status is pro if active, trialing, past_due, or canceled but not yet expired
+                const isPro = subscription.status === 'active' ||
+                    subscription.status === 'trialing' ||
+                    subscription.status === 'past_due' ||
+                    (subscription.status === 'canceled' && subscription.current_period_end > Math.floor(Date.now() / 1000));
+
+                const status = isPro ? 'pro' : 'free';
 
                 await supabase
                     .from("profiles")
