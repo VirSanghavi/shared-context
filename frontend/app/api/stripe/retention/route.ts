@@ -62,10 +62,9 @@ export async function POST(req: NextRequest) {
 
         const sub = subscriptions.data[0];
 
-        // Apply coupon RETENTION_50
-        // This coupon should be created in Stripe dashboard: 50% off for 3 months
+        // Apply coupon CvcPuGJs (RETENTION_50)
         await stripe.subscriptions.update(sub.id, {
-            coupon: 'RETENTION_50',
+            coupon: 'CvcPuGJs',
         });
 
         return NextResponse.json({ success: true, message: "Retention offer applied" });

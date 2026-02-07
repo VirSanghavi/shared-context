@@ -45,10 +45,14 @@ export async function POST(req: NextRequest) {
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
-      return_url: `${req.headers.get("origin")}/`,
+      return_url: `${req.headers.get("origin")}/billing`,
     });
 
-    return NextResponse.redirect(portalSession.url);
+    // Return both for flexibility
+    return NextResponse.json({ url: portalSession.url }, {
+      status: 200,
+      headers: { 'Location': portalSession.url }
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

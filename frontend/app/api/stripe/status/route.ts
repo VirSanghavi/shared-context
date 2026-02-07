@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
                         is_active: isActive,
                         plan_name: 'pro',
                         has_retention_offer: sub.discounts && Array.isArray(sub.discounts)
-                            ? sub.discounts.some((d: unknown) => typeof d === 'object' && d !== null && (d as Stripe.Discount).coupon?.id === 'RETENTION_50')
+                            ? sub.discounts.some((d: unknown) => typeof d === 'object' && d !== null && (d as Stripe.Discount).coupon?.id === 'CvcPuGJs')
                             : false
                     };
                 }

@@ -156,11 +156,29 @@ export default function BillingPage() {
                                 </button>
                             ) : (
                                 <>
-                                    <form action="/api/stripe/portal" method="POST">
-                                        <button className="w-full bg-neutral-900 text-white py-4 rounded-xl text-[12px] font-black tracking-[0.4em] uppercase hover:bg-black transition-all shadow-xl">
-                                            manage payment methods
-                                        </button>
-                                    </form>
+                                    <button
+                                        onClick={async () => {
+                                            setProcessing(true);
+                                            try {
+                                                const res = await fetch('/api/stripe/portal', { method: 'POST' });
+                                                if (res.redirected) {
+                                                    window.location.href = res.url;
+                                                } else if (res.ok) {
+                                                    // In case it doesn't auto-redirect but returns JSON or similar
+                                                    const data = await res.json();
+                                                    if (data.url) window.location.href = data.url;
+                                                }
+                                            } catch (e) {
+                                                console.error(e);
+                                            } finally {
+                                                setProcessing(false);
+                                            }
+                                        }}
+                                        disabled={processing}
+                                        className="w-full bg-neutral-900 text-white py-4 rounded-xl text-[12px] font-black tracking-[0.4em] uppercase hover:bg-black transition-all shadow-xl disabled:opacity-50"
+                                    >
+                                        {processing ? "loading..." : "manage payment methods"}
+                                    </button>
                                     {!isCancelled && (
                                         <button
                                             onClick={() => setShowRetention(true)}
