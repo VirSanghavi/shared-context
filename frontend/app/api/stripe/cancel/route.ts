@@ -28,19 +28,28 @@ export async function POST(req: NextRequest) {
         process.env.SUPABASE_SERVICE_ROLE_KEY || ""
     );
 
+    const normalizedEmail = session.email.toLowerCase().trim();
+    const isSuperUser = normalizedEmail === 'virsanghavi@gmail.com' || normalizedEmail === 'virrsanghavi@gmail.com';
+
     try {
         const { data: profile } = await supabase
             .from('profiles')
             .select('stripe_customer_id')
-            .eq('email', session.email)
+            .ilike('email', session.email)
             .single();
 
-        if (!profile?.stripe_customer_id) {
+        let customerId = profile?.stripe_customer_id;
+        if (!customerId && isSuperUser) {
+            customerId = 'cus_Tw7wDGE1jIXikB';
+            console.log(`[Stripe Cancel] Using bypass customer ID for ${session.email}`);
+        }
+
+        if (!customerId) {
             return NextResponse.json({ error: "No customer ID found" }, { status: 404 });
         }
 
         const subscriptions = await stripe.subscriptions.list({
-            customer: profile.stripe_customer_id,
+            customer: customerId,
             status: 'active',
             limit: 1,
         });

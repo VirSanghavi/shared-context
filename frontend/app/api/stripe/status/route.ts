@@ -77,9 +77,9 @@ export async function GET(req: NextRequest) {
                         cancel_at_period_end: sub.cancel_at_period_end,
                         is_active: isActive,
                         plan_name: 'pro',
-                        has_retention_offer: sub.discounts && Array.isArray(sub.discounts)
-                            ? sub.discounts.some((d: unknown) => typeof d === 'object' && d !== null && (d as Stripe.Discount).coupon?.id === 'CvcPuGJs')
-                            : false
+                        has_retention_offer: (sub.discount?.coupon?.id === 'CvcPuGJs') ||
+                            (sub.discounts && Array.isArray(sub.discounts) &&
+                                sub.discounts.some((d: any) => d.coupon?.id === 'CvcPuGJs'))
                     };
                 }
             }
