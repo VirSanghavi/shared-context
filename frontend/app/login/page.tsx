@@ -15,6 +15,31 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+
+  const handleResend = async () => {
+    setResendLoading(true);
+    setResendSuccess(false);
+    try {
+      const res = await fetch("/api/auth/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setResendSuccess(true);
+        setError("Confirmation email sent! Please check your inbox.");
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to resend confirmation");
+      }
+    } catch {
+      setError("An unexpected error occurred");
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -80,8 +105,18 @@ function LoginForm() {
           </div>
 
           {error && (
-            <div className="text-rose-500 text-[12px] font-mono bg-rose-500/5 border border-rose-500/10 p-3 rounded">
-              {error}
+            <div className="text-rose-500 text-[12px] font-mono bg-rose-500/5 border border-rose-500/10 p-3 rounded flex flex-col gap-2">
+              <span>{error}</span>
+              {error === "Email not confirmed" && !resendSuccess && (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendLoading}
+                  className="text-xs underline hover:text-rose-400 self-start"
+                >
+                  {resendLoading ? "Sending..." : "Resend confirmation email"}
+                </button>
+              )}
             </div>
           )}
 

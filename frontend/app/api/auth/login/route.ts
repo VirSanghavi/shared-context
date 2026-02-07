@@ -47,6 +47,14 @@ export async function POST(request: Request) {
       password
     });
     if (error || !data.user) {
+      // Check for specific email confirmation error
+      if (error?.message === "Email not confirmed") {
+        return NextResponse.json(
+          { error: "Email not confirmed" },
+          { status: 403, headers: rateHeaders(remaining, reset) }
+        );
+      }
+
       return NextResponse.json(
         { error: "Invalid credentials" },
         { status: 401, headers: rateHeaders(remaining, reset) }
