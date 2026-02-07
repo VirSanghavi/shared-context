@@ -33,7 +33,7 @@ export default function Navbar() {
             onClick: () => router.push("/")
         },
         {
-            icon: <Info size={20} />,
+            icon: isAuthenticated === false ? <LogIn size={20} /> : <Info size={20} />,
             label: "about",
             onClick: () => router.push("/about")
         },
