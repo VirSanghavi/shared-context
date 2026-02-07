@@ -1,0 +1,173 @@
+'use client';
+
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence, MotionValue, useVelocity } from 'framer-motion';
+import { Children, cloneElement, useEffect, useMemo, useRef, useState } from 'react';
+
+import './Dock.css';
+
+interface DockItemProps {
+    children: React.ReactNode;
+    className?: string;
+    onClick?: () => void;
+    mouseX: MotionValue<number>;
+    spring: any;
+    distance: number;
+    magnification: number;
+    baseItemSize: number;
+}
+
+function DockItem({
+    children,
+    className = '',
+    onClick,
+    mouseX,
+    spring,
+    distance,
+    magnification,
+    baseItemSize
+}: DockItemProps) {
+    const ref = useRef<HTMLDivElement>(null);
+    const isHovered = useMotionValue(0);
+
+    // To prevent jitter, we calculate distance relative to a STABLE center.
+    // We use a ref to store the initial/stable left position.
+    const stableX = useRef<number>(0);
+
+    useEffect(() => {
+        if (ref.current) {
+            const rect = ref.current.getBoundingClientRect();
+            stableX.current = rect.left + rect.width / 2;
+        }
+    }, [baseItemSize]);
+
+    const mouseDistance = useTransform(mouseX, (val) => {
+        if (val === Infinity) return Infinity;
+        // Use a more stable calculation that doesn't rely on the current (animating) rect if possible
+        const rect = ref.current?.getBoundingClientRect();
+        const centerX = rect ? rect.left + rect.width / 2 : stableX.current;
+        return val - centerX;
+    });
+
+    const targetSize = useTransform(
+        mouseDistance,
+        [-distance, 0, distance],
+        [baseItemSize, magnification, baseItemSize]
+    );
+
+    const size = useSpring(targetSize, spring);
+
+    return (
+        <motion.div
+            ref={ref}
+            style={{
+                width: size,
+                height: size
+            }}
+            onHoverStart={() => isHovered.set(1)}
+            onHoverEnd={() => isHovered.set(0)}
+            onFocus={() => isHovered.set(1)}
+            onBlur={() => isHovered.set(0)}
+            onClick={onClick}
+            className={`dock-item ${className}`}
+            tabIndex={0}
+            role="button"
+            aria-haspopup="true"
+        >
+            {Children.map(children, child => {
+                if (typeof child === 'object' && child !== null) {
+                    return cloneElement(child as any, { isHovered });
+                }
+                return child;
+            })}
+        </motion.div>
+    );
+}
+
+function DockLabel({ children, className = '', ...rest }: { children: React.ReactNode; className?: string;[key: string]: any }) {
+    const isHovered = rest.isHovered as MotionValue<number>;
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        if (!isHovered) return;
+        const unsubscribe = isHovered.on('change', latest => {
+            setIsVisible(latest === 1);
+        });
+        return () => unsubscribe();
+    }, [isHovered]);
+
+    return (
+        <AnimatePresence>
+            {isVisible && (
+                <motion.div
+                    initial={{ opacity: 0, y: 5, x: '-50%' }}
+                    animate={{ opacity: 1, y: 0, x: '-50%' }}
+                    exit={{ opacity: 0, y: 5, x: '-50%' }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    className={`dock-label ${className}`}
+                    role="tooltip"
+                >
+                    {children}
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+}
+
+function DockIcon({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+    return <div className={`dock-icon ${className}`}>{children}</div>;
+}
+
+export interface DockItemConfig {
+    icon: React.ReactNode;
+    label: string;
+    onClick: () => void;
+    className?: string;
+}
+
+export default function Dock({
+    items,
+    className = '',
+    spring = { mass: 0.1, stiffness: 200, damping: 15 },
+    magnification = 84,
+    distance = 150,
+    panelHeight = 60,
+    baseItemSize = 44
+}: {
+    items: DockItemConfig[];
+    className?: string;
+    spring?: any;
+    magnification?: number;
+    distance?: number;
+    panelHeight?: number;
+    baseItemSize?: number;
+}) {
+    const mouseX = useMotionValue(Infinity);
+
+    return (
+        <div className="dock-outer" onPointerLeave={() => mouseX.set(Infinity)}>
+            <motion.div
+                onPointerMove={(e) => mouseX.set(e.pageX)}
+                className={`dock-panel ${className}`}
+                style={{ height: panelHeight }}
+                role="toolbar"
+                aria-label="Application dock"
+            >
+                {items.map((item, index) => (
+                    <DockItem
+                        key={index}
+                        onClick={item.onClick}
+                        className={item.className}
+                        mouseX={mouseX}
+                        spring={spring}
+                        distance={distance}
+                        magnification={magnification}
+                        baseItemSize={baseItemSize}
+                    >
+                        <DockIcon>{item.icon}</DockIcon>
+                        <DockLabel>{item.label}</DockLabel>
+                    </DockItem>
+                ))}
+            </motion.div>
+        </div>
+    );
+}

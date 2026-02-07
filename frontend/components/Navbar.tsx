@@ -1,25 +1,81 @@
 'use client';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { Home, Info, MessageCircle, BookOpen, Github, LogOut, LogIn } from "lucide-react";
+import Dock, { DockItemConfig } from "./Dock";
+import { useRef, useState, useEffect } from "react";
 
 export default function Navbar() {
     const pathname = usePathname();
-    const isHome = pathname === "/";
-    const isAuth = pathname === "/login" || pathname === "/signup";
+    const router = useRouter();
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const logoutFormRef = useRef<HTMLFormElement>(null);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const res = await fetch("/api/auth/session");
+                if (res.ok) {
+                    const data = await res.json();
+                    setIsAuthenticated(data.authenticated);
+                }
+            } catch (e) {
+                setIsAuthenticated(false);
+            }
+        };
+        checkAuth();
+    }, [pathname]);
+
+    const navItems: DockItemConfig[] = [
+        {
+            icon: <Home size={20} />,
+            label: "home",
+            onClick: () => router.push("/")
+        },
+        {
+            icon: <Info size={20} />,
+            label: "about",
+            onClick: () => router.push("/about")
+        },
+        {
+            icon: <MessageCircle size={20} />,
+            label: "thoughts?",
+            onClick: () => router.push("/feedback")
+        },
+        {
+            icon: <BookOpen size={20} />,
+            label: "docs",
+            onClick: () => router.push("/docs")
+        },
+        {
+            icon: <Github size={20} />,
+            label: "github",
+            onClick: () => window.open("https://github.com/VirSanghavi/shared-context", "_blank")
+        }
+    ];
+
+    if (isAuthenticated === true) {
+        navItems.push({
+            icon: <LogOut size={20} />,
+            label: "logout",
+            onClick: () => logoutFormRef.current?.submit()
+        });
+    } else if (isAuthenticated === false) {
+        navItems.push({
+            icon: <LogIn size={20} />,
+            label: "sign in",
+            onClick: () => router.push("/login")
+        });
+    }
 
     return (
-        <nav className={`w-full fixed top-0 z-50 py-6 px-10 flex items-center justify-between ${!isHome && !isAuth ? 'bg-transparent' : 'mix-blend-difference'}`}>
-            <div className="flex items-center gap-12">
-                <Link href="/" className="font-bold text-lg tracking-tight text-white">axis</Link>
+        <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+            <form action="/api/auth/logout" method="POST" ref={logoutFormRef} className="hidden">
+                <button type="submit">logout</button>
+            </form>
+            <div className="max-w-7xl mx-auto px-6">
+                <Dock items={navItems} />
             </div>
-            <div className="flex items-center gap-8 text-[11px] font-medium tracking-[0.2em] text-white/60">
-                <Link href="/docs" className="hover:text-white transition-colors">docs</Link>
-                <Link href="https://github.com/VirSanghavi/shared-context" className="hover:text-white transition-colors">github</Link>
-                {!isAuth && (
-                    <Link href="/login" className="hover:text-white transition-colors">sign in</Link>
-                )}
-            </div>
-        </nav>
+        </header>
     );
 }

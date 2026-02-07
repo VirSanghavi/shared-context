@@ -5,8 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import Navbar from "@/components/Navbar";
+import MachineToggle from "@/components/MachineToggle";
+import { useMachineMode } from "@/context/MachineModeContext";
 
 export default function Home() {
+    const { mode } = useMachineMode();
     const [mounted, setMounted] = useState(false);
     const [query, setQuery] = useState("");
     const [isSearching, setIsSearching] = useState(false);
@@ -43,6 +46,54 @@ export default function Home() {
     };
 
     if (!mounted) return null;
+
+    if (mode === 'machine') {
+        return (
+            <div className="min-h-screen bg-black text-white font-mono p-10 leading-relaxed selection:bg-white/20">
+                <div className="max-w-3xl mx-auto space-y-8">
+                    <pre className="text-emerald-500 mb-10">
+                        {`
+    ___                _     
+   / _ \\__  _____  ___| |    
+  / /_\\ \\ \\/ / _ \\/ __| |    
+ / /_\\\\ \\  / (_| \\__ \\_|    
+ \\____/  \\_\\/\\___||___(_)    
+                             
+`}
+                    </pre>
+                    <div className="prose prose-invert prose-emerald max-w-none">
+                        <ReactMarkdown>{`
+# Axis Intelligence
+## Context for AI Agents
+Axis is an API and MCP layer that gives agents continuously updated context from libraries, research papers, and docs, so they don't hallucinate and you skip manual ingestion.
+
+[Deploy Axis](/signup)
+
+## Capabilities
+- **Context Mirroring**: High-fidelity mirror extraction.
+- **Protocol Enforced**: Standardized tools for agents.
+- **Governance**: Granular file locking and access controls.
+- **Session Sync**: Persistent memory across agent runs.
+
+## Pricing
+- **Tier Pro**: $5/month
+  - Live context streaming
+  - Zero manual ingestion
+  - Unlimited MCP connectors
+  - Priority agent recall
+  - Audit trails
+
+## Links
+- [Documentation](/docs)
+- [GitHub](https://github.com/VirSanghavi/shared-context)
+- [About](/about)
+`}</ReactMarkdown>
+                    </div>
+                </div>
+                <MachineToggle />
+            </div>
+        );
+    }
 
     return (
         <div className="relative min-h-screen font-sans selection:bg-white/5 tracking-tight lowercase overflow-x-hidden text-white bg-black">
@@ -238,6 +289,7 @@ export default function Home() {
                     <div className="flex gap-10 items-center">
                         <span>© 2026 axis intelligence</span>
                         <div className="w-8 h-[1px] bg-white/10" />
+                        <Link href="/about" className="hover:text-white transition-colors">about</Link>
                         <Link href="/docs" className="hover:text-white transition-colors">docs</Link>
                         <Link href="https://github.com/VirSanghavi/shared-context" className="hover:text-white transition-colors">github</Link>
                     </div>
@@ -247,6 +299,7 @@ export default function Home() {
                     </div>
                 </div>
             </section>
+            <MachineToggle />
         </div>
     );
 }

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import Navbar from '@/components/Navbar';
 
 const codeStyle = vscDarkPlus;
 
@@ -25,14 +26,7 @@ export default function Docs() {
             {/* Avalanche background */}
             <div className="bg-avalanche" />
 
-            {/* Minimal inline navbar */}
-            <nav className="w-full fixed top-0 z-50 py-6 px-8 flex items-center justify-between">
-                <Link href="/" className="font-bold text-lg tracking-tight">axis</Link>
-                <div className="flex items-center gap-6 text-[11px] font-medium tracking-[0.2em] opacity-60">
-                    <Link href="/dashboard" className="hover:text-white transition-colors">dashboard</Link>
-                    <Link href="/feedback" className="hover:text-white transition-colors">thoughts?</Link>
-                </div>
-            </nav>
+            <Navbar />
 
             {/* White modal container */}
             <main className="min-h-screen flex items-center justify-center py-20 px-6 relative z-10">
@@ -216,7 +210,7 @@ function APISection() {
                     <div className="mb-6">
                         <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 mb-2">query parameters</p>
                         <ul className="text-[13px] space-y-1">
-                            <li><code className="text-neutral-900">path</code>: target directory or file (default: &quot;.&quot;)</li>
+                            <li><code className="text-neutral-900">path</code>: target directory or file (default: ".")</li>
                             <li><code className="text-neutral-900">depth</code>: recursion limit for tree extraction</li>
                         </ul>
                     </div>
@@ -296,7 +290,7 @@ function GovernanceSection() {
             <div className="space-y-12">
                 <div className="p-8 bg-neutral-50 rounded-2xl border border-neutral-100">
                     <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-4">context mirroring</h3>
-                    <p className="mb-4">axis doesn&apos;t just &quot;index&quot; files. it creates a high-fidelity <strong>mirror</strong> of your project structure, injecting the &apos;soul&apos; (goals) and &apos;conventions&apos; of the repo into every agent request.</p>
+                    <p className="mb-4">axis doesn't just "index" files. it creates a high-fidelity <strong>mirror</strong> of your project structure, injecting the 'soul' (goals) and 'conventions' of the repo into every agent request.</p>
                     <ul className="list-disc pl-5 space-y-2 text-neutral-600">
                         <li><strong>selective pruning</strong>: ignores noise (node_modules, logs) while preserving tree structure.</li>
                         <li><strong>deep metadata</strong>: injects file sizes, last modified times, and dependency hints.</li>
@@ -305,7 +299,7 @@ function GovernanceSection() {
 
                 <div>
                     <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-4">concurrency & locking</h3>
-                    <p className="mb-4">to prevent &quot;merge hell&quot; in multi-agent environments, axis implements a <strong>file locking protocol</strong>.</p>
+                    <p className="mb-4">to prevent "merge hell" in multi-agent environments, axis implements a <strong>file locking protocol</strong>.</p>
                     <CodeBlock lang="bash" code={`# agent loop example
 propose_file_access(agent_id="A", file="auth.ts")
 -> GRANTED (Lock Acquired)

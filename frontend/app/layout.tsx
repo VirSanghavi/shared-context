@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "Governance layer for AI agent context.",
 };
 
+import { MachineModeProvider } from "@/context/MachineModeContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,9 +28,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preload" as="image" href="/avalanche.gif" />
+        <link rel="preload" as="image" href="/avalanche2.gif" />
+      </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased min-h-screen bg-[#050505] lowercase`}>
-        <Snowflakes />
-        {children}
+        <MachineModeProvider>
+          <Snowflakes />
+          {children}
+        </MachineModeProvider>
       </body>
     </html>
   );

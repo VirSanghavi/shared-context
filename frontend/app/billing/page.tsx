@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 
 // Types
 interface SubscriptionData {
@@ -106,13 +107,7 @@ export default function BillingPage() {
         <div className="min-h-screen bg-[#050505] text-white selection:bg-white/10 tracking-tight lowercase">
             <div className="bg-avalanche" />
 
-            <nav className="w-full fixed top-0 z-50 py-6 px-8 flex items-center justify-between">
-                <Link href="/" className="font-bold text-lg tracking-tight">axis</Link>
-                <div className="flex items-center gap-6 text-[11px] font-medium tracking-[0.2em] opacity-60">
-                    <Link href="/dashboard" className="hover:text-white transition-colors">dashboard</Link>
-                    <Link href="/docs" className="hover:text-white transition-colors">docs</Link>
-                </div>
-            </nav>
+            <Navbar />
 
             <main className="pt-32 pb-20 px-6 relative z-10 flex flex-col items-center">
                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-12 text-neutral-900">
@@ -129,18 +124,15 @@ export default function BillingPage() {
                                     <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400 mb-2">current plan</div>
                                     <div className="text-2xl font-black text-neutral-900 tracking-tighter">axis pro</div>
                                 </div>
-                                <div className={cn(
-                                    "px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest",
-                                    isActive ? "bg-emerald-100 text-emerald-700" : "bg-neutral-200 text-neutral-500"
-                                )}>
-                                    {isActive ? "active" : "inactive"}
+                                <div className={isActive ? (isCancelled ? "bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest" : "bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest") : "bg-neutral-200 text-neutral-500 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest"}>
+                                    {isActive ? (isCancelled ? "cancelling" : "active") : "inactive"}
                                 </div>
                             </div>
 
                             {isActive && subData.stripe?.current_period_end && (
                                 <div className="text-[11px] text-neutral-500 font-mono tracking-wider">
-                                    next billing date: {new Date(subData.stripe.current_period_end * 1000).toLocaleDateString()}
-                                    {isCancelled && <span className="text-rose-500 block mt-1">(cancelling at end of period)</span>}
+                                    {isCancelled ? "expires on: " : "next billing date: "}
+                                    {new Date(subData.stripe.current_period_end * 1000).toLocaleDateString()}
                                 </div>
                             )}
 
@@ -197,52 +189,54 @@ export default function BillingPage() {
                         </Link>
                     </div>
                 </div>
-            </main>
+            </main >
 
             {/* Retention Modal */}
             <AnimatePresence>
-                {showRetention && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                            onClick={() => setShowRetention(false)}
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-md bg-white rounded-3xl p-12 text-center shadow-[0_32px_120px_rgba(0,0,0,0.5)]"
-                        >
-                            <div className="text-4xl mb-6">🏔️</div>
-                            <h2 className="text-3xl font-black text-neutral-900 tracking-tighter mb-4">wait! before you go...</h2>
-                            <p className="text-[14px] text-neutral-600 leading-relaxed mb-10">
-                                we&apos;d love to keep you on axis. accept this one-time offer: get <b>50% off</b> for the next 3 months.
-                            </p>
+                {
+                    showRetention && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                                onClick={() => setShowRetention(false)}
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                className="relative w-full max-w-md bg-white rounded-3xl p-12 text-center shadow-[0_32px_120px_rgba(0,0,0,0.5)]"
+                            >
+                                <div className="text-4xl mb-6">🏔️</div>
+                                <h2 className="text-3xl font-black text-neutral-900 tracking-tighter mb-4">wait! before you go...</h2>
+                                <p className="text-[14px] text-neutral-600 leading-relaxed mb-10">
+                                    we&apos;d love to keep you on axis. accept this one-time offer: get <b>50% off</b> for the next 3 months.
+                                </p>
 
-                            <div className="space-y-4">
-                                <button
-                                    onClick={handleApplyOffer}
-                                    disabled={processing}
-                                    className="w-full bg-emerald-600 text-white py-4 rounded-xl text-[12px] font-black tracking-[0.3em] uppercase hover:bg-emerald-700 transition-all shadow-lg"
-                                >
-                                    {processing ? "applying..." : "accept offer — $2.50/mo"}
-                                </button>
-                                <button
-                                    onClick={handleFinalCancel}
-                                    disabled={processing}
-                                    className="w-full text-[10px] text-neutral-400 hover:text-rose-500 transition-colors uppercase tracking-widest font-mono"
-                                >
-                                    no thanks, cancel subscription
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-        </div>
+                                <div className="space-y-4">
+                                    <button
+                                        onClick={handleApplyOffer}
+                                        disabled={processing}
+                                        className="w-full bg-emerald-600 text-white py-4 rounded-xl text-[12px] font-black tracking-[0.3em] uppercase hover:bg-emerald-700 transition-all shadow-lg"
+                                    >
+                                        {processing ? "applying..." : "accept offer — $2.50/mo"}
+                                    </button>
+                                    <button
+                                        onClick={handleFinalCancel}
+                                        disabled={processing}
+                                        className="w-full text-[10px] text-neutral-400 hover:text-rose-500 transition-colors uppercase tracking-widest font-mono"
+                                    >
+                                        no thanks, cancel subscription
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )
+                }
+            </AnimatePresence >
+        </div >
     );
 }
 

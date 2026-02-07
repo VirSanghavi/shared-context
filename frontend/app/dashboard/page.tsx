@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 
 // Helper for classes
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -33,6 +34,7 @@ interface SubscriptionData {
   stripe?: {
     status: string;
     cancel_at_period_end: boolean;
+    current_period_end?: number;
   };
 }
 
@@ -168,16 +170,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[#050505] text-white selection:bg-white/10 tracking-tight lowercase">
       <div className="bg-avalanche" />
 
-      <nav className="w-full fixed top-0 z-50 py-6 px-8 flex items-center justify-between">
-        <Link href="/" className="font-bold text-lg tracking-tight">axis</Link>
-        <div className="flex items-center gap-6 text-[11px] font-medium tracking-[0.2em] opacity-60">
-          <Link href="/feedback" className="hover:text-white transition-colors">thoughts?</Link>
-          <Link href="/docs" className="hover:text-white transition-colors">docs</Link>
-          <form action="/api/auth/logout" method="POST">
-            <button type="submit" className="hover:text-white transition-colors">logout</button>
-          </form>
-        </div>
-      </nav>
+      <Navbar />
 
       <main className="pt-32 pb-20 px-6 relative z-10">
         <div className="max-w-4xl mx-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 text-neutral-900 max-h-[85vh] overflow-hidden flex flex-col">
@@ -269,9 +262,15 @@ export default function Dashboard() {
               <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-5">
                 <h3 className="text-[9px] font-mono text-neutral-500 uppercase tracking-[0.3em] mb-3">subscription</h3>
                 <div className="mb-4">
-                  <div className="text-[16px] font-medium tracking-tight mb-0.5">{subData?.subscription_status === 'pro' ? 'axis pro' : 'axis legacy'}</div>
+                  <div className="text-[16px] font-medium tracking-tight mb-0.5">
+                    {subData?.subscription_status === 'pro' ? 'axis pro' : 'axis legacy'}
+                  </div>
                   <div className="text-[10px] font-mono text-neutral-400 tracking-wider">
-                    {subData?.stripe?.status === 'active' ? (subData.stripe.cancel_at_period_end ? 'expires soon' : 'active') : 'free tier'}
+                    {subData?.subscription_status === 'pro'
+                      ? (subData.stripe?.cancel_at_period_end
+                        ? `expires ${new Date((subData.stripe.current_period_end || 0) * 1000).toLocaleDateString()}`
+                        : 'active')
+                      : 'free tier'}
                   </div>
                 </div>
                 <Link href="/billing" className="block w-full bg-neutral-900 text-white py-2.5 rounded text-[10px] font-bold tracking-[0.2em] uppercase text-center">manage billing</Link>

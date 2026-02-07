@@ -1,0 +1,91 @@
+.dock-outer {
+    margin: 0;
+    display: flex;
+    max-width: 100%;
+    align-items: center;
+    position: relative;
+    top: 0;
+    left: 0;
+    right: 0;
+    justify-content: center;
+    z-index: 100;
+}
+
+.dock-panel {
+    position: relative;
+    top: 1rem;
+    display: flex;
+    align-items: center;
+    /* Centered vertically since we don't animate dock height anymore */
+    width: fit-content;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    /* Pill shape for premium feel */
+    background-color: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    /* Minimal border for high-end look */
+    padding: 0.4rem;
+    pointer-events: auto;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.06),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.dock-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    /* Circular items */
+    background-color: transparent;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.dock-item:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.dock-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1a1a1a;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.dock-item:hover .dock-icon {
+    color: #000;
+}
+
+.dock-label {
+    position: absolute;
+    top: -3rem;
+    /* Lift label higher for cleaner pop */
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    white-space: pre;
+    border-radius: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.85);
+    /* Contrast with white dock */
+    backdrop-filter: blur(4px);
+    padding: 0.35rem 0.8rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #fff;
+    pointer-events: none;
+    letter-spacing: 0.05em;
+    text-transform: lowercase;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Fix for lag/jitter: ensure mouse tracking doesn't trigger layout shifts */
+.dock-panel * {
+    will-change: transform, width, height;
+}

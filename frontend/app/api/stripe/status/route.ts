@@ -33,6 +33,8 @@ export async function GET(req: NextRequest) {
         }
 
         let stripeData = null;
+        let isPro = profile.subscription_status === 'pro';
+
         if (profile.stripe_customer_id) {
             const stripeKey = process.env.STRIPE_SECRET_KEY;
             if (stripeKey) {
@@ -44,26 +46,42 @@ export async function GET(req: NextRequest) {
                     customer: profile.stripe_customer_id as string,
                     status: 'all',
                     limit: 1,
-                    expand: ['data.discounts'] // Ensure we get objects, not IDs
+                    expand: ['data.discounts']
                 });
 
                 if (subscriptions.data.length > 0) {
                     const sub = subscriptions.data[0];
+                    const now = Math.floor(Date.now() / 1000);
+
+                    // A subscription is considered "active" if its status is active, 
+                    // or if it's trialing, or if it's canceled but hasn't reached the end of the period yet.
+                    const isActive = sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due' || (sub.status === 'canceled' && sub.current_period_end > now);
+
+                    if (isActive) {
+                        isPro = true;
+                    }
+
                     stripeData = {
                         status: sub.status,
                         current_period_end: sub.current_period_end,
                         cancel_at_period_end: sub.cancel_at_period_end,
+                        is_active: isActive,
                         plan_name: 'pro',
-                        has_retention_offer: sub.discounts && Array.isArray(sub.discounts) 
-                            ? sub.discounts.some((d: any) => typeof d === 'object' && d.coupon?.id === 'RETENTION_50') 
+                        has_retention_offer: sub.discounts && Array.isArray(sub.discounts)
+                            ? sub.discounts.some((d: any) => typeof d === 'object' && d.coupon?.id === 'RETENTION_50')
                             : false
                     };
                 }
             }
         }
 
+        // Final fallback: check profile.current_period_end
+        if (profile.current_period_end && new Date(profile.current_period_end) > new Date()) {
+            isPro = true;
+        }
+
         return NextResponse.json({
-            subscription_status: profile.subscription_status || 'free',
+            subscription_status: isPro ? 'pro' : 'free',
             current_period_end: profile.current_period_end,
             stripe: stripeData
         });

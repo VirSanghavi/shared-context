@@ -50,7 +50,7 @@ export async function POST(req: Request) {
             case "customer.subscription.updated": {
                 const subscription = event.data.object as Stripe.Subscription;
                 const customerId = subscription.customer as string;
-                const status = subscription.status === 'active' ? 'pro' : 'free';
+                const status = (subscription.status === 'active' || subscription.status === 'trialing') ? 'pro' : 'free';
 
                 await supabase
                     .from("profiles")
