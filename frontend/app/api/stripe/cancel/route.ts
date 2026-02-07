@@ -9,7 +9,7 @@ const LIMIT = 5; // 5 req/min for cancellation
 
 export async function POST(req: Request) {
     const ip = getClientIp(req.headers);
-    const { allowed } = rateLimit(`cancel:${ip}`, LIMIT, WINDOW_MS);
+    const { allowed, remaining, reset } = await rateLimit(`cancel:${ip}`, LIMIT, WINDOW_MS);
     if (!allowed) {
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }

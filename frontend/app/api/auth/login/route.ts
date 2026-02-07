@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || ""
   );
   const ip = getClientIp(request.headers);
-  const { allowed, remaining, reset } = rateLimit(`login:${ip}`, LIMIT, WINDOW_MS);
+  const { allowed, remaining, reset } = await rateLimit(`login:${ip}`, LIMIT, WINDOW_MS);
   if (!allowed) {
     return NextResponse.json(
       { error: "Too many requests" },
@@ -33,11 +33,13 @@ export async function POST(request: Request) {
 
   const expected = process.env.APP_LOGIN_PASSWORD;
   if (expected && password === expected) {
-    // Admin login - find or create admin user?
-    // For now, let's just lookup user by email to get ID
-    const { data } = await supabase.auth.admin.listUsers();
-    const user = data.users.find(u => u.email === email);
-    userId = user?.id;
+    // Admin login - Lookup user by email in profiles to get ID
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .single();
+    userId = profile?.id;
   } else {
     // Try Supabase Auth
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -55,11 +57,11 @@ export async function POST(request: Request) {
 
   // Create user in profiles if not exists (lazy sync)
   if (userId) {
-    const { error: profileError } = await supabase.from('profiles').insert({
+    await supabase.from('profiles').insert({
       id: userId,
       email: email
-    }).select().single();
-    // Ignore error if already exists
+    });
+    // Ignore error if already exists as per RLS or unique constraint
   }
 
   const token = await createSession(email, userId, 60 * 60 * 24 * 30);

@@ -4,8 +4,18 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
+// Types
+interface SubscriptionData {
+    subscription_status: string;
+    stripe?: {
+        status: string;
+        cancel_at_period_end: boolean;
+        current_period_end?: number;
+    };
+}
+
 export default function BillingPage() {
-    const [subData, setSubData] = useState<any>(null);
+    const [subData, setSubData] = useState<SubscriptionData | null>(null);
     const [loading, setLoading] = useState(true);
     const [showRetention, setShowRetention] = useState(false);
     const [processing, setProcessing] = useState(false);
@@ -209,7 +219,7 @@ export default function BillingPage() {
                             <div className="text-4xl mb-6">🏔️</div>
                             <h2 className="text-3xl font-black text-neutral-900 tracking-tighter mb-4">wait! before you go...</h2>
                             <p className="text-[14px] text-neutral-600 leading-relaxed mb-10">
-                                we'd love to keep you on axis. accept this one-time offer: get <b>50% off</b> for the next 3 months.
+                                we&apos;d love to keep you on axis. accept this one-time offer: get <b>50% off</b> for the next 3 months.
                             </p>
 
                             <div className="space-y-4">
@@ -236,6 +246,6 @@ export default function BillingPage() {
     );
 }
 
-function cn(...inputs: any[]) {
+function cn(...inputs: (string | boolean | undefined | null)[]) {
     return inputs.filter(Boolean).join(' ');
 }

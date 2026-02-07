@@ -6,14 +6,17 @@ const Snowflakes = () => {
     const [flakes, setFlakes] = useState<{ id: number; left: string; delay: string; duration: string; size: string }[]>([]);
 
     useEffect(() => {
-        const newFlakes = Array.from({ length: 50 }).map((_, i) => ({
-            id: i,
-            left: `${Math.random() * 100}%`,
-            delay: `${Math.random() * 20}s`,
-            duration: `${10 + Math.random() * 20}s`,
-            size: `${2 + Math.random() * 4}px`
-        }));
-        setFlakes(newFlakes);
+        const timeout = setTimeout(() => {
+            const newFlakes = Array.from({ length: 50 }).map((_, i) => ({
+                id: i,
+                left: `${Math.random() * 100}%`,
+                delay: `${Math.random() * 20}s`,
+                duration: `${10 + Math.random() * 20}s`,
+                size: `${2 + Math.random() * 4}px`
+            }));
+            setFlakes(newFlakes);
+        }, 0);
+        return () => clearTimeout(timeout);
     }, []);
 
     return (

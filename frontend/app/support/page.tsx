@@ -15,12 +15,18 @@ export default function SupportPage() {
         e.preventDefault();
         if (!message.trim() || !subject.trim() || !email.trim()) return;
 
-        setSubmitting(true);
+        const res = await fetch("/api/support", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, subject, message }),
+        });
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        setSubmitted(true);
+        if (res.ok) {
+            setSubmitted(true);
+        } else {
+            const data = await res.json().catch(() => ({}));
+            alert(data.error || "Failed to submit support request");
+        }
         setSubmitting(false);
     }
 
@@ -43,7 +49,7 @@ export default function SupportPage() {
                 <div className="max-w-lg mx-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-10 text-neutral-900">
                     <div className="mb-8">
                         <h1 className="text-3xl font-medium tracking-tight mb-2">contact support</h1>
-                        <p className="text-[11px] text-neutral-500 uppercase tracking-[0.2em]">we're here to help</p>
+                        <p className="text-[11px] text-neutral-500 uppercase tracking-[0.2em]">we&apos;re here to help</p>
                     </div>
 
                     {submitted ? (
@@ -73,7 +79,7 @@ export default function SupportPage() {
                                     type="email"
                                     placeholder="your@email.com"
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
                                     className="w-full bg-neutral-100 border border-neutral-200 rounded px-4 py-3 outline-none focus:border-neutral-400 text-[12px] font-mono text-neutral-900"
                                     required
                                 />
@@ -88,7 +94,7 @@ export default function SupportPage() {
                                     type="text"
                                     placeholder="how can we help?"
                                     value={subject}
-                                    onChange={(e) => setSubject(e.target.value)}
+                                    onChange={(e) => setSubject((e.target as HTMLInputElement).value)}
                                     className="w-full bg-neutral-100 border border-neutral-200 rounded px-4 py-3 outline-none focus:border-neutral-400 text-[12px] text-neutral-900"
                                     required
                                 />
@@ -102,7 +108,7 @@ export default function SupportPage() {
                                 <textarea
                                     placeholder="describe your issue in detail..."
                                     value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
+                                    onChange={(e) => setMessage((e.target as HTMLTextAreaElement).value)}
                                     rows={5}
                                     className="w-full bg-neutral-100 border border-neutral-200 rounded px-4 py-3 outline-none focus:border-neutral-400 text-[12px] text-neutral-900 resize-none"
                                     required

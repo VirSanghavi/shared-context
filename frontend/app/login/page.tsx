@@ -29,7 +29,10 @@ function LoginForm() {
       setError(data.error || "Login failed");
       return;
     }
-    router.push(next);
+
+    // Use window.location for a hard redirect to ensure the session cookie is correctly picked up
+    // and to bypass any potential state-hanging with router.push in complex auth flows.
+    window.location.href = next;
   };
 
   return (
@@ -82,7 +85,7 @@ function LoginForm() {
 
         <div className="mt-8 pt-8 border-t border-white/5 text-center relative z-20">
           <p className="text-[12px] text-white/30 lowercase">
-            don't have an account?{' '}
+            don&apos;t have an account?{' '}
             <Link href="/signup" className="text-white hover:underline lowercase relative z-30 pointer-events-auto">
               create one
             </Link>

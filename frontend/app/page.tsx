@@ -29,7 +29,7 @@ export default function Home() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ query }),
             });
-            const data = await res.json();
+            const data = await res.json() as { answer?: string; error?: string };
             if (data.answer) {
                 setAnswer(data.answer);
             } else if (data.error) {
@@ -85,7 +85,7 @@ export default function Home() {
                             placeholder="ask axis anything..."
                             className="w-full bg-black/40 p-6 pr-32 outline-none text-[15px] font-mono placeholder:text-white/40 text-white mix-blend-difference drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"
                             value={query}
-                            onChange={(e) => setQuery(e.target.value)}
+                            onChange={(e) => setQuery((e.target as HTMLInputElement).value)}
                         />
                         <div className="absolute right-4 top-1/2 -translate-y-1/2">
                             <button
@@ -109,7 +109,7 @@ export default function Home() {
                                     <span className="text-white/60 italic shrink-0">axis:</span>
                                     <div className="max-h-52 overflow-y-auto pr-2 custom-scrollbar w-full">
                                         <div className="prose prose-invert prose-xs max-w-none">
-                                            <ReactMarkdown 
+                                            <ReactMarkdown
                                                 components={{
                                                     p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
                                                     ol: ({ children }) => <ol className="list-decimal pl-4 mb-3 space-y-1">{children}</ol>,

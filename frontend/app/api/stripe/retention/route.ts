@@ -9,7 +9,7 @@ const LIMIT = 5; // 5 req/min for retention offers
 
 export async function POST(req: Request) {
     const ip = getClientIp(req.headers);
-    const { allowed } = rateLimit(`retention:${ip}`, LIMIT, WINDOW_MS);
+    const { allowed, remaining, reset } = await rateLimit(`retention:${ip}`, LIMIT, WINDOW_MS);
     if (!allowed) {
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }

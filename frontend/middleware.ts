@@ -6,14 +6,14 @@ const PUBLIC_PATHS = ["/login", "/signup", "/api/auth/login", "/api/auth/signup"
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  
+
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname === "/") {
     return NextResponse.next();
   }
-  
+
   // Allow public assets
   if (pathname.match(/\.(png|jpg|jpeg|gif|ico|svg)$/)) {
-      return NextResponse.next();
+    return NextResponse.next();
   }
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
@@ -21,6 +21,14 @@ export async function middleware(req: NextRequest) {
   }
 
   const session = await getSessionFromRequest(req);
+
+  // If authenticated, redirect away from auth pages
+  if (session && (pathname === "/login" || pathname === "/signup")) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
   if (!session) {
     if (pathname.startsWith("/api")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -29,7 +37,7 @@ export async function middleware(req: NextRequest) {
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
-  
+
   return NextResponse.next();
 }
 

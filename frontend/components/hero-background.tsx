@@ -2,6 +2,43 @@
 
 import { useEffect, useRef } from 'react';
 
+class Particle {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    size: number;
+    w: number;
+    h: number;
+
+    constructor(w: number, h: number) {
+        this.w = w;
+        this.h = h;
+        this.x = Math.random() * w;
+        this.y = Math.random() * h;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.size = Math.random() * 1.5 + 0.5;
+    }
+
+    update(w: number, h: number) {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x < 0) this.x = w;
+        if (this.x > w) this.x = 0;
+        if (this.y < 0) this.y = h;
+        if (this.y > h) this.y = 0;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(100, 100, 100, 0.3)';
+        ctx.fill();
+    }
+}
+
 export function HeroBackground() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -12,51 +49,17 @@ export function HeroBackground() {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        if (typeof window === 'undefined') return;
         let w = canvas.width = window.innerWidth;
         let h = canvas.height = window.innerHeight;
 
         const particles: Particle[] = [];
-        const particleCount = 60; // Slightly sparser for a clean look
+        const particleCount = 60;
         const connectionDistance = 150;
-        const items: Array<Particle> = [];
-
-        class Particle {
-            x: number;
-            y: number;
-            vx: number;
-            vy: number;
-            size: number;
-
-            constructor() {
-                this.x = Math.random() * w;
-                this.y = Math.random() * h;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.size = Math.random() * 1.5 + 0.5;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.x < 0) this.x = w;
-                if (this.x > w) this.x = 0;
-                if (this.y < 0) this.y = h;
-                if (this.y > h) this.y = 0;
-            }
-
-            draw() {
-                if (!ctx) return;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(100, 100, 100, 0.3)';
-                ctx.fill();
-            }
-        }
 
         // Init
         for (let i = 0; i < particleCount; i++) {
-            particles.push(new Particle());
+            particles.push(new Particle(w, h));
         }
 
         const mouse = { x: 0, y: 0 };
@@ -66,25 +69,18 @@ export function HeroBackground() {
             mouse.x = e.clientX;
             mouse.y = e.clientY;
         };
-        window.addEventListener('mousemove', handleMouseMove);
+        if (typeof window !== 'undefined') {
+            window.addEventListener('mousemove', handleMouseMove);
+        }
 
         const animate = () => {
             if (!ctx) return;
             ctx.clearRect(0, 0, w, h);
 
-            // Draw subtle grid
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-            ctx.lineWidth = 1;
-            const gridSize = 50;
-
-            // Moving grid effect
-            const time = Date.now() * 0.0005;
-            const functionY = (x: number) => Math.sin(x * 0.01 + time) * 20;
-
             // Draw Particles & Connections
             particles.forEach((p, i) => {
-                p.update();
-                p.draw();
+                p.update(w, h);
+                p.draw(ctx);
 
                 // Connect to nearby particles
                 for (let j = i + 1; j < particles.length; j++) {
@@ -116,20 +112,27 @@ export function HeroBackground() {
 
             });
 
-            requestAnimationFrame(animate);
+            if (typeof requestAnimationFrame !== 'undefined') {
+                requestAnimationFrame(animate);
+            }
         };
 
         animate();
 
         const handleResize = () => {
+            if (typeof window === 'undefined') return;
             w = canvas.width = window.innerWidth;
             h = canvas.height = window.innerHeight;
         };
-        window.addEventListener('resize', handleResize);
+        if (typeof window !== 'undefined') {
+            window.addEventListener('resize', handleResize);
+        }
 
         return () => {
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('mousemove', handleMouseMove);
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('resize', handleResize);
+                window.removeEventListener('mousemove', handleMouseMove);
+            }
         };
     }, []);
 

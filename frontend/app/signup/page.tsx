@@ -27,7 +27,7 @@ export default function SignupPage() {
             if (res.ok) {
                 router.push('/login?message=Check your email to confirm your account');
             } else {
-                const data = await res.json();
+                const data = await res.json() as { error?: string };
                 setError(data.error || 'Failed to sign up');
             }
         } catch (err) {
@@ -40,7 +40,7 @@ export default function SignupPage() {
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-white/10 tracking-tight lowercase">
             <div className="bg-avalanche opacity-20 fixed inset-0 pointer-events-none" />
-            
+
             <Navbar />
 
             <main className="pt-40 flex flex-col items-center justify-center px-6 relative z-10">
@@ -59,7 +59,7 @@ export default function SignupPage() {
                                     type="email"
                                     required
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
                                     className="w-full bg-white/[0.02] border border-white/5 rounded px-4 py-3 outline-none focus:border-white/10 transition-colors text-sm lowercase"
                                     placeholder="name@company.com"
                                 />
@@ -71,7 +71,7 @@ export default function SignupPage() {
                                     type="password"
                                     required
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
                                     className="w-full bg-white/[0.02] border border-white/5 rounded px-4 py-3 outline-none focus:border-white/10 transition-colors text-sm lowercase"
                                     placeholder="••••••••"
                                 />

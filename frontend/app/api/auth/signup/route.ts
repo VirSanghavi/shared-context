@@ -20,7 +20,7 @@ export async function POST(request: Request) {
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
         const ip = getClientIp(request.headers);
-        const { allowed, remaining, reset } = rateLimit(`signup:${ip}`, LIMIT, WINDOW_MS);
+        const { allowed, remaining, reset } = await rateLimit(`signup:${ip}`, LIMIT, WINDOW_MS);
         if (!allowed) {
             return NextResponse.json(
                 { error: "Too many requests" },
@@ -55,10 +55,11 @@ export async function POST(request: Request) {
         }
 
         return NextResponse.json({ ok: true }, { headers: rateHeaders(remaining, reset) });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Signup error:", err);
+        const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
         return NextResponse.json(
-            { error: err?.message || "An unexpected error occurred" },
+            { error: errorMessage },
             { status: 500 }
         );
     }

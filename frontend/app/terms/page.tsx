@@ -63,7 +63,7 @@ export default function TermsPage() {
                         <section>
                             <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-900 mb-4">5. limitation of liability</h2>
                             <p>
-                                axis is provided "as is". we are not liable for any direct or indirect damages resulting from the use or inability to use our platform, including but not limited to inaccuracies in ai-generated responses based on provided context.
+                                axis is provided &quot;as is&quot;. we are not liable for any direct or indirect damages resulting from the use or inability to use our platform, including but not limited to inaccuracies in ai-generated responses based on provided context.
                             </p>
                         </section>
                     </div>

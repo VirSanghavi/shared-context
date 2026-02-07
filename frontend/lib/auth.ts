@@ -33,64 +33,63 @@ export async function verifySession(token?: string): Promise<SessionPayload | nu
 }
 
 async function hashKey(key: string) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(key);
-    const hash = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export async function validateApiKey(key: string): Promise<SessionPayload | null> {
-    if (!key.startsWith("sk_sc_")) return null;
-    
-    const hash = await hashKey(key);
-    
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-        process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-    );
-    
-    const { data, error } = await supabase
-        .from("api_keys")
-        .select("user_id")
-        .eq("key_hash", hash)
-        .single();
-        
-    if (error || !data) return null;
-    
-    // Fire and forget update last_used_at
-    // Note: await avoids race condition closing lambda, but in edge it's tricky. 
-    // Ideally use waitUntil but middleware doesn't expose it easily in all versions.
-    // For now, we just validade.
-    
-    return {
-        email: "api-key-user",
-        sub: data.user_id,
-        role: "api_key"
-    };
+  if (!key.startsWith("sk_sc_")) return null;
+
+  const hash = await hashKey(key);
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+  );
+
+  const { data, error } = await supabase
+    .from("api_keys")
+    .select("id, user_id, is_active")
+    .eq("key_hash", hash)
+    .single();
+
+  if (error || !data || !data.is_active) return null;
+
+  // Fire and forget update last_used_at
+  supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", data.id).then();
+
+  return {
+    email: "api-key-user",
+    sub: data.user_id,
+    keyId: data.id,
+    role: "api_key"
+  };
 }
 
 export async function getSessionFromRequest(req: NextRequest): Promise<SessionPayload | null> {
-    // 1. Check Cookie
-    const cookieToken = req.cookies.get(SESSION_COOKIE)?.value;
-    if (cookieToken) {
-        return verifySession(cookieToken);
-    }
+  // 1. Check Cookie
+  const cookieToken = req.cookies.get(SESSION_COOKIE)?.value;
+  if (cookieToken) {
+    return verifySession(cookieToken);
+  }
 
-    // 2. Check Authorization Header (Bearer Token or API Key)
-    const authHeader = req.headers.get("Authorization");
-    if (authHeader) {
-        const [scheme, token] = authHeader.split(" ");
-        if (scheme === "Bearer" && token) {
-            // Check if it's an API Key
-            if (token.startsWith("sk_sc_")) {
-                return validateApiKey(token);
-            }
-            // Otherwise try as JWT
-            return verifySession(token);
-        }
+  // 2. Check Authorization Header (Bearer Token or API Key)
+  const authHeader = req.headers.get("Authorization");
+  if (authHeader) {
+    const [scheme, token] = authHeader.split(" ");
+    if (scheme === "Bearer" && token) {
+      // Check if it's an API Key
+      if (token.startsWith("sk_sc_")) {
+        return validateApiKey(token);
+      }
+      // Otherwise try as JWT
+      return verifySession(token);
     }
+  }
 
-    return null;
+  return null;
 }
 
 export async function setSessionCookie(token: string) {

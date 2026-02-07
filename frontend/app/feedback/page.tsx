@@ -15,12 +15,18 @@ export default function FeedbackPage() {
         e.preventDefault();
         if (!message.trim()) return;
 
-        setSubmitting(true);
+        const res = await fetch("/api/feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ category, email, message }),
+        });
 
-        // Simulate API call (replace with real endpoint)
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        setSubmitted(true);
+        if (res.ok) {
+            setSubmitted(true);
+        } else {
+            const data = await res.json().catch(() => ({}));
+            alert(data.error || "Failed to submit feedback");
+        }
         setSubmitting(false);
     }
 
@@ -76,8 +82,8 @@ export default function FeedbackPage() {
                                             type="button"
                                             onClick={() => setCategory(cat)}
                                             className={`px-4 py-2 rounded text-[10px] font-bold tracking-[0.1em] uppercase transition-colors ${category === cat
-                                                    ? 'bg-neutral-900 text-white'
-                                                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                                                ? 'bg-neutral-900 text-white'
+                                                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                                                 }`}
                                         >
                                             {cat}

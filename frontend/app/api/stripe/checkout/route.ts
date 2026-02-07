@@ -10,7 +10,7 @@ const LIMIT = 30;
 
 export async function POST(request: Request) {
   const ip = getClientIp(request.headers);
-  const { allowed, remaining, reset } = rateLimit(`checkout:${ip}`, LIMIT, WINDOW_MS);
+  const { allowed, remaining, reset } = await rateLimit(`checkout:${ip}`, LIMIT, WINDOW_MS);
   if (!allowed) {
     return NextResponse.json(
       { error: "Too many requests" },

@@ -9,7 +9,7 @@ const LIMIT = 10; // 10 req/min for portal access
 
 export async function POST(req: Request) {
   const ip = getClientIp(req.headers);
-  const { allowed } = rateLimit(`portal:${ip}`, LIMIT, WINDOW_MS);
+  const { allowed, remaining, reset } = await rateLimit(`portal:${ip}`, LIMIT, WINDOW_MS);
   if (!allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

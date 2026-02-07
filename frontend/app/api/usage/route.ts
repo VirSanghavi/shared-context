@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { resolveUserId } from "@/lib/db-utils";
 
 const WINDOW_MS = 60 * 1000;
 const LIMIT = 60; // 60 req/min for usage analytics (higher volume)
@@ -17,9 +18,9 @@ function getSupabaseClient() {
     return createClient(url, key);
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
     const ip = getClientIp(req.headers);
-    const { allowed, remaining, reset } = rateLimit(`usage_get:${ip}`, LIMIT, WINDOW_MS);
+    const { allowed, remaining, reset } = await rateLimit(`usage:${ip}`, LIMIT, WINDOW_MS);
     if (!allowed) {
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
@@ -29,26 +30,21 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
     }
 
-    const session = await getSessionFromRequest(req as any);
+    const session = await getSessionFromRequest(req);
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     try {
-        const userId = session.sub || session.id;
+        const userId = session.sub || await resolveUserId(session.email);
 
         if (!userId) {
-            // Fallback: find user by email
-            const { data: users } = await supabase.auth.admin.listUsers();
-            const user = users?.users.find((u: any) => u.email === session.email);
-            if (!user) {
-                return NextResponse.json({ error: "User not found" }, { status: 404 });
-            }
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
         // Get usage data for the last 7 days
         const { data, error } = await supabase.rpc('get_daily_usage', {
-            p_user_id: userId || session.sub,
+            p_user_id: userId,
             p_days: 7
         });
 
@@ -69,7 +65,7 @@ export async function GET(req: Request) {
             const dateStr = date.toISOString().split('T')[0];
             const dayName = days[date.getDay()];
 
-            const found = data?.find((d: any) => d.day === dateStr);
+            const found = (data as any[])?.find((d: any) => d.day === dateStr);
             last7Days.push({
                 day: dayName,
                 date: dateStr,
@@ -79,16 +75,17 @@ export async function GET(req: Request) {
         }
 
         return NextResponse.json({ usage: last7Days });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Usage API error:", err);
-        return NextResponse.json({ error: err?.message || "Failed to fetch usage" }, { status: 500 });
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch usage";
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
 
 // Log usage when API is called
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     const ip = getClientIp(req.headers);
-    const { allowed } = rateLimit(`usage_post:${ip}`, LIMIT * 2, WINDOW_MS); // Higher limit for logging
+    const { allowed } = await rateLimit(`usage_post:${ip}`, LIMIT * 2, WINDOW_MS); // Higher limit for logging
     if (!allowed) {
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
@@ -104,13 +101,13 @@ export async function POST(req: Request) {
 
         // SANITIZATION & VALIDATION
         if (!user_id || typeof user_id !== 'string') {
-             return NextResponse.json({ error: "Invalid user_id" }, { status: 400 });
+            return NextResponse.json({ error: "Invalid user_id" }, { status: 400 });
         }
         if (!endpoint || typeof endpoint !== 'string') {
-             return NextResponse.json({ error: "Invalid endpoint" }, { status: 400 });
+            return NextResponse.json({ error: "Invalid endpoint" }, { status: 400 });
         }
         if (tokens_used && typeof tokens_used !== 'number') {
-             return NextResponse.json({ error: "Invalid tokens_used" }, { status: 400 });
+            return NextResponse.json({ error: "Invalid tokens_used" }, { status: 400 });
         }
 
         const { error } = await supabase
@@ -131,8 +128,9 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json({ ok: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Usage POST error:", err);
-        return NextResponse.json({ error: err?.message || "Failed to log usage" }, { status: 500 });
+        const errorMessage = err instanceof Error ? err.message : "Failed to log usage";
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }

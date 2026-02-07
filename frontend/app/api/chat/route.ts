@@ -1,36 +1,40 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
-import fs from "fs/promises";
-import path from "path";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { logUsage } from "@/lib/usage";
+import { getSessionFromRequest } from "@/lib/auth";
 
 // Use standard rate limiter
 const LIMIT = 10;
 const WINDOW_MS = 60 * 1000; // 1 minute
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+    const startTime = Date.now();
     // 0. Rate Limiting
     const ip = getClientIp(req.headers);
-    const { allowed, remaining, reset } = rateLimit(`chat:${ip}`, LIMIT, WINDOW_MS);
+    const { allowed, remaining, reset } = await rateLimit(`chat:${ip}`, LIMIT, WINDOW_MS);
 
     if (!allowed) {
         return NextResponse.json({
             error: "rate limit exceeded: max 10 requests per minute. please slow down and come back in a little bit :)"
-        }, { status: 429, headers: {
-            "x-rate-limit-remaining": String(remaining),
-            "x-rate-limit-reset": String(reset)
-        }});
+        }, {
+            status: 429, headers: {
+                "x-rate-limit-remaining": String(remaining),
+                "x-rate-limit-reset": String(reset)
+            }
+        });
     }
 
-    // Check for placeholder keys
+    const session = await getSessionFromRequest(req);
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
 
-    if (!supabaseUrl || supabaseUrl.includes("<your-project-id>") || !supabaseKey || supabaseKey.startsWith("eyJ") && supabaseKey.length < 50 || !openaiKey) {
+    if (!supabaseUrl || !supabaseKey || !openaiKey) {
         return NextResponse.json({
-            error: "axis connection error: your environment variables are not configured correctly. please update .env.local with real keys."
+            error: "axis connection error: environment variables are not configured correctly."
         }, { status: 500 });
     }
 
@@ -38,120 +42,52 @@ export async function POST(req: Request) {
         apiKey: openaiKey,
     });
 
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-        process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-    );
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     try {
-        const body = await req.json();
+        const body = (await req.json()) as { query?: string };
         let { query } = body;
 
-        // SANITIZATION
         if (!query || typeof query !== 'string') {
-             return NextResponse.json({ error: "Invalid query" }, { status: 400 });
+            return NextResponse.json({ error: "Invalid query" }, { status: 400 });
         }
-        
-        // Basic sanitization: trim and limit length
-        query = query.trim().slice(0, 500); // 500 char max
 
-        // --- FULL SCALE RAG IMPLEMENTATION ---
-        
+        query = query.trim().slice(0, 500);
+
         let contextContent = "";
-        
-        // 1. Try Vector Search (Full Scale)
-        try {
-            const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-            const projectKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-            
-            if (projectUrl && projectKey) {
-                // Generate embedding for query
-                const embeddingResponse = await openai.embeddings.create({
-                    model: "text-embedding-3-small",
-                    input: query,
-                });
-                const embedding = embeddingResponse.data[0].embedding;
 
-                // Match in DB
-                // Since this is a generic chat, we might need to know WHICH project context to query.
-                // For now, we search ALL projects the user owns (if we had the user ID from session).
-                // Or, if this is a "general docs" chat, we might have a specific project ID for "axis-docs".
-                // Assuming "Axis Docs" project exists for now, or falling back to file read if no match.
-                
-                // For this demo, we can try to call the match_embeddings function.
-                // BUT, since we don't have a projectId in the request, we'll stick to the file-stuffing fallback 
-                // UNTIL the user maps a project via the UI.
-                
-                // However, user specifically asked for "Full Scale RAG Ready".
-                // So we will leave this code structure ready to swap:
-                /*
-                const { data: chunks } = await supabase.rpc('match_embeddings', {
-                    query_embedding: embedding,
-                    match_threshold: 0.7,
-                    match_count: 5,
-                    p_project_id: '...' // needs project context
-                });
-                if (chunks && chunks.length > 0) {
-                     contextContent = chunks.map(c => c.content).join('\n---\n');
-                }
-                */
+        // 1. Try Vector Search
+        try {
+            const embeddingResponse = await openai.embeddings.create({
+                model: "text-embedding-3-small",
+                input: query,
+            });
+            const embedding = embeddingResponse.data[0].embedding;
+
+            const { data: chunks } = await supabase.rpc('match_embeddings', {
+                query_embedding: embedding,
+                match_threshold: 0.5,
+                match_count: 5,
+                p_project_id: null
+            });
+
+            if (chunks && Array.isArray(chunks) && chunks.length > 0) {
+                contextContent = "--- HISTORICAL CONTEXT & SESSIONS ---\n" +
+                    chunks.map((c: any) => `[Content]: ${c.content}\n[Metadata]: ${JSON.stringify(c.metadata)}`).join('\n---\n');
             }
         } catch (e) {
-            console.warn("Vector search failed, falling back to local docs", e);
+            console.warn("Vector search failed, falling back to basic response", e);
         }
 
-        // 2. Fallback to Local Docs (Context Stuffing - Reliable for small docs)
-        if (!contextContent) {
-            let agentDocsPath = path.join(process.cwd(), "..", "agent-instructions");
-
-            // Try to locate agent-instructions robustly
-            try {
-                await fs.access(agentDocsPath);
-            } catch {
-                agentDocsPath = path.join(process.cwd(), "agent-instructions");
-            }
-
-            console.log("DEBUG: Looking for docs at", agentDocsPath);
-
-            try {
-                const files = await fs.readdir(agentDocsPath);
-                for (const file of files) {
-                    if (file.endsWith(".md")) {
-                         const content = await fs.readFile(path.join(agentDocsPath, file), "utf-8");
-                         contextContent += `\n\n--- FILE: ${file} ---\n${content}`;
-                    }
-                }
-            } catch (e) {
-                 console.error("Error reading docs:", e);
-            }
-        }
-
-        // 3. Chat with OpenAI strictly constrained to the docs
-        console.log("DEBUG: Querying OpenAI with query:", query);
         const response = await openai.chat.completions.create({
-            model: "gpt-4o", // or your preferred model
+            model: "gpt-4o",
             messages: [
                 {
                     role: "system",
-                    content: `You are Axis Intelligence. You are a professional, helpful technical assistant. 
+                    content: `you are axis, a context-aware assistant. use the following context if relevant:
+${contextContent}
                     
-                    Core Mission:
-                    Axis is a "context governance" layer for AI agents. It mirrors project structures and streams high-fidelity context directly into agent prompts via the Model Context Protocol (MCP). Context governance means enforcing strict maps of what an agent should and shouldn't see to ensure accuracy and reduce hallucinations.
-                    
-                    Knowledge Base:
-                    You have access to the documentation context provided below. For technical questions about setup, configuration, or API usage, you MUST answer strictly based on this context. 
-                    If a technical question is asked that isn't in the context, say "I'm sorry, I couldn't find information about that in our documentation."
-                    
-                    General Interaction:
-                    You are also permitted to handle basic conversational greetings, small talk, and general helpfulness (e.g., "hi", "how are you?", "who are you?"). Do NOT use the document fallback for simple greetings.
-                    
-                    Rules:
-                    1. Keep answers concise.
-                    2. Use markdown for structure (bold, lists).
-                    3. Do NOT wrap your entire response in a code block unless you are actually showing code.
-                    4. Use a professional, technical lowercase tone (matching the site's aesthetic).
-                    
-                    CONTEXT:
-                    ${contextContent}`
+answer strictly based on context. if not found, say you don't know.`
                 },
                 {
                     role: "user",
@@ -161,10 +97,24 @@ export async function POST(req: Request) {
             temperature: 0,
         });
 
-        console.log("DEBUG: OpenAI Response:", response.choices[0].message.content);
-        return NextResponse.json({ answer: response.choices[0].message.content });
-    } catch (error: any) {
+        const answer = response.choices[0].message.content;
+
+        if (session) {
+            logUsage({
+                userId: session.sub!,
+                apiKeyId: session.role === 'api_key' ? session.keyId : undefined,
+                endpoint: "/api/chat",
+                method: "POST",
+                statusCode: 200,
+                responseTimeMs: Date.now() - startTime,
+                tokensUsed: response.usage?.total_tokens || 0
+            });
+        }
+
+        return NextResponse.json({ answer });
+    } catch (error: unknown) {
         console.error("DEBUG: Chat Error:", error);
-        return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }

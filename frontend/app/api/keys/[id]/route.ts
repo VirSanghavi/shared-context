@@ -1,31 +1,32 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { resolveUserId } from "@/lib/db-utils";
 
 function getSupabaseClient() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
+
     if (!url || !key || url.includes("<") || url.includes("your-project")) {
         return null;
     }
-    
+
     return createClient(url, key);
 }
 
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const supabase = getSupabaseClient();
     if (!supabase) {
         return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
     }
 
     const { id } = await params;
-    const session = await getSessionFromRequest(req as any);
+    const session = await getSessionFromRequest(req);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
         const userId = session.sub || session.id || await getUserId(supabase, session.email);
-        
+
         if (!userId) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
@@ -41,32 +42,13 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         }
 
         return NextResponse.json({ success: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Delete key exception:", err);
-        return NextResponse.json({ error: err?.message || "Failed to delete key" }, { status: 500 });
+        const errorMessage = err instanceof Error ? err.message : "Failed to delete key";
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
 
-async function getUserId(supabase: any, email: string) {
-    try {
-        if (!email) return null;
-        
-        const { data: users } = await supabase.auth.admin.listUsers();
-        if (users?.users) {
-            const user = users.users.find((u: any) => u.email === email);
-            if (user) return user.id;
-        }
-
-        // Fallback: check profiles table
-        const { data: profile } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("email", email)
-            .single();
-        
-        return profile?.id;
-    } catch (err) {
-        console.error("getUserId error in component:", err);
-        return null;
-    }
+async function getUserId(supabase: SupabaseClient, email: string) {
+    return resolveUserId(email);
 }
