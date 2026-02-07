@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar';
 // Types
 interface SubscriptionData {
     subscription_status: string;
+    has_retention_offer: boolean;
     stripe?: {
         status: string;
         cancel_at_period_end: boolean;
@@ -181,7 +182,14 @@ export default function BillingPage() {
                                     </button>
                                     {!isCancelled && (
                                         <button
-                                            onClick={() => setShowRetention(true)}
+                                            onClick={() => {
+                                                if (subData?.has_retention_offer) {
+                                                    // Already have the offer, just proceed to cancel
+                                                    handleFinalCancel();
+                                                } else {
+                                                    setShowRetention(true);
+                                                }
+                                            }}
                                             className="w-full text-[10px] text-neutral-400 hover:text-rose-500 transition-colors uppercase tracking-widest font-mono mt-4"
                                         >
                                             cancel subscription

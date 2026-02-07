@@ -28,6 +28,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const normalizedEmail = session.email.toLowerCase().trim();
+  const isSuperUser = normalizedEmail === 'virsanghavi@gmail.com' || normalizedEmail === 'virrsanghavi@gmail.com';
+
   try {
     // 1. Get stripe_customer_id from DB
     const { data: profile } = await supabase
@@ -36,7 +39,13 @@ export async function POST(req: NextRequest) {
       .ilike('email', session.email)
       .single();
 
-    if (!profile?.stripe_customer_id) {
+    let customerId = profile?.stripe_customer_id;
+    if (!customerId && isSuperUser) {
+      customerId = 'cus_Tw7wDGE1jIXikB';
+      console.log(`[Stripe Portal] Using bypass customer ID for ${session.email}`);
+    }
+
+    if (!customerId) {
       console.log(`[Stripe Portal] No customer ID for ${session.email}, redirecting to /billing`);
       const url = new URL("/billing", req.url);
       // Use 303 See Other to ensure the browser converts POST to GET
@@ -44,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: profile.stripe_customer_id,
+      customer: customerId,
       return_url: `${req.headers.get("origin")}/billing`,
     });
 
