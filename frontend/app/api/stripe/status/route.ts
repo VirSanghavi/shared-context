@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('*')
+            .select('subscription_status, stripe_customer_id, current_period_end, has_seen_retention')
             .ilike('email', session.email)
             .single();
 
@@ -93,6 +93,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
             subscription_status: isPro ? 'pro' : 'free',
             current_period_end: profile?.current_period_end,
+            has_seen_retention: profile?.has_seen_retention || false,
             stripe: stripeData
         });
 

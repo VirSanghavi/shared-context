@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar';
 interface SubscriptionData {
     subscription_status: string;
     has_retention_offer: boolean;
+    has_seen_retention: boolean;
     stripe?: {
         status: string;
         cancel_at_period_end: boolean;
@@ -183,10 +184,12 @@ export default function BillingPage() {
                                     {!isCancelled && (
                                         <button
                                             onClick={() => {
-                                                if (subData?.has_retention_offer) {
-                                                    // Already have the offer, just proceed to cancel
+                                                if (subData?.has_retention_offer || subData?.has_seen_retention) {
+                                                    // Already have it OR already saw it - just cancel
                                                     handleFinalCancel();
                                                 } else {
+                                                    // Mark as seen in DB immediately
+                                                    fetch('/api/stripe/status/mark-seen', { method: 'POST' });
                                                     setShowRetention(true);
                                                 }
                                             }}
