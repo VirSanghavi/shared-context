@@ -23,7 +23,7 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_
 
 // Configuration
 const manager = new ContextManager(
-  process.env.SHARED_CONTEXT_API_URL || "https://api.axis.sh/v1",
+  process.env.SHARED_CONTEXT_API_URL || "https://aicontext.vercel.app/api/v1",
   process.env.AXIS_API_KEY || process.env.SHARED_CONTEXT_API_SECRET
 );
 const nerveCenter = new NerveCenter(manager, {

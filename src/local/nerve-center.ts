@@ -104,8 +104,23 @@ export class NerveCenter {
 
     async init() {
         await this.loadState();
+        await this.detectProjectName();
         if (this.useSupabase) {
             await this.ensureProjectId();
+        }
+    }
+
+    private async detectProjectName() {
+        try {
+            const axisConfigPath = path.join(process.cwd(), ".axis", "axis.json");
+            const configData = await fs.readFile(axisConfigPath, "utf-8");
+            const config = JSON.parse(configData);
+            if (config.project) {
+                this.projectName = config.project;
+                logger.info(`Detected project name from .axis/axis.json: ${this.projectName}`);
+            }
+        } catch (e) {
+            // No .axis config found, stick with default/env
         }
     }
 
