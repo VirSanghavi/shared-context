@@ -28,9 +28,36 @@ program
             await fs.ensureDir(path.join(axisDir, 'research'));
 
             // Initialize standard context files
-            await fs.writeFile(path.join(instructionsDir, 'context.md'), '# Project Context\n\nHigh-level architectural context goes here.\n');
-            await fs.writeFile(path.join(instructionsDir, 'conventions.md'), '# Coding Conventions\n\nProject-specific patterns and rules.\n');
-            await fs.writeFile(path.join(instructionsDir, 'activity.md'), '# Activity Log\n\nLog of major agentic actions.\n');
+            await fs.writeFile(path.join(instructionsDir, 'context.md'),
+                `# Project Context
+
+## Overview
+<!-- Describe the project's core value proposition and goals -->
+
+## Architecture
+<!-- High-level design patterns and stack choices -->
+
+## Core Features
+<!-- List of main capabilities -->
+`);
+            await fs.writeFile(path.join(instructionsDir, 'conventions.md'),
+                `# Coding Conventions
+
+## Language Standards
+<!-- TypeScript, Python, etc. guidelines -->
+
+## Styling
+<!-- CSS/Tailwind rules -->
+
+## Testing
+<!-- Test framework and strategy -->
+`);
+            await fs.writeFile(path.join(instructionsDir, 'activity.md'),
+                `# Activity Log
+
+## Session History
+<!-- Log of major agentic actions and decisions -->
+`);
 
             const configPath = path.join(axisDir, 'axis.json');
             await fs.writeJson(configPath, {

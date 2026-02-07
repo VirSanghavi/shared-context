@@ -110,17 +110,18 @@ var ContextManager = class {
       return `Updated ${filename}`;
     });
   }
-  async searchContext(query) {
+  async searchContext(query, projectName = "default") {
     if (!this.apiUrl) {
       throw new Error("SHARED_CONTEXT_API_URL not configured.");
     }
-    const response = await fetch(`${this.apiUrl}/search`, {
+    const endpoint = this.apiUrl.endsWith("/v1") ? `${this.apiUrl}/search` : `${this.apiUrl}/v1/search`;
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${this.apiSecret || ""}`
       },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({ query, projectName })
     });
     if (!response.ok) {
       const text = await response.text();
@@ -134,18 +135,19 @@ var ContextManager = class {
     }
     throw new Error("No results format recognized.");
   }
-  async embedContent(items) {
+  async embedContent(items, projectName = "default") {
     if (!this.apiUrl) {
       console.warn("Skipping RAG embedding: SHARED_CONTEXT_API_URL not configured.");
       return;
     }
-    const response = await fetch(`${this.apiUrl}/embed`, {
+    const endpoint = this.apiUrl.endsWith("/v1") ? `${this.apiUrl}/embed` : `${this.apiUrl}/v1/embed`;
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${this.apiSecret || ""}`
       },
-      body: JSON.stringify({ items })
+      body: JSON.stringify({ items, projectName })
     });
     if (!response.ok) {
       const text = await response.text();
@@ -169,7 +171,7 @@ var Logger = class {
   }
   log(level, message, meta) {
     const timestamp = (/* @__PURE__ */ new Date()).toISOString();
-    console.log(JSON.stringify({
+    console.error(JSON.stringify({
       timestamp,
       level,
       message,
@@ -222,10 +224,13 @@ var NerveCenter = class {
     const supabaseUrl = options.supabaseUrl || process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = options.supabaseServiceRoleKey || process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error("CRITICAL: Supabase URL and Service Role Key are REQUIRED for NerveCenter persistence.");
+      logger.warn("Supabase credentials missing. Running in local-only mode (state will be ephemeral or file-based).");
+      this.supabase = void 0;
+      this.useSupabase = false;
+    } else {
+      this.supabase = createClient(supabaseUrl, supabaseKey);
+      this.useSupabase = true;
     }
-    this.supabase = createClient(supabaseUrl, supabaseKey);
-    this.useSupabase = true;
     this.state = {
       locks: {},
       jobs: {},
@@ -234,6 +239,9 @@ var NerveCenter = class {
   }
   get projectId() {
     return this._projectId;
+  }
+  get currentProjectName() {
+    return this.projectName;
   }
   async init() {
     await this.loadState();
@@ -744,8 +752,7 @@ var RagEngine = class {
 // ../../src/local/mcp-server.ts
 dotenv2.config({ path: ".env.local" });
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  logger.error("CRITICAL: Supabase credentials missing. RAG & Persistence disabled.");
-  process.exit(1);
+  logger.warn("Supabase credentials missing. RAG & Persistence disabled. Running in local/ephemeral mode.");
 }
 var manager = new ContextManager(
   process.env.SHARED_CONTEXT_API_URL || "https://aicontext.vercel.app/api/v1",
@@ -756,13 +763,14 @@ var nerveCenter = new NerveCenter(manager, {
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   projectName: process.env.PROJECT_NAME || "default"
 });
-var ragEngine = new RagEngine(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  process.env.OPENAI_API_KEY || ""
-  // Project ID is loaded async by NerveCenter... tricky dependency.
-  // We'll let NerveCenter expose it or pass it later.
-);
+var ragEngine;
+if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  ragEngine = new RagEngine(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.OPENAI_API_KEY || ""
+  );
+}
 async function ensureFileSystem() {
   const fs3 = await import("fs/promises");
   const path3 = await import("path");
@@ -1082,13 +1090,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
-    const success = await ragEngine.indexContent(filePath, content);
-    return { content: [{ type: "text", text: success ? "Indexed." : "Failed." }] };
+    try {
+      await manager.embedContent([{ content, metadata: { filePath } }], nerveCenter.currentProjectName);
+      return { content: [{ type: "text", text: "Indexed via Remote API." }] };
+    } catch (e) {
+      if (ragEngine) {
+        const success = await ragEngine.indexContent(filePath, content);
+        return { content: [{ type: "text", text: success ? "Indexed locally." : "Local index failed." }] };
+      }
+      return { content: [{ type: "text", text: `Indexing failed: ${e}` }], isError: true };
+    }
   }
   if (name === SEARCH_CONTEXT_TOOL) {
     const query = String(args?.query);
-    const results = await ragEngine.search(query);
-    return { content: [{ type: "text", text: results.join("\n---\n") }] };
+    try {
+      const results = await manager.searchContext(query, nerveCenter.currentProjectName);
+      return { content: [{ type: "text", text: results }] };
+    } catch (e) {
+      if (ragEngine) {
+        const results = await ragEngine.search(query);
+        return { content: [{ type: "text", text: results.join("\n---\n") }] };
+      }
+      return { content: [{ type: "text", text: `Search failed: ${e}` }], isError: true };
+    }
   }
   if (name === "get_subscription_status") {
     const email = String(args?.email);
@@ -1160,9 +1184,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   await ensureFileSystem();
   await nerveCenter.init();
-  if (nerveCenter.projectId) {
+  if (nerveCenter.projectId && ragEngine) {
     ragEngine.setProjectId(nerveCenter.projectId);
-    logger.info(`RAG Engine linked to Project ID: ${nerveCenter.projectId}`);
+    logger.info(`Local RAG Engine linked to Project ID: ${nerveCenter.projectId}`);
   }
   const transport = new StdioServerTransport();
   await server.connect(transport);

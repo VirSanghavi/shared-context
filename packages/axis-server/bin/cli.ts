@@ -17,7 +17,7 @@ program
     .version("1.0.0");
 
 program.action(() => {
-    console.log(chalk.bold.blue("Axis MCP Server Starting..."));
+    console.error(chalk.bold.blue("Axis MCP Server Starting..."));
 
     // Locate the bundled server script
     const serverScript = path.resolve(__dirname, "../dist/mcp-server.mjs");
@@ -29,22 +29,22 @@ program.action(() => {
         process.exit(1);
     }
 
-    console.log(chalk.gray(`Launching server context...`));
-    
+    console.error(chalk.gray(`Launching server context...`));
+
     // Pass through all arguments from the CLI to the underlying server
     const args = [serverScript, ...process.argv.slice(2)];
 
     // Spawn the node process with the bundled script
-    const proc = spawn("node", args, { 
+    const proc = spawn("node", args, {
         stdio: "inherit",
-        env: { ...process.env, FORCE_COLOR: '1' } 
+        env: { ...process.env, FORCE_COLOR: '1' }
     });
-    
+
     proc.on("close", (code) => {
         if (code !== 0) {
-            console.log(chalk.red(`Server process exited with code ${code}`));
+            console.error(chalk.red(`Server process exited with code ${code}`));
         } else {
-            console.log(chalk.green("Server stopped gracefully."));
+            console.error(chalk.green("Server stopped gracefully."));
         }
     });
 

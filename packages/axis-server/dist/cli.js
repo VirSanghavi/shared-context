@@ -38,7 +38,7 @@ var __filename2 = (0, import_url.fileURLToPath)(importMetaUrl);
 var __dirname = import_path.default.dirname(__filename2);
 import_commander.program.name("axis-server").description("Start the Axis Shared Context MCP Server").version("1.0.0");
 import_commander.program.action(() => {
-  console.log(import_chalk.default.bold.blue("Axis MCP Server Starting..."));
+  console.error(import_chalk.default.bold.blue("Axis MCP Server Starting..."));
   const serverScript = import_path.default.resolve(__dirname, "../dist/mcp-server.mjs");
   if (!import_fs.default.existsSync(serverScript)) {
     console.error(import_chalk.default.red("Error: Server script not found."));
@@ -46,7 +46,7 @@ import_commander.program.action(() => {
     console.error(import_chalk.default.gray("Did you run 'npm run build'?"));
     process.exit(1);
   }
-  console.log(import_chalk.default.gray(`Launching server context...`));
+  console.error(import_chalk.default.gray(`Launching server context...`));
   const args = [serverScript, ...process.argv.slice(2)];
   const proc = (0, import_child_process.spawn)("node", args, {
     stdio: "inherit",
@@ -54,9 +54,9 @@ import_commander.program.action(() => {
   });
   proc.on("close", (code) => {
     if (code !== 0) {
-      console.log(import_chalk.default.red(`Server process exited with code ${code}`));
+      console.error(import_chalk.default.red(`Server process exited with code ${code}`));
     } else {
-      console.log(import_chalk.default.green("Server stopped gracefully."));
+      console.error(import_chalk.default.green("Server stopped gracefully."));
     }
   });
   process.on("SIGINT", () => {

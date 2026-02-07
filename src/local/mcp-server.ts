@@ -17,8 +17,7 @@ dotenv.config({ path: ".env.local" });
 
 // VALIDATION
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  logger.error("CRITICAL: Supabase credentials missing. RAG & Persistence disabled.");
-  process.exit(1);
+  logger.warn("Supabase credentials missing. RAG & Persistence disabled. Running in local/ephemeral mode.");
 }
 
 // Configuration
@@ -33,13 +32,15 @@ const nerveCenter = new NerveCenter(manager, {
 });
 
 // Initialize RAG Engine
-const ragEngine = new RagEngine(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  process.env.OPENAI_API_KEY || "",
-  // Project ID is loaded async by NerveCenter... tricky dependency.
-  // We'll let NerveCenter expose it or pass it later.
-);
+// Initialize RAG Engine (Optional - only if local credentials present)
+let ragEngine: RagEngine | undefined;
+if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  ragEngine = new RagEngine(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.OPENAI_API_KEY || "",
+  );
+}
 
 // --- File System Operations ---
 async function ensureFileSystem() {
@@ -387,14 +388,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
-    const success = await ragEngine.indexContent(filePath, content);
-    return { content: [{ type: "text", text: success ? "Indexed." : "Failed." }] };
+    // Prefer remote embedding via API
+    try {
+      await manager.embedContent([{ content, metadata: { filePath } }], nerveCenter.currentProjectName);
+      return { content: [{ type: "text", text: "Indexed via Remote API." }] };
+    } catch (e) {
+      // Fallback to local if available?
+      if (ragEngine) {
+        const success = await ragEngine.indexContent(filePath, content);
+        return { content: [{ type: "text", text: success ? "Indexed locally." : "Local index failed." }] };
+      }
+      return { content: [{ type: "text", text: `Indexing failed: ${e}` }], isError: true };
+    }
   }
 
   if (name === SEARCH_CONTEXT_TOOL) {
     const query = String(args?.query);
-    const results = await ragEngine.search(query);
-    return { content: [{ type: "text", text: results.join("\n---\n") }] };
+    try {
+      const results = await manager.searchContext(query, nerveCenter.currentProjectName);
+      return { content: [{ type: "text", text: results }] };
+    } catch (e) {
+      if (ragEngine) {
+        const results = await ragEngine.search(query);
+        return { content: [{ type: "text", text: results.join("\n---\n") }] };
+      }
+      return { content: [{ type: "text", text: `Search failed: ${e}` }], isError: true };
+    }
   }
 
   if (name === "get_subscription_status") {
@@ -477,9 +496,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   await ensureFileSystem();
   await nerveCenter.init();
-  if (nerveCenter.projectId) {
+  if (nerveCenter.projectId && ragEngine) {
     ragEngine.setProjectId(nerveCenter.projectId);
-    logger.info(`RAG Engine linked to Project ID: ${nerveCenter.projectId}`);
+    logger.info(`Local RAG Engine linked to Project ID: ${nerveCenter.projectId}`);
   }
   const transport = new StdioServerTransport();
   await server.connect(transport);
