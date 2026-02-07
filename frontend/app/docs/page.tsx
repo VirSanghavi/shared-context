@@ -163,10 +163,21 @@ function MCPSection() {
                     <CodeBlock code="npm install -g @virsanghavi/axis-server" />
                 </div>
 
-                {/* Step 2: Configuration */}
+                {/* Step 2: Initialization */}
                 <div className="relative pl-12 border-l-2 border-neutral-100">
                     <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-neutral-900 border-4 border-white shadow-sm" />
-                    <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-4">step 2: add to your ide</h3>
+                    <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-4">step 2: initialize project (optional)</h3>
+                    <p className="mb-4">run the init command to set up your project's memory container and identity.</p>
+                    <CodeBlock code="npx @virsanghavi/axis-init@latest" />
+                    <p className="text-[12px] text-neutral-500 italic">
+                        note: if you skip this, the server will auto-create the <code>.axis</code> folder with a generic name. running this is recommended to keep multi-project contexts separate.
+                    </p>
+                </div>
+
+                {/* Step 3: Configuration */}
+                <div className="relative pl-12 border-l-2 border-neutral-100">
+                    <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-neutral-900 border-4 border-white shadow-sm" />
+                    <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-4">step 3: add to your ide</h3>
                     <p className="mb-6">copy and paste the configuration below into your ide&apos;s mcp settings. this works for <strong>cursor, vs code, antigravity, windsurf, and codex</strong>.</p>
 
                     <CodeBlock lang="json" code={`{
