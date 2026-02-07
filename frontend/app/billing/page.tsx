@@ -210,7 +210,6 @@ export default function BillingPage() {
                                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                                 className="relative w-full max-w-md bg-white rounded-3xl p-12 text-center shadow-[0_32px_120px_rgba(0,0,0,0.5)]"
                             >
-                                <div className="text-4xl mb-6">🏔️</div>
                                 <h2 className="text-3xl font-black text-neutral-900 tracking-tighter mb-4">wait! before you go...</h2>
                                 <p className="text-[14px] text-neutral-600 leading-relaxed mb-10">
                                     we&apos;d love to keep you on axis. accept this one-time offer: get <b>50% off</b> for the next 3 months.
