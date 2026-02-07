@@ -16,8 +16,8 @@
 }
 
 .dock-mobile {
-    bottom: 2rem;
-    top: auto;
+    top: 1rem;
+    bottom: auto;
 }
 
 .dock-panel {
