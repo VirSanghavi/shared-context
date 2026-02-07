@@ -15,10 +15,13 @@ export async function GET(req: NextRequest) {
 
         console.log(`[Stripe Status] Checking: "${session.email}"`);
 
-        // TEMPORARY BYPASS: Force Pro for user email variations while debugging
         const normalizedEmail = session.email.toLowerCase().trim();
-        const targetEmail = (normalizedEmail === 'virrsanghavi@gmail.com') ? 'virsanghavi@gmail.com' : session.email;
-        const isSuperUser = normalizedEmail === 'virsanghavi@gmail.com' || normalizedEmail === 'virrsanghavi@gmail.com';
+        const primaryEmail = "virsanghavi@gmail.com";
+        const typoEmail = "virrsanghavi@gmail.com";
+
+        const targetEmail = (normalizedEmail === typoEmail) ? primaryEmail : session.email;
+        const isSuperUser = normalizedEmail === primaryEmail || normalizedEmail === typoEmail;
+        console.log(`[Stripe Status] Email: ${session.email}, Normalized: ${normalizedEmail}, Super: ${isSuperUser}`);
 
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

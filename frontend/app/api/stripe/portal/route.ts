@@ -29,14 +29,17 @@ export async function POST(req: NextRequest) {
   }
 
   const normalizedEmail = session.email.toLowerCase().trim();
-  const isSuperUser = normalizedEmail === 'virsanghavi@gmail.com' || normalizedEmail === 'virrsanghavi@gmail.com';
+  const primaryEmail = "virsanghavi@gmail.com";
+  const typoEmail = "virrsanghavi@gmail.com";
+  const isSuperUser = (normalizedEmail === primaryEmail || normalizedEmail === typoEmail);
 
   try {
     // 1. Get stripe_customer_id from DB
+    const targetEmail = (normalizedEmail === typoEmail) ? primaryEmail : session.email;
     const { data: profile } = await supabase
       .from('profiles')
       .select('stripe_customer_id')
-      .ilike('email', session.email)
+      .ilike('email', targetEmail)
       .single();
 
     let customerId = profile?.stripe_customer_id;
