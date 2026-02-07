@@ -37,13 +37,22 @@ export async function POST(req: Request) {
                 const email = session.customer_details?.email || session.metadata?.email;
 
                 if (email) {
-                    await supabase
+                    console.log(`[Webhook] Processing checkout for email: ${email}, customer: ${customerId}`);
+                    const { error } = await supabase
                         .from("profiles")
                         .update({
                             stripe_customer_id: customerId,
                             subscription_status: 'pro'
                         })
                         .ilike("email", email);
+
+                    if (error) {
+                        console.error(`[Webhook] Profile update failed: ${error.message}`);
+                    } else {
+                        console.log(`[Webhook] Profile updated successfully for ${email}`);
+                    }
+                } else {
+                    console.warn(`[Webhook] No email found in session`);
                 }
                 break;
             }

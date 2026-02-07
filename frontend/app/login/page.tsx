@@ -5,11 +5,14 @@ import { useState, Suspense } from "react";
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 
+import { Eye, EyeOff } from "lucide-react";
+
 function LoginForm() {
   const search = useSearchParams();
   const next = search.get("next") || "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -57,14 +60,23 @@ function LoginForm() {
 
           <div>
             <label className="block text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] mb-2 lowercase opacity-40">password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/[0.02] border border-white/5 rounded px-4 py-3 outline-none focus:border-white/10 transition-colors text-sm"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-white/[0.02] border border-white/5 rounded px-4 py-3 outline-none focus:border-white/10 transition-colors text-sm pr-10"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
 
           {error && (
