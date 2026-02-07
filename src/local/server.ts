@@ -59,6 +59,45 @@ async function ensureFileSystem() {
 const app = express();
 const port = 3001;
 
+// Auth Middleware
+import { createClient } from "@supabase/supabase-js";
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
+
+app.use(async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(" ")[1] || req.query.token as string;
+
+    if (!token) {
+        // Allow if SECRET matches (Service-to-Service)
+        if (req.headers['x-api-key'] === process.env.SHARED_CONTEXT_API_SECRET) return next();
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    if (!supabase) {
+        // Fallback if no Supabase configured yet (dev mode)
+        if (token === process.env.SHARED_CONTEXT_API_SECRET) return next();
+        return res.status(500).json({ error: "Server Configuration Error" });
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) {
+        if (token === process.env.SHARED_CONTEXT_API_SECRET) return next();
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Check subscription
+    const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('id', user.id).single();
+    if (profile?.subscription_status !== 'active' && profile?.subscription_status !== 'pro') {
+         return res.status(402).json({ error: "Payment Required" });
+    }
+    
+    (req as any).user = user;
+    next();
+});
+
+
 // Map sessionId -> { server, transport }
 const sessions = new Map();
 
