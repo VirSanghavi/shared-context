@@ -7,9 +7,12 @@ const PUBLIC_PATHS = ["/login", "/signup", "/api/auth/login", "/api/auth/signup"
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname === "/") {
+  if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname === "/" || pathname === "/api/stripe/webhook") {
     return NextResponse.next();
   }
+
+  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  console.log(`[Middleware] Path: ${pathname}, Public: ${isPublic}`);
 
   // Allow public assets
   if (pathname.match(/\.(png|jpg|jpeg|gif|ico|svg)$/)) {

@@ -9,8 +9,15 @@ export async function GET(req: NextRequest) {
     try {
         const session = await getSessionFromRequest(req);
         if (!session) {
+            console.log("[Stripe Status] No session found");
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
+
+        console.log(`[Stripe Status] Checking: "${session.email}"`);
+
+        // TEMPORARY BYPASS: Force Pro for user email variations while debugging
+        const normalizedEmail = session.email.toLowerCase().trim();
+        const isSuperUser = normalizedEmail === 'virsanghavi@gmail.com' || normalizedEmail === 'virrsanghavi@gmail.com';
 
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -28,12 +35,16 @@ export async function GET(req: NextRequest) {
             .ilike('email', session.email)
             .single();
 
-        if (profileError || !profile) {
+        if ((profileError || !profile) && !isSuperUser) {
+            console.log(`[Stripe Status] Profile 404: "${session.email}"`);
             return NextResponse.json({ error: "Profile not found" }, { status: 404 });
         }
 
+        let isPro = isSuperUser || profile?.subscription_status === 'pro';
+        console.log(`[Stripe Status] Final Decision: ${session.email} is ${isPro ? 'pro' : 'free'}`);
+
         let stripeData = null;
-        let isPro = profile.subscription_status === 'pro';
+        // isPro is already defined above
 
         if (profile.stripe_customer_id) {
             const stripeKey = process.env.STRIPE_SECRET_KEY;

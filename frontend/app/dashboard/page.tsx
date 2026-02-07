@@ -69,8 +69,12 @@ export default function Dashboard() {
   const [subData, setSubData] = useState<SubscriptionData | null>(null);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [activeTab, setActiveTab] = useState<'keys' | 'usage' | 'sessions'>('keys');
+  const [session, setSession] = useState<{ email: string } | null>(null);
 
   useEffect(() => {
+    fetch('/api/auth/session').then(res => res.json()).then(data => {
+      if (data.user) setSession(data.user);
+    });
     fetchKeys();
     fetchUsage();
     fetchSubStatus();
@@ -177,7 +181,9 @@ export default function Dashboard() {
           <div className="flex justify-between items-end mb-6">
             <div>
               <h1 className="text-3xl font-medium tracking-tight mb-2">dashboard</h1>
-              <p className="text-[11px] text-neutral-500 uppercase tracking-[0.2em]">manage your api keys and context governance.</p>
+              <p className="text-[11px] text-neutral-500 uppercase tracking-[0.2em]">
+                {session ? `logged in as ${session.email}` : 'manage your api keys'} — {subData?.subscription_status === 'pro' ? 'pro' : 'free'}
+              </p>
             </div>
           </div>
 
