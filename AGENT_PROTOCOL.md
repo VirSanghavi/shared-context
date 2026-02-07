@@ -11,6 +11,7 @@ You are one of multiple AI agents working on this codebase simultaneously. To pr
 ## Implementation Notes
 - MCP tools are exposed by the Nerve Center in [src/local/server.ts](src/local/server.ts).
 - Orchestration + locking logic lives in [src/local/nerve-center.ts](src/local/nerve-center.ts).
+- Billing & Usage checks are available via `get_subscription_status` and `get_usage_stats`.
 - RAG requires `SHARED_CONTEXT_API_URL` and `SHARED_CONTEXT_API_SECRET` to be configured.
 
 ## The Workflow

@@ -93,7 +93,14 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
         }]
       };
     }
-    const fileName = uri.replace("context://local/", "");
+    
+    let fileName = uri;
+    if (uri.startsWith("context://local/")) {
+        fileName = uri.replace("context://local/", "");
+    } else if (uri.startsWith("context://docs/")) {
+        fileName = uri.replace("context://", ""); // Result: docs/filename.md which ContextManager handles
+    }
+    
     const content = await manager.readFile(fileName);
         return {
             contents: [{
@@ -144,6 +151,40 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
           required: ["query"],
         },
+      },
+      // --- Billing & Usage ---
+      {
+        name: "get_subscription_status",
+        description: "Check the subscription status of a user (Pro vs Free).",
+        inputSchema: {
+          type: "object",
+          properties: {
+             email: { type: "string", description: "User email to check." }
+          },
+          required: ["email"]
+        }
+      },
+      {
+        name: "get_usage_stats",
+        description: "Get API usage statistics for a user.",
+        inputSchema: {
+          type: "object",
+          properties: {
+             email: { type: "string", description: "User email to check." }
+          },
+          required: ["email"]
+        }
+      },
+      {
+        name: "search_docs",
+        description: "Search the Axis documentation.",
+        inputSchema: {
+          type: "object",
+          properties: {
+             query: { type: "string", description: "Search query." }
+          },
+          required: ["query"]
+        }
       },
       // --- Decision & Orchestration ---
       {
@@ -298,6 +339,36 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
              isError: true
          }
      }
+  }
+
+  if (name === "get_subscription_status") {
+      const email = String(args?.email);
+      const result = await nerveCenter.getSubscriptionStatus(email);
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+
+  if (name === "get_usage_stats") {
+      const email = String(args?.email);
+      const result = await nerveCenter.getUsageStats(email);
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+
+  if (name === "search_docs") {
+      const query = String(args?.query);
+      // For now, use the same searchContext method, or a specialized one if we added it.
+      // ContextManager.searchContext uses an API, which might not be running.
+      // But we can implement a simple fuzzy match here or rely on the API.
+      // Since we want "detailed", let's assume the API handles it or fallback.
+      // Re-using searchContext for now as it's the RAG interface.
+      try {
+        const formatted = await manager.searchContext(query);
+        return { content: [{ type: "text", text: formatted }] };
+      } catch (err) {
+         return {
+             content: [{ type: "text", text: `Search Error: ${err}` }],
+             isError: true
+         }
+      }
   }
 
     if (name === "propose_file_access") {

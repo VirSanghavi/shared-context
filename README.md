@@ -99,6 +99,9 @@ The server exposes these orchestration tools to agents:
 - `force_unlock`
 - `finalize_session`
 - `get_project_soul`
+- `get_subscription_status`
+- `get_usage_stats`
+- `search_docs`
 
 ### Agent Integration Examples
 

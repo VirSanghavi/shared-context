@@ -29,7 +29,10 @@ export class ContextManager {
     async listFiles() {
         try {
             const files = await fs.readdir(INSTRUCTIONS_DIR);
-            return files
+            // also allow reading from a "docs" folder if it exists
+            const docFiles = await this.listDocs();
+            
+            const instructionFiles = files
                 .filter(f => f.endsWith('.md'))
                 .map(f => ({
                     uri: `context://local/${f}`,
@@ -37,13 +40,44 @@ export class ContextManager {
                     mimeType: "text/markdown",
                     description: `Shared context file: ${f}`
                 }));
+                
+            return [...instructionFiles, ...docFiles];
         } catch (error) {
             console.error("Error listing resources:", error);
             return [];
         }
     }
 
+    async listDocs() {
+        const docsDir = path.resolve(process.cwd(), "docs");
+        try {
+            await fs.access(docsDir);
+            const files = await fs.readdir(docsDir);
+             return files
+                .filter(f => f.endsWith('.md'))
+                .map(f => ({
+                    uri: `context://docs/${f}`,
+                    name: `Docs: ${f}`,
+                    mimeType: "text/markdown",
+                    description: `Documentation file: ${f}`
+                }));
+        } catch {
+            return [];
+        }
+    }
+
     async readFile(filename: string) {
+        // Check if it's a doc request
+        if (filename.startsWith("docs/")) {
+             const docName = filename.replace("docs/", "");
+             const docPath = path.resolve(process.cwd(), "docs", docName);
+             // Security check
+             if (!docPath.startsWith(path.resolve(process.cwd(), "docs"))) {
+                 throw new Error("Invalid doc path");
+             }
+             return await fs.readFile(docPath, "utf-8");
+        }
+
         const filePath = this.resolveFilePath(filename);
         // Read is safe to run concurrently, but we might want to ensure we don't read while writing
         // For max concurrency, we can let reads happen, but atomic writes are key.
