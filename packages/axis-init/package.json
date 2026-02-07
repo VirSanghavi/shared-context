@@ -1,11 +1,11 @@
 {
     "name": "@virsanghavi/axis-init",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "type": "module",
     "description": "initialize axis context in your project",
     "main": "dist/index.js",
     "bin": {
-        "axis-init": "bin/cli.js"
+        "axis-init": "dist/bin/cli.js"
     },
     "files": [
         "bin",

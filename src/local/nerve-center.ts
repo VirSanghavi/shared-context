@@ -85,11 +85,13 @@ export class NerveCenter {
         const supabaseKey = options.supabaseServiceRoleKey || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
         if (!supabaseUrl || !supabaseKey) {
-            throw new Error("CRITICAL: Supabase URL and Service Role Key are REQUIRED for NerveCenter persistence.");
+            logger.warn("Supabase credentials missing. Running in local-only mode (state will be ephemeral or file-based).");
+            this.supabase = undefined;
+            this.useSupabase = false;
+        } else {
+            this.supabase = createClient(supabaseUrl, supabaseKey);
+            this.useSupabase = true;
         }
-
-        this.supabase = createClient(supabaseUrl, supabaseKey);
-        this.useSupabase = true;
 
         this.state = {
             locks: {},
@@ -100,6 +102,10 @@ export class NerveCenter {
 
     public get projectId(): string | undefined {
         return this._projectId;
+    }
+
+    public get currentProjectName(): string {
+        return this.projectName;
     }
 
     async init() {

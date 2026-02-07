@@ -116,18 +116,21 @@ export class ContextManager {
         });
     }
 
-    async searchContext(query: string) {
+    async searchContext(query: string, projectName: string = "default") {
         if (!this.apiUrl) {
             throw new Error("SHARED_CONTEXT_API_URL not configured.");
         }
 
-        const response = await fetch(`${this.apiUrl}/search`, {
+        // Ensure we hit the correct endpoint version
+        const endpoint = this.apiUrl.endsWith("/v1") ? `${this.apiUrl}/search` : `${this.apiUrl}/v1/search`;
+
+        const response = await fetch(endpoint, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${this.apiSecret || ""}`
             },
-            body: JSON.stringify({ query })
+            body: JSON.stringify({ query, projectName })
         });
 
         if (!response.ok) {
@@ -146,19 +149,21 @@ export class ContextManager {
         throw new Error("No results format recognized.");
     }
 
-    async embedContent(items: { content: string, metadata: any }[]) {
+    async embedContent(items: { content: string, metadata: any }[], projectName: string = "default") {
         if (!this.apiUrl) {
             console.warn("Skipping RAG embedding: SHARED_CONTEXT_API_URL not configured.");
             return;
         }
 
-        const response = await fetch(`${this.apiUrl}/embed`, {
+        const endpoint = this.apiUrl.endsWith("/v1") ? `${this.apiUrl}/embed` : `${this.apiUrl}/v1/embed`;
+
+        const response = await fetch(endpoint, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${this.apiSecret || ""}`
             },
-            body: JSON.stringify({ items })
+            body: JSON.stringify({ items, projectName })
         });
 
         if (!response.ok) {

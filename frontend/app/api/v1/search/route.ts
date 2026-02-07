@@ -1,0 +1,92 @@
+
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionFromRequest } from "@/lib/auth";
+import { createClient } from "@supabase/supabase-js";
+import OpenAI from "openai";
+import { logUsage } from "@/lib/usage";
+
+// Force dynamic to ensure we don't cache auth
+export const dynamic = 'force-dynamic';
+
+export async function POST(req: NextRequest) {
+    const session = await getSessionFromRequest(req);
+    if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { query, projectName } = await req.json();
+
+    if (!query) {
+        return NextResponse.json({ error: "Query is required" }, { status: 400 });
+    }
+
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    try {
+        // Resolve Project ID
+        // If the user didn't specify a project name, default to 'default'
+        const effectiveProjectName = projectName || "default";
+
+        const { data: project, error: projectError } = await supabase
+            .from("projects")
+            .select("id")
+            .eq("user_id", session.sub) // session.sub is user_id
+            .eq("name", effectiveProjectName)
+            .single();
+
+        if (projectError || !project) {
+            return NextResponse.json({ error: `Project '${effectiveProjectName}' not found` }, { status: 404 });
+        }
+
+        // Generate Embedding
+        const embeddingResponse = await openai.embeddings.create({
+            model: "text-embedding-3-small",
+            input: query,
+        });
+        const embedding = embeddingResponse.data[0].embedding;
+
+        // Search via RPC
+        const { data: results, error: searchError } = await supabase.rpc('match_embeddings', {
+            query_embedding: embedding,
+            match_threshold: 0.5,
+            match_count: 5,
+            p_project_id: project.id
+        });
+
+        if (searchError) {
+            console.error("Search RPC Error:", searchError);
+            return NextResponse.json({ error: "Search failed" }, { status: 500 });
+        }
+
+        // Format results
+        // match_embeddings returns { content, similarity, metadata }
+        const formatted = results.map((r: any) => ({
+            content: r.content,
+            similarity: r.similarity,
+            metadata: r.metadata
+        }));
+
+        // Log usage
+        await logUsage({
+            userId: session.sub!,
+            apiKeyId: session.role === 'api_key' ? session.keyId : undefined,
+            endpoint: "/api/v1/search",
+            method: "POST",
+            statusCode: 200,
+            metadata: { query, project: effectiveProjectName, resultCount: results.length }
+        });
+
+        return NextResponse.json({ results: formatted });
+
+    } catch (error: any) {
+        console.error("Link Error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}

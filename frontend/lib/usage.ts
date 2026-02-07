@@ -7,7 +7,8 @@ export async function logUsage({
     method,
     statusCode,
     responseTimeMs,
-    tokensUsed = 0
+    tokensUsed = 0,
+    metadata
 }: {
     userId: string;
     apiKeyId?: string;
@@ -16,6 +17,7 @@ export async function logUsage({
     statusCode: number;
     responseTimeMs?: number;
     tokensUsed?: number;
+    metadata?: Record<string, any>;
 }) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -30,7 +32,8 @@ export async function logUsage({
             method,
             status_code: statusCode,
             response_time_ms: responseTimeMs,
-            tokens_used: tokensUsed
+            tokens_used: tokensUsed,
+            metadata
         });
 
         if (error) {

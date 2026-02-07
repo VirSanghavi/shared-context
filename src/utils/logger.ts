@@ -15,7 +15,7 @@ class Logger {
 
   private log(level: LogLevel, message: string, meta?: Record<string, any>) {
     const timestamp = new Date().toISOString();
-    console.log(JSON.stringify({
+    console.error(JSON.stringify({
       timestamp,
       level,
       message,
@@ -28,7 +28,7 @@ class Logger {
   }
 
   info(message: string, meta?: Record<string, any>) {
-     this.log(LogLevel.INFO, message, meta);
+    this.log(LogLevel.INFO, message, meta);
   }
 
   warn(message: string, meta?: Record<string, any>) {
