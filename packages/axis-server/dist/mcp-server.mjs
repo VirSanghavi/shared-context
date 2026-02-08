@@ -13,6 +13,42 @@ import dotenv2 from "dotenv";
 import fs from "fs/promises";
 import path from "path";
 import { Mutex } from "async-mutex";
+
+// ../../src/utils/logger.ts
+var Logger = class {
+  level = "info" /* INFO */;
+  setLevel(level) {
+    this.level = level;
+  }
+  log(level, message, meta) {
+    const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+    console.error(JSON.stringify({
+      timestamp,
+      level,
+      message,
+      ...meta
+    }));
+  }
+  debug(message, meta) {
+    if (this.level === "debug" /* DEBUG */) this.log("debug" /* DEBUG */, message, meta);
+  }
+  info(message, meta) {
+    this.log("info" /* INFO */, message, meta);
+  }
+  warn(message, meta) {
+    this.log("warn" /* WARN */, message, meta);
+  }
+  error(message, error, meta) {
+    this.log("error" /* ERROR */, message, {
+      ...meta,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : void 0
+    });
+  }
+};
+var logger = new Logger();
+
+// ../../src/local/context-manager.ts
 import * as fsSync from "fs";
 function getEffectiveInstructionsDir() {
   const cwd = process.cwd();
@@ -131,45 +167,105 @@ var ContextManager = class {
       throw new Error("SHARED_CONTEXT_API_URL not configured.");
     }
     const endpoint = this.apiUrl.endsWith("/v1") ? `${this.apiUrl}/search` : `${this.apiUrl}/v1/search`;
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${this.apiSecret || ""}`
-      },
-      body: JSON.stringify({ query, projectName })
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`API Error ${response.status}: ${text}`);
+    const maxRetries = 3;
+    const baseDelay = 1e3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15e3);
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${this.apiSecret || ""}`
+          },
+          body: JSON.stringify({ query, projectName }),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+        if (!response.ok) {
+          const text = await response.text();
+          if (response.status >= 400 && response.status < 500) {
+            throw new Error(`API Error ${response.status}: ${text}`);
+          }
+          if (attempt < maxRetries) {
+            const delay = baseDelay * Math.pow(2, attempt - 1);
+            logger.warn(`[searchContext] 5xx error, retrying in ${delay}ms (attempt ${attempt}/${maxRetries})`);
+            await new Promise((r) => setTimeout(r, delay));
+            continue;
+          }
+          throw new Error(`API Error ${response.status}: ${text}`);
+        }
+        const result = await response.json();
+        if (result.results && Array.isArray(result.results)) {
+          return result.results.map(
+            (r) => `[Similarity: ${(r.similarity * 100).toFixed(1)}%] ${r.content}`
+          ).join("\n\n---\n\n") || "No results found.";
+        }
+        throw new Error("No results format recognized.");
+      } catch (e) {
+        clearTimeout(timeout);
+        if (e.message.startsWith("API Error 4")) throw e;
+        if (attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt - 1);
+          logger.warn(`[searchContext] Network/timeout error, retrying in ${delay}ms (attempt ${attempt}/${maxRetries}): ${e.message}`);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+        throw e;
+      }
     }
-    const result = await response.json();
-    if (result.results && Array.isArray(result.results)) {
-      return result.results.map(
-        (r) => `[Similarity: ${(r.similarity * 100).toFixed(1)}%] ${r.content}`
-      ).join("\n\n---\n\n") || "No results found.";
-    }
-    throw new Error("No results format recognized.");
+    throw new Error("searchContext: unexpected end of retry loop");
   }
   async embedContent(items, projectName = "default") {
     if (!this.apiUrl) {
-      console.warn("Skipping RAG embedding: SHARED_CONTEXT_API_URL not configured.");
+      logger.warn("Skipping RAG embedding: SHARED_CONTEXT_API_URL not configured.");
       return;
     }
     const endpoint = this.apiUrl.endsWith("/v1") ? `${this.apiUrl}/embed` : `${this.apiUrl}/v1/embed`;
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${this.apiSecret || ""}`
-      },
-      body: JSON.stringify({ items, projectName })
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`API Error ${response.status}: ${text}`);
+    const maxRetries = 3;
+    const baseDelay = 1e3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15e3);
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${this.apiSecret || ""}`
+          },
+          body: JSON.stringify({ items, projectName }),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+        if (!response.ok) {
+          const text = await response.text();
+          if (response.status >= 400 && response.status < 500) {
+            throw new Error(`API Error ${response.status}: ${text}`);
+          }
+          if (attempt < maxRetries) {
+            const delay = baseDelay * Math.pow(2, attempt - 1);
+            logger.warn(`[embedContent] 5xx error, retrying in ${delay}ms (attempt ${attempt}/${maxRetries})`);
+            await new Promise((r) => setTimeout(r, delay));
+            continue;
+          }
+          throw new Error(`API Error ${response.status}: ${text}`);
+        }
+        return await response.json();
+      } catch (e) {
+        clearTimeout(timeout);
+        if (e.message.startsWith("API Error 4")) throw e;
+        if (attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt - 1);
+          logger.warn(`[embedContent] Network/timeout error, retrying in ${delay}ms (attempt ${attempt}/${maxRetries}): ${e.message}`);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+        logger.warn(`[embedContent] Failed after ${maxRetries} attempts: ${e.message}. Skipping embed.`);
+        return;
+      }
     }
-    return await response.json();
   }
 };
 
@@ -178,44 +274,16 @@ import { Mutex as Mutex2 } from "async-mutex";
 import { createClient } from "@supabase/supabase-js";
 import fs2 from "fs/promises";
 import path2 from "path";
-
-// ../../src/utils/logger.ts
-var Logger = class {
-  level = "info" /* INFO */;
-  setLevel(level) {
-    this.level = level;
-  }
-  log(level, message, meta) {
-    const timestamp = (/* @__PURE__ */ new Date()).toISOString();
-    console.error(JSON.stringify({
-      timestamp,
-      level,
-      message,
-      ...meta
-    }));
-  }
-  debug(message, meta) {
-    if (this.level === "debug" /* DEBUG */) this.log("debug" /* DEBUG */, message, meta);
-  }
-  info(message, meta) {
-    this.log("info" /* INFO */, message, meta);
-  }
-  warn(message, meta) {
-    this.log("warn" /* WARN */, message, meta);
-  }
-  error(message, error, meta) {
-    this.log("error" /* ERROR */, message, {
-      ...meta,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : void 0
-    });
-  }
-};
-var logger = new Logger();
-
-// ../../src/local/nerve-center.ts
 var STATE_FILE = process.env.NERVE_CENTER_STATE_FILE || path2.join(process.cwd(), "history", "nerve-center-state.json");
 var LOCK_TIMEOUT_DEFAULT = 30 * 60 * 1e3;
+var CIRCUIT_FAILURE_THRESHOLD = 5;
+var CIRCUIT_COOLDOWN_MS = 6e4;
+var CircuitOpenError = class extends Error {
+  constructor() {
+    super("Circuit breaker open \u2014 remote API temporarily unavailable, falling back to local");
+    this.name = "CircuitOpenError";
+  }
+};
 var NerveCenter = class {
   mutex;
   state;
@@ -227,6 +295,8 @@ var NerveCenter = class {
   // Renamed backing field
   projectName;
   useSupabase;
+  _circuitFailures = 0;
+  _circuitOpenUntil = 0;
   /**
    * @param contextManager - Instance of ContextManager for legacy operations
    * @param options - Configuration options for state persistence and timeouts
@@ -335,40 +405,88 @@ var NerveCenter = class {
       logger.error("[callCoordination] Remote API not configured - apiUrl is:", this.contextManager.apiUrl);
       throw new Error("Remote API not configured");
     }
+    if (this._circuitFailures >= CIRCUIT_FAILURE_THRESHOLD && Date.now() < this._circuitOpenUntil) {
+      logger.warn(`[callCoordination] Circuit breaker OPEN \u2014 skipping remote call (resets at ${new Date(this._circuitOpenUntil).toISOString()})`);
+      throw new CircuitOpenError();
+    }
+    if (this._circuitFailures >= CIRCUIT_FAILURE_THRESHOLD && Date.now() >= this._circuitOpenUntil) {
+      logger.info("[callCoordination] Circuit breaker half-open \u2014 allowing probe request");
+    }
     const url = this.contextManager.apiUrl.endsWith("/v1") ? `${this.contextManager.apiUrl}/${endpoint}` : `${this.contextManager.apiUrl}/v1/${endpoint}`;
     logger.info(`[callCoordination] Full URL: ${method} ${url}`);
     logger.info(`[callCoordination] Request body: ${body ? JSON.stringify({ ...body, projectName: this.projectName }) : "none"}`);
-    try {
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${this.contextManager.apiSecret || ""}`
-        },
-        body: body ? JSON.stringify({ ...body, projectName: this.projectName }) : void 0
-      });
-      logger.info(`[callCoordination] Response status: ${response.status} ${response.statusText}`);
-      if (!response.ok) {
-        const text = await response.text();
-        logger.error(`[callCoordination] API Error Response (${response.status}): ${text}`);
-        if (response.status === 401) {
-          throw new Error(`Authentication failed (401): ${text}. Check if API key is valid and exists in api_keys table.`);
-        } else if (response.status === 500) {
-          throw new Error(`Server error (500): ${text}. Check Vercel logs for details.`);
-        } else {
-          throw new Error(`API Error (${response.status}): ${text}`);
+    const maxRetries = 3;
+    const baseDelay = 1e3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1e4);
+      try {
+        const response = await fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${this.contextManager.apiSecret || ""}`
+          },
+          body: body ? JSON.stringify({ ...body, projectName: this.projectName }) : void 0,
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+        logger.info(`[callCoordination] Response status: ${response.status} ${response.statusText}`);
+        if (!response.ok) {
+          const text = await response.text();
+          logger.error(`[callCoordination] API Error Response (${response.status}): ${text}`);
+          if (response.status >= 400 && response.status < 500) {
+            if (response.status === 401) {
+              throw new Error(`Authentication failed (401): ${text}. Check if API key is valid and exists in api_keys table.`);
+            }
+            throw new Error(`API Error (${response.status}): ${text}`);
+          }
+          if (attempt < maxRetries) {
+            const delay = baseDelay * Math.pow(2, attempt - 1);
+            logger.warn(`[callCoordination] 5xx error, retrying in ${delay}ms (attempt ${attempt}/${maxRetries})`);
+            await new Promise((r) => setTimeout(r, delay));
+            continue;
+          }
+          this._circuitFailures++;
+          if (this._circuitFailures >= CIRCUIT_FAILURE_THRESHOLD) {
+            this._circuitOpenUntil = Date.now() + CIRCUIT_COOLDOWN_MS;
+            logger.error(`[callCoordination] Circuit breaker OPENED after ${this._circuitFailures} consecutive failures`);
+          }
+          throw new Error(`Server error (${response.status}): ${text}. Check Vercel logs for details.`);
         }
+        if (this._circuitFailures > 0) {
+          logger.info(`[callCoordination] Request succeeded, resetting circuit breaker (was at ${this._circuitFailures} failures)`);
+          this._circuitFailures = 0;
+          this._circuitOpenUntil = 0;
+        }
+        const jsonResult = await response.json();
+        logger.info(`[callCoordination] Success - Response: ${JSON.stringify(jsonResult).substring(0, 200)}...`);
+        return jsonResult;
+      } catch (e) {
+        clearTimeout(timeout);
+        if (e instanceof CircuitOpenError) throw e;
+        if (e.message.includes("Authentication failed") || e.message.includes("API Error (4")) {
+          throw e;
+        }
+        if (attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt - 1);
+          logger.warn(`[callCoordination] Network/timeout error, retrying in ${delay}ms (attempt ${attempt}/${maxRetries}): ${e.message}`);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+        this._circuitFailures++;
+        if (this._circuitFailures >= CIRCUIT_FAILURE_THRESHOLD) {
+          this._circuitOpenUntil = Date.now() + CIRCUIT_COOLDOWN_MS;
+          logger.error(`[callCoordination] Circuit breaker OPENED after ${this._circuitFailures} consecutive failures`);
+        }
+        logger.error(`[callCoordination] Fetch failed after ${maxRetries} attempts: ${e.message}`, e);
+        if (e.message.includes("401")) {
+          throw new Error(`API Authentication Error: ${e.message}. Verify AXIS_API_KEY in MCP config matches a key in the api_keys table.`);
+        }
+        throw e;
       }
-      const jsonResult = await response.json();
-      logger.info(`[callCoordination] Success - Response: ${JSON.stringify(jsonResult).substring(0, 200)}...`);
-      return jsonResult;
-    } catch (e) {
-      logger.error(`[callCoordination] Fetch failed: ${e.message}`, e);
-      if (e.message.includes("Authentication failed") || e.message.includes("401")) {
-        throw new Error(`API Authentication Error: ${e.message}. Verify AXIS_API_KEY in MCP config matches a key in the api_keys table.`);
-      }
-      throw e;
     }
+    throw new Error("callCoordination: unexpected end of retry loop");
   }
   jobFromRecord(record) {
     return {
@@ -479,6 +597,7 @@ var NerveCenter = class {
           p_text: text
         });
       } catch (e) {
+        logger.warn("Notepad RPC append failed", e);
       }
     }
     if (this.contextManager.apiUrl) {
@@ -955,7 +1074,7 @@ var RagEngine = class {
   }
   async indexContent(filePath, content) {
     if (!this.projectId) {
-      console.error("RAG: Project ID missing.");
+      logger.error("RAG: Project ID missing.");
       return false;
     }
     try {
@@ -973,13 +1092,13 @@ var RagEngine = class {
         metadata: { filePath }
       });
       if (error) {
-        console.error("RAG Insert Error:", error);
+        logger.error("RAG Insert Error:", error);
         return false;
       }
       logger.info(`Indexed ${filePath}`);
       return true;
     } catch (e) {
-      console.error("RAG Error:", e);
+      logger.error("RAG Error:", e);
       return false;
     }
   }
@@ -998,12 +1117,12 @@ var RagEngine = class {
         p_project_id: this.projectId
       });
       if (error || !data) {
-        console.error("RAG Search DB Error:", error);
+        logger.error("RAG Search DB Error:", error);
         return [];
       }
       return data.map((d) => d.content);
     } catch (e) {
-      console.error("RAG Search Fail:", e);
+      logger.error("RAG Search Fail:", e);
       return [];
     }
   }
@@ -1037,7 +1156,7 @@ if (process.env.SHARED_CONTEXT_API_URL || process.env.AXIS_API_KEY) {
   }
   if (!envLoaded) {
     logger.warn("No configuration found from MCP client (mcp.json) or .env.local");
-    logger.warn("MCP server will use default API URL: https://aicontext.vercel.app/api/v1");
+    logger.warn("MCP server will use default API URL: https://useaxis.dev/api/v1");
   }
 }
 logger.info("=== Axis MCP Server Starting ===");
@@ -1049,7 +1168,7 @@ logger.info("Environment check:", {
   hasSUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
   PROJECT_NAME: process.env.PROJECT_NAME || "default"
 });
-var apiUrl = process.env.SHARED_CONTEXT_API_URL || process.env.AXIS_API_URL || "https://aicontext.vercel.app/api/v1";
+var apiUrl = process.env.SHARED_CONTEXT_API_URL || process.env.AXIS_API_URL || "https://useaxis.dev/api/v1";
 var apiSecret = process.env.AXIS_API_KEY || process.env.SHARED_CONTEXT_API_SECRET || process.env.AXIS_API_SECRET;
 var useRemoteApiOnly = !!process.env.SHARED_CONTEXT_API_URL || !!process.env.AXIS_API_KEY;
 if (useRemoteApiOnly) {
