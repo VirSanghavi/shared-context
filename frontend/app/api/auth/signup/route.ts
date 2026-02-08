@@ -37,9 +37,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Email and password required" }, { status: 400 });
         }
 
+        // Determine the app's base URL for the email confirmation redirect
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL
+            || process.env.NEXT_PUBLIC_SITE_URL
+            || (request.headers.get('origin') ?? request.headers.get('referer')?.replace(/\/signup.*$/, ''))
+            || 'https://useaxis.dev';
+
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
+            options: {
+                emailRedirectTo: `${appUrl}/auth/callback`,
+            },
         });
 
         if (error) {

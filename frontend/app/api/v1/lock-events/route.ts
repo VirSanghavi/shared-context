@@ -65,12 +65,16 @@ export async function GET(req: NextRequest) {
             if (row.event_type === "GRANTED") daily[row.day].granted += Number(row.event_count);
         }
 
-        // Fill in missing days
+        // Fill in missing days — use UTC consistently (Supabase stores in UTC)
+        const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        const now = new Date();
+        const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         const dailyData = [];
         for (let i = days - 1; i >= 0; i--) {
-            const d = new Date(Date.now() - i * 86400000);
+            const d = new Date(todayUTC);
+            d.setUTCDate(d.getUTCDate() - i);
             const key = d.toISOString().split("T")[0];
-            const label = d.toLocaleDateString("en-US", { weekday: "short" }).toLowerCase();
+            const label = dayNames[d.getUTCDay()];
             dailyData.push({
                 day: label,
                 date: key,

@@ -55,15 +55,18 @@ export async function GET(req: NextRequest) {
         }
 
         // Fill in missing days with 0
-        const today = new Date();
+        // Use UTC methods consistently — Supabase stores dates in UTC,
+        // so local timezone offsets would shift days (yesterday shows as today, etc.)
+        const now = new Date();
+        const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
         const last7Days = [];
 
         for (let i = 6; i >= 0; i--) {
-            const date = new Date(today);
-            date.setDate(date.getDate() - i);
+            const date = new Date(todayUTC);
+            date.setUTCDate(date.getUTCDate() - i);
             const dateStr = date.toISOString().split('T')[0];
-            const dayName = days[date.getDay()];
+            const dayName = days[date.getUTCDay()];
 
             const found = (data as Array<{ day: string; request_count: number; total_tokens: number }>)?.find((d) => d.day === dateStr);
             last7Days.push({
