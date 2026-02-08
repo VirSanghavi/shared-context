@@ -91,6 +91,25 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.dock-item-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.dock-active-indicator {
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 2px;
+    border-radius: 1px;
+    background-color: rgba(255, 255, 255, 0.85);
+    pointer-events: none;
+}
+
 /* Fix for lag/jitter: ensure mouse tracking doesn't trigger layout shifts */
 .dock-panel * {
     will-change: transform, width, height;

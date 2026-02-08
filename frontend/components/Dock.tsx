@@ -14,6 +14,7 @@ interface DockItemProps {
     distance: number;
     magnification: number;
     baseItemSize: number;
+    isActive?: boolean;
 }
 
 function DockItem({
@@ -24,7 +25,8 @@ function DockItem({
     spring,
     distance,
     magnification,
-    baseItemSize
+    baseItemSize,
+    isActive
 }: DockItemProps) {
     const ref = useRef<HTMLDivElement>(null);
     const isHovered = useMotionValue(0);
@@ -67,29 +69,38 @@ function DockItem({
     const size = useSpring(targetSize, spring);
 
     return (
-        <motion.div
-            ref={ref}
-            style={{
-                width: size,
-                height: size
-            }}
-            onHoverStart={() => isHovered.set(1)}
-            onHoverEnd={() => isHovered.set(0)}
-            onFocus={() => isHovered.set(1)}
-            onBlur={() => isHovered.set(0)}
-            onClick={onClick}
-            className={`dock-item ${className}`}
-            tabIndex={0}
-            role="button"
-            aria-haspopup="true"
-        >
-            {Children.map(children, child => {
-                if (typeof child === 'object' && child !== null) {
-                    return cloneElement(child as ReactElement<{ isHovered: MotionValue<number> }>, { isHovered });
-                }
-                return child;
-            })}
-        </motion.div>
+        <div className="dock-item-wrapper">
+            <motion.div
+                ref={ref}
+                style={{
+                    width: size,
+                    height: size
+                }}
+                onHoverStart={() => isHovered.set(1)}
+                onHoverEnd={() => isHovered.set(0)}
+                onFocus={() => isHovered.set(1)}
+                onBlur={() => isHovered.set(0)}
+                onClick={onClick}
+                className={`dock-item ${className}`}
+                tabIndex={0}
+                role="button"
+                aria-haspopup="true"
+            >
+                {Children.map(children, child => {
+                    if (typeof child === 'object' && child !== null) {
+                        return cloneElement(child as ReactElement<{ isHovered: MotionValue<number> }>, { isHovered });
+                    }
+                    return child;
+                })}
+            </motion.div>
+            {isActive && (
+                <motion.div
+                    layoutId="dock-active-indicator"
+                    className="dock-active-indicator"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+            )}
+        </div>
     );
 }
 
@@ -132,6 +143,7 @@ export interface DockItemConfig {
     label: string;
     onClick: () => void;
     className?: string;
+    isActive?: boolean;
 }
 
 export default function Dock({
@@ -184,6 +196,7 @@ export default function Dock({
                         distance={isMobile ? 0 : distance}
                         magnification={effectiveMagnification}
                         baseItemSize={isMobile ? baseItemSize - 4 : baseItemSize}
+                        isActive={item.isActive}
                     >
                         <DockIcon>{item.icon}</DockIcon>
                         {!isMobile && <DockLabel>{item.label}</DockLabel>}

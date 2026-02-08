@@ -47,27 +47,32 @@ export default function Navbar() {
             {
                 icon: <img src="/alogo.jpg" alt="Axis" className="w-full h-full object-cover rounded-full" />,
                 label: "axis",
-                onClick: () => router.push("/")
+                onClick: () => router.push("/"),
+                isActive: pathname === '/'
             },
             {
                 icon: <Home size={20} />,
                 label: "home",
-                onClick: () => router.push(isAuthenticated === true ? "/dashboard" : "/")
+                onClick: () => router.push(isAuthenticated === true ? "/dashboard" : "/"),
+                isActive: pathname === '/dashboard'
             },
             {
                 icon: isAuthenticated === false ? <LogIn size={20} /> : <Info size={20} />,
                 label: isAuthenticated === false ? "sign in" : "about",
-                onClick: () => router.push(isAuthenticated === false ? "/login" : "/about")
+                onClick: () => router.push(isAuthenticated === false ? "/login" : "/about"),
+                isActive: pathname === '/about' || pathname === '/login'
             },
             {
                 icon: <MessageCircle size={20} />,
                 label: "thoughts?",
-                onClick: () => router.push("/feedback")
+                onClick: () => router.push("/feedback"),
+                isActive: pathname === '/feedback'
             },
             {
                 icon: <BookOpen size={20} />,
                 label: "docs",
-                onClick: () => router.push("/docs")
+                onClick: () => router.push("/docs"),
+                isActive: pathname === '/docs'
             },
             {
                 icon: <Github size={20} />,
@@ -84,7 +89,7 @@ export default function Navbar() {
             });
         }
         return items;
-    }, [isAuthenticated, router, handleLogout]);
+    }, [isAuthenticated, router, handleLogout, pathname]);
 
     return (
         <header className="z-50 pointer-events-none">
