@@ -828,13 +828,69 @@ export class NerveCenter {
     // --- Decision & Orchestration ---
 
     /**
+     * Normalize a lock path to be relative to the project root.
+     * Strips the project root prefix (process.cwd()) so that absolute and relative
+     * paths resolve to the same key.
+     * Examples (assuming cwd = /Users/vir/Projects/MyApp):
+     *   "/Users/vir/Projects/MyApp/src/api/v1/route.ts" => "src/api/v1/route.ts"
+     *   "src/api/v1/route.ts"                            => "src/api/v1/route.ts"
+     *   "/Users/vir/Projects/MyApp/"                     => ""  (project root)
+     */
+    private static normalizeLockPath(filePath: string): string {
+        let normalized = filePath.replace(/\/+$/, "");
+        const cwd = process.cwd().replace(/\/+$/, "");
+
+        // Strip project root prefix if present
+        if (normalized.startsWith(cwd + "/")) {
+            normalized = normalized.slice(cwd.length + 1);
+        } else if (normalized === cwd) {
+            normalized = "";
+        }
+
+        // Strip leading slashes for consistency
+        normalized = normalized.replace(/^\/+/, "");
+        return normalized;
+    }
+
+    /**
+     * Validate that a lock path is not overly broad.
+     * Directory locks (last segment has no file extension) must have at least
+     * MIN_DIR_LOCK_DEPTH segments from the project root.
+     * This prevents agents from locking huge swaths of the codebase like
+     * "src/" or "frontend/" which would block every other agent.
+     */
+    private static readonly MIN_DIR_LOCK_DEPTH = 2;
+
+    private static validateLockScope(normalizedPath: string): { valid: boolean; reason?: string } {
+        // Reject locking the project root entirely
+        if (!normalizedPath || normalizedPath === "." || normalizedPath === "/") {
+            return { valid: false, reason: "Cannot lock the entire project root. Lock specific files or subdirectories instead." };
+        }
+
+        const segments = normalizedPath.split("/").filter(Boolean);
+        const lastSegment = segments[segments.length - 1] || "";
+        const hasExtension = lastSegment.includes(".");
+
+        // If it looks like a directory (no file extension), enforce minimum depth
+        if (!hasExtension && segments.length < NerveCenter.MIN_DIR_LOCK_DEPTH) {
+            return {
+                valid: false,
+                reason: `Directory lock '${normalizedPath}' is too broad (depth ${segments.length}, minimum ${NerveCenter.MIN_DIR_LOCK_DEPTH}). Lock a more specific subdirectory or individual files instead.`
+            };
+        }
+
+        return { valid: true };
+    }
+
+    /**
      * Check if two file paths conflict hierarchically.
+     * Both paths should be normalized (relative to project root) before comparison.
      * A lock on a directory blocks locks on any file within it, and vice versa.
      * Examples:
-     *   pathsConflict("/foo/bar", "/foo/bar/baz.ts") => true  (parent blocks child)
-     *   pathsConflict("/foo/bar/baz.ts", "/foo/bar") => true  (child blocks parent)
-     *   pathsConflict("/foo/bar", "/foo/bar")         => true  (exact match)
-     *   pathsConflict("/foo/bar", "/foo/baz")         => false (siblings)
+     *   pathsConflict("src/api", "src/api/route.ts") => true  (parent blocks child)
+     *   pathsConflict("src/api/route.ts", "src/api") => true  (child blocks parent)
+     *   pathsConflict("src/api", "src/api")           => true  (exact match)
+     *   pathsConflict("src/api", "src/lib")           => false (siblings)
      */
     private static pathsConflict(pathA: string, pathB: string): boolean {
         const a = pathA.replace(/\/+$/, "");
@@ -848,13 +904,16 @@ export class NerveCenter {
     /**
      * Find any existing lock that conflicts hierarchically with the requested path.
      * Skips locks owned by the same agent and stale locks.
+     * All paths are normalized before comparison.
      */
     private findHierarchicalConflict(requestedPath: string, requestingAgent: string, locks: FileLock[]): FileLock | null {
+        const normalizedRequested = NerveCenter.normalizeLockPath(requestedPath);
         for (const lock of locks) {
             if (lock.agentId === requestingAgent) continue;
             const isStale = (Date.now() - lock.timestamp) > this.lockTimeout;
             if (isStale) continue;
-            if (NerveCenter.pathsConflict(requestedPath, lock.filePath)) {
+            const normalizedLock = NerveCenter.normalizeLockPath(lock.filePath);
+            if (NerveCenter.pathsConflict(normalizedRequested, normalizedLock)) {
                 return lock;
             }
         }
@@ -864,6 +923,19 @@ export class NerveCenter {
     async proposeFileAccess(agentId: string, filePath: string, intent: string, userPrompt: string) {
         return await this.mutex.runExclusive(async () => {
             logger.info(`[proposeFileAccess] Starting - agentId: ${agentId}, filePath: ${filePath}`);
+
+            // --- Normalize and validate lock scope ---
+            const normalizedPath = NerveCenter.normalizeLockPath(filePath);
+            logger.info(`[proposeFileAccess] Normalized path: '${normalizedPath}' (from '${filePath}')`);
+
+            const scopeCheck = NerveCenter.validateLockScope(normalizedPath);
+            if (!scopeCheck.valid) {
+                logger.warn(`[proposeFileAccess] REJECTED — scope too broad: ${scopeCheck.reason}`);
+                return {
+                    status: "REJECTED",
+                    message: scopeCheck.reason
+                };
+            }
 
             // --- Path 1: Remote API (customer mode) ---
             // Atomicity is handled server-side via try_acquire_lock RPC.

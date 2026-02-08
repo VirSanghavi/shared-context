@@ -73,6 +73,28 @@ export async function POST(req: NextRequest) {
         const projectId = await getOrCreateProjectId(projectName, session.sub!);
 
         if (action === "lock") {
+            // --- Lock scope validation ---
+            // Reject overly broad locks that would block too much of the codebase.
+            const MIN_DIR_LOCK_DEPTH = 2;
+            const normalized = filePath.replace(/\/+$/, "").replace(/^\/+/, "");
+            const segments = normalized.split("/").filter(Boolean);
+            const lastSegment = segments[segments.length - 1] || "";
+            const hasExtension = lastSegment.includes(".");
+
+            if (!normalized || normalized === "." || normalized === "/") {
+                return NextResponse.json({
+                    status: "REJECTED",
+                    message: "Cannot lock the entire project root. Lock specific files or subdirectories instead.",
+                }, { status: 400 });
+            }
+
+            if (!hasExtension && segments.length < MIN_DIR_LOCK_DEPTH) {
+                return NextResponse.json({
+                    status: "REJECTED",
+                    message: `Directory lock '${normalized}' is too broad (depth ${segments.length}, minimum ${MIN_DIR_LOCK_DEPTH}). Lock a more specific subdirectory or individual files instead.`,
+                }, { status: 400 });
+            }
+
             // --- Hierarchical conflict check ---
             // Before acquiring the exact-path lock, check if any existing lock
             // overlaps hierarchically (parent locks child, child locks parent).
