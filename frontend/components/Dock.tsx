@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence, MotionValue, SpringOptions } from 'framer-motion';
-import { Children, cloneElement, useEffect, useRef, useState, ReactElement } from 'react';
+import { Children, cloneElement, useEffect, useLayoutEffect, useRef, useState, ReactElement } from 'react';
 
 import './Dock.css';
 
@@ -75,6 +75,7 @@ function DockItem({
             onBlur={() => isHovered.set(0)}
             onClick={onClick}
             className={`dock-item ${className}`}
+            data-dock-item
             tabIndex={0}
             role="button"
             aria-haspopup="true"
@@ -151,7 +152,7 @@ export default function Dock({
     const mouseX = useMotionValue(Infinity);
     const [isMobile, setIsMobile] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
-    const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const leaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const activeIndex = items.findIndex(i => i.isActive);
 
@@ -160,30 +161,33 @@ export default function Dock({
     const indicatorX = useSpring(indicatorTarget, { stiffness: 500, damping: 30, mass: 0.5 });
     const indicatorOpacity = useMotionValue(activeIndex >= 0 ? 1 : 0);
 
-    // Get the center-x of item[i] relative to panel left
+    // Get the center-x of item[i] relative to panel left (only dock items, exclude indicator)
     const getItemCenterInPanel = (index: number): number | null => {
         const panel = panelRef.current;
-        const items = panel?.children;
-        if (!panel || !items || !items[index]) return null;
+        if (!panel) return null;
+        const dockItems = panel.querySelectorAll('[data-dock-item]');
+        const itemEl = dockItems[index] as HTMLElement | undefined;
+        if (!itemEl) return null;
         const panelRect = panel.getBoundingClientRect();
-        const itemEl = items[index] as HTMLElement;
         const itemRect = itemEl.getBoundingClientRect();
         return itemRect.left + itemRect.width / 2 - panelRect.left;
     };
 
     // Set indicator to active item on mount and when active changes
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (activeIndex < 0) {
             indicatorOpacity.set(0);
             return;
         }
         indicatorOpacity.set(1);
-        // Wait for layout to settle
-        const raf = requestAnimationFrame(() => {
+        const updatePos = () => {
             const x = getItemCenterInPanel(activeIndex);
             if (x !== null) indicatorTarget.set(x);
-        });
-        return () => cancelAnimationFrame(raf);
+        };
+        updatePos();
+        // Re-read after a frame in case layout hasn't settled (e.g. magnification)
+        const id = requestAnimationFrame(updatePos);
+        return () => cancelAnimationFrame(id);
     }, [activeIndex, indicatorTarget, indicatorOpacity]);
 
     useEffect(() => {
@@ -200,6 +204,10 @@ export default function Dock({
     // On pointer move: find which item the cursor is closest to and move indicator there
     const handlePointerMove = (e: React.PointerEvent) => {
         if (isMobile) return;
+        if (leaveTimeoutRef.current) {
+            clearTimeout(leaveTimeoutRef.current);
+            leaveTimeoutRef.current = null;
+        }
         mouseX.set(e.pageX);
 
         const panel = panelRef.current;
@@ -211,10 +219,9 @@ export default function Dock({
         let closestDist = Infinity;
         let closestX = indicatorTarget.get();
 
-        const children = panel.children;
-        for (let i = 0; i < items.length; i++) {
-            const el = children[i] as HTMLElement | undefined;
-            if (!el) continue;
+        const dockItems = panel.querySelectorAll('[data-dock-item]');
+        for (let i = 0; i < dockItems.length; i++) {
+            const el = dockItems[i] as HTMLElement;
             const elRect = el.getBoundingClientRect();
             const center = elRect.left + elRect.width / 2 - panelRect.left;
             const dist = Math.abs(cursorXInPanel - center);
@@ -230,13 +237,15 @@ export default function Dock({
 
     const handlePointerLeave = () => {
         mouseX.set(Infinity);
+        if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
 
-        // Spring back to active item
         if (activeIndex >= 0) {
-            requestAnimationFrame(() => {
-                const x = getItemCenterInPanel(activeIndex);
+            const idx = activeIndex;
+            leaveTimeoutRef.current = setTimeout(() => {
+                leaveTimeoutRef.current = null;
+                const x = getItemCenterInPanel(idx);
                 if (x !== null) indicatorTarget.set(x);
-            });
+            }, 120);
         } else {
             indicatorOpacity.set(0);
         }
