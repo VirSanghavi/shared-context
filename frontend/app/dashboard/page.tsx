@@ -610,78 +610,78 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="md:col-span-5 space-y-6">
+            <div className="md:col-span-5 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-5">
 
-              {/* Active Locks */}
-              <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-[9px] font-mono text-neutral-500 uppercase tracking-[0.3em]">active locks</h3>
-                  <span className="text-[9px] font-mono text-neutral-400">{locks.length} file{locks.length !== 1 ? 's' : ''}</span>
-                </div>
-                {locks.length === 0 ? (
-                  <div className="text-[10px] text-neutral-400 font-mono">no files locked — all clear</div>
-                ) : (
-                  <div className="space-y-2.5 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
-                    {locks.map(lock => {
-                      const acquiredAt = new Date(lock.updated_at).getTime();
-                      const expiresAt = acquiredAt + 30 * 60 * 1000;
-                      const now = Date.now();
-                      const remainingMs = Math.max(0, expiresAt - now);
-                      const remainingMin = Math.ceil(remainingMs / 60000);
-                      const shortPath = lock.file_path.split('/').slice(-2).join('/');
-                      return (
-                        <div key={lock.file_path} className="bg-white border border-neutral-200 rounded-lg p-3">
-                          <div className="text-[11px] font-mono font-medium text-neutral-900 truncate mb-1" title={lock.file_path}>{shortPath}</div>
-                          <div className="text-[10px] text-neutral-500 space-y-0.5">
-                            <div>locked by <span className="font-medium text-neutral-700">{lock.agent_id}</span></div>
-                            {lock.intent && <div className="italic text-neutral-400">intent: &quot;{lock.intent}&quot;</div>}
-                            <div className={remainingMin <= 5 ? 'text-amber-600 font-medium' : 'text-neutral-400'}>
-                              expires in {remainingMin}m
+                {/* Active Locks — compact inline when empty, expandable when active */}
+                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[9px] font-mono text-neutral-500 uppercase tracking-[0.3em]">active locks</h3>
+                    <span className={cn("text-[9px] font-mono px-1.5 py-0.5 rounded", locks.length > 0 ? "bg-amber-100 text-amber-600 font-medium" : "text-neutral-400")}>{locks.length} file{locks.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  {locks.length > 0 && (
+                    <div className="space-y-2 mt-3 max-h-[140px] overflow-y-auto pr-1 custom-scrollbar">
+                      {locks.map(lock => {
+                        const acquiredAt = new Date(lock.updated_at).getTime();
+                        const expiresAt = acquiredAt + 30 * 60 * 1000;
+                        const now = Date.now();
+                        const remainingMs = Math.max(0, expiresAt - now);
+                        const remainingMin = Math.ceil(remainingMs / 60000);
+                        const shortPath = lock.file_path.split('/').slice(-2).join('/');
+                        return (
+                          <div key={lock.file_path} className="bg-white border border-neutral-200 rounded p-2.5">
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="text-[10px] font-mono font-medium text-neutral-900 truncate" title={lock.file_path}>{shortPath}</div>
+                              <span className={cn("text-[9px] font-mono whitespace-nowrap", remainingMin <= 5 ? 'text-amber-600 font-medium' : 'text-neutral-400')}>{remainingMin}m</span>
+                            </div>
+                            <div className="text-[9px] text-neutral-500 mt-0.5">
+                              {lock.agent_id}{lock.intent ? ` — ${lock.intent}` : ''}
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
 
-              <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-5">
-                <h3 className="text-[9px] font-mono text-neutral-500 uppercase tracking-[0.3em] mb-3">subscription</h3>
-                <div className="mb-4">
-                  <div className="text-[16px] font-medium tracking-tight mb-0.5">
-                    {subData?.subscription_status === 'pro' ? 'axis pro' : 'axis legacy'}
+                <div className="bg-neutral-100 border border-neutral-200 rounded-lg p-5">
+                  <h3 className="text-[9px] font-mono text-neutral-500 uppercase tracking-[0.3em] mb-3">subscription</h3>
+                  <div className="mb-4">
+                    <div className="text-[16px] font-medium tracking-tight mb-0.5">
+                      {subData?.subscription_status === 'pro' ? 'axis pro' : 'axis legacy'}
+                    </div>
+                    <div className="text-[10px] font-mono text-neutral-400 tracking-wider">
+                      {subData?.subscription_status === 'pro'
+                        ? (subData.stripe?.cancel_at_period_end
+                          ? `expires ${new Date((subData.stripe.current_period_end || 0) * 1000).toLocaleDateString()}`
+                          : 'active')
+                        : 'free tier'}
+                    </div>
                   </div>
-                  <div className="text-[10px] font-mono text-neutral-400 tracking-wider">
-                    {subData?.subscription_status === 'pro'
-                      ? (subData.stripe?.cancel_at_period_end
-                        ? `expires ${new Date((subData.stripe.current_period_end || 0) * 1000).toLocaleDateString()}`
-                        : 'active')
-                      : 'free tier'}
+                  <Link href="/billing" className="block w-full bg-neutral-900 text-white py-2.5 rounded text-[10px] font-bold tracking-[0.2em] uppercase text-center">manage billing</Link>
+                </div>
+
+                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-5">
+                  <h3 className="text-[9px] font-mono text-neutral-500 uppercase tracking-[0.3em] mb-2">support</h3>
+                  <p className="text-[10px] text-neutral-500 leading-relaxed lowercase mb-3">need help with mcp headers or context governance?</p>
+                  <Link href="/support" className="text-[9px] font-mono text-neutral-400 hover:text-neutral-900 uppercase tracking-widest">contact support ↗</Link>
+                </div>
+
+                {/* Quick Integration Guide */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <h3 className="text-[10px] font-mono text-neutral-400 uppercase tracking-[0.3em]">mcp headers guide</h3>
+                  </div>
+                  <div className="bg-neutral-50 border border-dashed border-neutral-300 rounded p-4 font-mono">
+                    <div className="text-[9px] text-neutral-400 mb-2">{"// use your axis-pro key"}</div>
+                    <div className="text-[10px] text-neutral-600 space-y-1">
+                      <div>Authorization: Bearer <span className="text-blue-600">sk_sc_...</span></div>
+                      <div>X-Axis-Context: mirror-sync</div>
+                      <div>X-Axis-Origin: cluster-7</div>
+                    </div>
                   </div>
                 </div>
-                <Link href="/billing" className="block w-full bg-neutral-900 text-white py-2.5 rounded text-[10px] font-bold tracking-[0.2em] uppercase text-center">manage billing</Link>
-              </div>
 
-              <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-5">
-                <h3 className="text-[9px] font-mono text-neutral-500 uppercase tracking-[0.3em] mb-2">support</h3>
-                <p className="text-[10px] text-neutral-500 leading-relaxed lowercase mb-3">need help with mcp headers or context governance?</p>
-                <Link href="/support" className="text-[9px] font-mono text-neutral-400 hover:text-neutral-900 uppercase tracking-widest">contact support ↗</Link>
-              </div>
-
-              {/* Quick Integration Guide - NEW */}
-              <div className="pt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <h3 className="text-[10px] font-mono text-neutral-400 uppercase tracking-[0.3em]">mcp headers guide</h3>
-                </div>
-                <div className="bg-neutral-50 border border-dashed border-neutral-300 rounded p-4 font-mono">
-                  <div className="text-[9px] text-neutral-400 mb-2">{"// use your axis-pro key"}</div>
-                  <div className="text-[10px] text-neutral-600 space-y-1">
-                    <div>Authorization: Bearer <span className="text-blue-600">sk_sc_...</span></div>
-                    <div>X-Axis-Context: mirror-sync</div>
-                    <div>X-Axis-Origin: cluster-7</div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
