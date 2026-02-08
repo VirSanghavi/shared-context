@@ -73,66 +73,25 @@ export async function POST(req: NextRequest) {
         const projectId = await getOrCreateProjectId(projectName, session.sub!);
 
         if (action === "lock") {
-            // --- Lock scope validation ---
-            // Reject overly broad locks that would block too much of the codebase.
-            const MIN_DIR_LOCK_DEPTH = 2;
+            // --- File-only lock validation ---
+            // Agents must lock individual files, not directories.
+            // Directory locks would block all agents from the entire tree,
+            // preventing parallel work on different features.
             const normalized = filePath.replace(/\/+$/, "").replace(/^\/+/, "");
-            const segments = normalized.split("/").filter(Boolean);
-            const lastSegment = segments[segments.length - 1] || "";
-            const hasExtension = lastSegment.includes(".");
 
             if (!normalized || normalized === "." || normalized === "/") {
                 return NextResponse.json({
                     status: "REJECTED",
-                    message: "Cannot lock the entire project root. Lock specific files or subdirectories instead.",
+                    message: "Cannot lock the project root. Lock individual files instead.",
                 }, { status: 400 });
             }
 
-            if (!hasExtension && segments.length < MIN_DIR_LOCK_DEPTH) {
+            const lastSegment = normalized.split("/").filter(Boolean).pop() || "";
+            if (!lastSegment.includes(".")) {
                 return NextResponse.json({
                     status: "REJECTED",
-                    message: `Directory lock '${normalized}' is too broad (depth ${segments.length}, minimum ${MIN_DIR_LOCK_DEPTH}). Lock a more specific subdirectory or individual files instead.`,
+                    message: `'${normalized}' looks like a directory (no file extension). Lock individual files instead — directory locks block all agents from the entire tree, preventing parallel work on different features.`,
                 }, { status: 400 });
-            }
-
-            // --- Hierarchical conflict check ---
-            // Before acquiring the exact-path lock, check if any existing lock
-            // overlaps hierarchically (parent locks child, child locks parent).
-            const { data: existingLocks, error: fetchErr } = await supabase
-                .from("locks")
-                .select("agent_id, file_path, intent, updated_at")
-                .eq("project_id", projectId);
-
-            if (fetchErr) throw fetchErr;
-
-            if (existingLocks && existingLocks.length > 0) {
-                const LOCK_TIMEOUT_MS = 1800 * 1000; // 30 minutes
-                const normalizedReq = filePath.replace(/\/+$/, "");
-
-                for (const lock of existingLocks) {
-                    if (lock.agent_id === agentId) continue;
-                    const age = Date.now() - Date.parse(lock.updated_at);
-                    if (age > LOCK_TIMEOUT_MS) continue;
-
-                    const normalizedLock = lock.file_path.replace(/\/+$/, "");
-                    const isConflict =
-                        normalizedReq === normalizedLock ||
-                        normalizedReq.startsWith(normalizedLock + "/") ||
-                        normalizedLock.startsWith(normalizedReq + "/");
-
-                    if (isConflict) {
-                        return NextResponse.json({
-                            status: "DENIED",
-                            message: `Path '${filePath}' overlaps with '${lock.file_path}' locked by '${lock.agent_id}'`,
-                            current_lock: {
-                                agent_id: lock.agent_id,
-                                file_path: lock.file_path,
-                                intent: lock.intent,
-                                updated_at: lock.updated_at,
-                            },
-                        }, { status: 409 });
-                    }
-                }
             }
 
             // --- Exact-path atomic lock via RPC ---

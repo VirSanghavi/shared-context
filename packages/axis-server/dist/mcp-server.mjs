@@ -879,11 +879,9 @@ ${notepad}`;
   /**
    * Normalize a lock path to be relative to the project root.
    * Strips the project root prefix (process.cwd()) so that absolute and relative
-   * paths resolve to the same key.
-   * Examples (assuming cwd = /Users/vir/Projects/MyApp):
-   *   "/Users/vir/Projects/MyApp/src/api/v1/route.ts" => "src/api/v1/route.ts"
-   *   "src/api/v1/route.ts"                            => "src/api/v1/route.ts"
-   *   "/Users/vir/Projects/MyApp/"                     => ""  (project root)
+   * paths resolve to the same key. This ensures that:
+   *   "/Users/vir/Projects/MyApp/src/api/route.ts" and "src/api/route.ts"
+   * are treated as the same lock.
    */
   static normalizeLockPath(filePath) {
     let normalized = filePath.replace(/\/+$/, "");
@@ -897,59 +895,54 @@ ${notepad}`;
     return normalized;
   }
   /**
-   * Validate that a lock path is not overly broad.
-   * Directory locks (last segment has no file extension) must have at least
-   * MIN_DIR_LOCK_DEPTH segments from the project root.
-   * This prevents agents from locking huge swaths of the codebase like
-   * "src/" or "frontend/" which would block every other agent.
+   * Validate that a lock targets an individual file, not a directory.
+   * Agents must lock specific files — directory locks are rejected because
+   * they block all other agents from working on ANY file in that tree,
+   * even for completely unrelated features.
+   *
+   * Detection strategy:
+   * 1. If the path exists on disk, use fs.stat to check (handles extensionless files like Makefile)
+   * 2. If the path doesn't exist, use file extension heuristic
    */
-  static MIN_DIR_LOCK_DEPTH = 2;
-  static validateLockScope(normalizedPath) {
-    if (!normalizedPath || normalizedPath === "." || normalizedPath === "/") {
-      return { valid: false, reason: "Cannot lock the entire project root. Lock specific files or subdirectories instead." };
+  static async validateFileOnly(filePath) {
+    const normalized = _NerveCenter.normalizeLockPath(filePath);
+    if (!normalized || normalized === "." || normalized === "/") {
+      return { valid: false, reason: "Cannot lock the project root. Lock individual files instead." };
     }
-    const segments = normalizedPath.split("/").filter(Boolean);
-    const lastSegment = segments[segments.length - 1] || "";
-    const hasExtension = lastSegment.includes(".");
-    if (!hasExtension && segments.length < _NerveCenter.MIN_DIR_LOCK_DEPTH) {
+    const absolutePath = path2.isAbsolute(filePath) ? filePath : path2.join(process.cwd(), filePath);
+    try {
+      const stat = await fs2.stat(absolutePath);
+      if (stat.isDirectory()) {
+        return {
+          valid: false,
+          reason: `'${normalized}' is a directory. Lock individual files instead \u2014 directory locks block all agents from the entire tree, preventing parallel work on different features.`
+        };
+      }
+      return { valid: true };
+    } catch {
+    }
+    const lastSegment = normalized.split("/").filter(Boolean).pop() || "";
+    if (!lastSegment.includes(".")) {
       return {
         valid: false,
-        reason: `Directory lock '${normalizedPath}' is too broad (depth ${segments.length}, minimum ${_NerveCenter.MIN_DIR_LOCK_DEPTH}). Lock a more specific subdirectory or individual files instead.`
+        reason: `'${normalized}' looks like a directory (no file extension). Lock individual files instead \u2014 directory locks block all agents from the entire tree, preventing parallel work on different features.`
       };
     }
     return { valid: true };
   }
   /**
-   * Check if two file paths conflict hierarchically.
-   * Both paths should be normalized (relative to project root) before comparison.
-   * A lock on a directory blocks locks on any file within it, and vice versa.
-   * Examples:
-   *   pathsConflict("src/api", "src/api/route.ts") => true  (parent blocks child)
-   *   pathsConflict("src/api/route.ts", "src/api") => true  (child blocks parent)
-   *   pathsConflict("src/api", "src/api")           => true  (exact match)
-   *   pathsConflict("src/api", "src/lib")           => false (siblings)
+   * Find an existing lock that conflicts with the requested path (exact match).
+   * Paths are normalized before comparison so absolute and relative paths
+   * targeting the same file are correctly detected as conflicts.
    */
-  static pathsConflict(pathA, pathB) {
-    const a = pathA.replace(/\/+$/, "");
-    const b = pathB.replace(/\/+$/, "");
-    if (a === b) return true;
-    if (b.startsWith(a + "/")) return true;
-    if (a.startsWith(b + "/")) return true;
-    return false;
-  }
-  /**
-   * Find any existing lock that conflicts hierarchically with the requested path.
-   * Skips locks owned by the same agent and stale locks.
-   * All paths are normalized before comparison.
-   */
-  findHierarchicalConflict(requestedPath, requestingAgent, locks) {
+  findExactConflict(requestedPath, requestingAgent, locks) {
     const normalizedRequested = _NerveCenter.normalizeLockPath(requestedPath);
     for (const lock of locks) {
       if (lock.agentId === requestingAgent) continue;
       const isStale = Date.now() - lock.timestamp > this.lockTimeout;
       if (isStale) continue;
       const normalizedLock = _NerveCenter.normalizeLockPath(lock.filePath);
-      if (_NerveCenter.pathsConflict(normalizedRequested, normalizedLock)) {
+      if (normalizedRequested === normalizedLock) {
         return lock;
       }
     }
@@ -960,38 +953,42 @@ ${notepad}`;
       logger.info(`[proposeFileAccess] Starting - agentId: ${agentId}, filePath: ${filePath}`);
       const normalizedPath = _NerveCenter.normalizeLockPath(filePath);
       logger.info(`[proposeFileAccess] Normalized path: '${normalizedPath}' (from '${filePath}')`);
-      const scopeCheck = _NerveCenter.validateLockScope(normalizedPath);
-      if (!scopeCheck.valid) {
-        logger.warn(`[proposeFileAccess] REJECTED \u2014 scope too broad: ${scopeCheck.reason}`);
+      const fileCheck = await _NerveCenter.validateFileOnly(filePath);
+      if (!fileCheck.valid) {
+        logger.warn(`[proposeFileAccess] REJECTED \u2014 not a file: ${fileCheck.reason}`);
         return {
           status: "REJECTED",
-          message: scopeCheck.reason
+          message: fileCheck.reason
         };
       }
       if (this.contextManager.apiUrl) {
         try {
           const result = await this.callCoordination("locks", "POST", {
             action: "lock",
-            filePath,
+            filePath: normalizedPath,
             agentId,
             intent,
             userPrompt
           });
           if (result.status === "DENIED") {
             logger.info(`[proposeFileAccess] DENIED by server: ${result.message}`);
-            this.logLockEvent("BLOCKED", filePath, agentId, result.current_lock?.agent_id, intent);
+            this.logLockEvent("BLOCKED", normalizedPath, agentId, result.current_lock?.agent_id, intent);
             return {
               status: "REQUIRES_ORCHESTRATION",
-              message: result.message || `File '${filePath}' is locked by another agent`,
+              message: result.message || `File '${normalizedPath}' is locked by another agent`,
               currentLock: result.current_lock
             };
           }
+          if (result.status === "REJECTED") {
+            logger.warn(`[proposeFileAccess] REJECTED by server: ${result.message}`);
+            return { status: "REJECTED", message: result.message };
+          }
           logger.info(`[proposeFileAccess] GRANTED by server`);
-          this.logLockEvent("GRANTED", filePath, agentId, void 0, intent);
+          this.logLockEvent("GRANTED", normalizedPath, agentId, void 0, intent);
           await this.appendToNotepad(`
-- [LOCK] ${agentId} locked ${filePath}
+- [LOCK] ${agentId} locked ${normalizedPath}
   Intent: ${intent}`);
-          return { status: "GRANTED", message: `Access granted for ${filePath}` };
+          return { status: "GRANTED", message: `Access granted for ${normalizedPath}` };
         } catch (e) {
           if (e.message && e.message.includes("409")) {
             logger.info(`[proposeFileAccess] Lock conflict (409)`);
@@ -1004,10 +1001,10 @@ ${notepad}`;
               }
             } catch {
             }
-            this.logLockEvent("BLOCKED", filePath, agentId, blockingAgent, intent);
+            this.logLockEvent("BLOCKED", normalizedPath, agentId, blockingAgent, intent);
             return {
               status: "REQUIRES_ORCHESTRATION",
-              message: `File '${filePath}' is locked by another agent`
+              message: `File '${normalizedPath}' is locked by another agent`
             };
           }
           logger.error(`[proposeFileAccess] API lock failed: ${e.message}`, e);
@@ -1016,29 +1013,9 @@ ${notepad}`;
       }
       if (this.useSupabase && this.supabase && this._projectId) {
         try {
-          const { data: existingLocks } = await this.supabase.from("locks").select("agent_id, file_path, intent, updated_at").eq("project_id", this._projectId);
-          if (existingLocks && existingLocks.length > 0) {
-            const asFileLocks = existingLocks.map((row2) => ({
-              agentId: row2.agent_id,
-              filePath: row2.file_path,
-              intent: row2.intent,
-              userPrompt: "",
-              timestamp: row2.updated_at ? Date.parse(row2.updated_at) : Date.now()
-            }));
-            const conflict2 = this.findHierarchicalConflict(filePath, agentId, asFileLocks);
-            if (conflict2) {
-              logger.info(`[proposeFileAccess] Hierarchical conflict: '${filePath}' overlaps with locked '${conflict2.filePath}' (owner: ${conflict2.agentId})`);
-              this.logLockEvent("BLOCKED", filePath, agentId, conflict2.agentId, intent);
-              return {
-                status: "REQUIRES_ORCHESTRATION",
-                message: `Conflict: '${filePath}' overlaps with '${conflict2.filePath}' locked by '${conflict2.agentId}'`,
-                currentLock: conflict2
-              };
-            }
-          }
           const { data, error } = await this.supabase.rpc("try_acquire_lock", {
             p_project_id: this._projectId,
-            p_file_path: filePath,
+            p_file_path: normalizedPath,
             p_agent_id: agentId,
             p_intent: intent,
             p_user_prompt: userPrompt,
@@ -1047,45 +1024,44 @@ ${notepad}`;
           if (error) throw error;
           const row = Array.isArray(data) ? data[0] : data;
           if (row && row.status === "DENIED") {
-            this.logLockEvent("BLOCKED", filePath, agentId, row.owner_id, intent);
+            this.logLockEvent("BLOCKED", normalizedPath, agentId, row.owner_id, intent);
             return {
               status: "REQUIRES_ORCHESTRATION",
-              message: `Conflict: File '${filePath}' is locked by '${row.owner_id}'`,
+              message: `Conflict: File '${normalizedPath}' is locked by '${row.owner_id}'`,
               currentLock: {
                 agentId: row.owner_id,
-                filePath,
+                filePath: normalizedPath,
                 intent: row.intent,
                 timestamp: row.updated_at ? Date.parse(row.updated_at) : Date.now()
               }
             };
           }
-          this.logLockEvent("GRANTED", filePath, agentId, void 0, intent);
+          this.logLockEvent("GRANTED", normalizedPath, agentId, void 0, intent);
           await this.appendToNotepad(`
-- [LOCK] ${agentId} locked ${filePath}
+- [LOCK] ${agentId} locked ${normalizedPath}
   Intent: ${intent}`);
-          return { status: "GRANTED", message: `Access granted for ${filePath}` };
+          return { status: "GRANTED", message: `Access granted for ${normalizedPath}` };
         } catch (e) {
           logger.warn("[NerveCenter] Lock RPC failed. Falling back to local.", e);
         }
       }
       const allLocks = Object.values(this.state.locks);
-      const conflict = this.findHierarchicalConflict(filePath, agentId, allLocks);
+      const conflict = this.findExactConflict(filePath, agentId, allLocks);
       if (conflict) {
-        logger.info(`[proposeFileAccess] Hierarchical conflict (local): '${filePath}' overlaps with locked '${conflict.filePath}' (owner: ${conflict.agentId})`);
-        this.logLockEvent("BLOCKED", filePath, agentId, conflict.agentId, intent);
+        this.logLockEvent("BLOCKED", normalizedPath, agentId, conflict.agentId, intent);
         return {
           status: "REQUIRES_ORCHESTRATION",
-          message: `Conflict: '${filePath}' overlaps with '${conflict.filePath}' locked by '${conflict.agentId}'`,
+          message: `Conflict: File '${normalizedPath}' is locked by '${conflict.agentId}'`,
           currentLock: conflict
         };
       }
-      this.state.locks[filePath] = { agentId, filePath, intent, userPrompt, timestamp: Date.now() };
+      this.state.locks[normalizedPath] = { agentId, filePath: normalizedPath, intent, userPrompt, timestamp: Date.now() };
       await this.saveState();
-      this.logLockEvent("GRANTED", filePath, agentId, void 0, intent);
+      this.logLockEvent("GRANTED", normalizedPath, agentId, void 0, intent);
       await this.appendToNotepad(`
-- [LOCK] ${agentId} locked ${filePath}
+- [LOCK] ${agentId} locked ${normalizedPath}
   Intent: ${intent}`);
-      return { status: "GRANTED", message: `Access granted for ${filePath}` };
+      return { status: "GRANTED", message: `Access granted for ${normalizedPath}` };
     });
   }
   async updateSharedContext(text, agentId) {
@@ -2069,7 +2045,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     // --- Decision & Orchestration ---
     {
       name: "propose_file_access",
-      description: "**CRITICAL: REQUEST FILE LOCK** \u2014 call this before EVERY file edit, no exceptions.\n- Checks if another agent currently holds a lock.\n- Returns `GRANTED` if safe to proceed, `REQUIRES_ORCHESTRATION` if someone else is editing, or `REJECTED` if the lock scope is too broad.\n- **Hierarchical matching**: Locking a directory also blocks locks on files within it, and vice versa. E.g. locking `src/api/` blocks `src/api/auth/login.ts`.\n- **Scope guard**: Overly broad directory locks are rejected. You cannot lock top-level directories like `src/` or `frontend/` \u2014 lock specific subdirectories (e.g. `src/api/auth/`) or individual files instead.\n- Paths are normalized relative to the project root, so absolute and relative paths are treated equivalently.\n- Usage: Provide your `agentId` (e.g., 'cursor-agent'), `filePath` (absolute or relative), and `intent` (descriptive \u2014 e.g. 'Refactor auth to use JWT', NOT 'editing file').\n- Locks expire after 30 minutes. Use `force_unlock` only as a last resort for crashed agents.\n- **IMPORTANT**: Every lock you acquire MUST be released. Call `complete_job` when done with each task, and `finalize_session` before ending your session. Dangling locks block all other agents.",
+      description: "**CRITICAL: REQUEST FILE LOCK** \u2014 call this before EVERY file edit, no exceptions.\n- Checks if another agent currently holds a lock on the same file.\n- Returns `GRANTED` if safe to proceed, `REQUIRES_ORCHESTRATION` if another agent has the file locked, or `REJECTED` if you tried to lock a directory.\n- **File-only locks**: You MUST lock individual files, not directories. Directory locks are rejected because they block all agents from the entire tree, preventing parallel work on different features. Lock each file you edit separately.\n- Paths are normalized relative to the project root, so absolute and relative paths are treated equivalently.\n- Usage: Provide your `agentId` (e.g., 'cursor-agent'), `filePath` (absolute or relative to a specific file), and `intent` (descriptive \u2014 e.g. 'Refactor auth to use JWT', NOT 'editing file').\n- Locks expire after 30 minutes. Use `force_unlock` only as a last resort for crashed agents.\n- **IMPORTANT**: Every lock you acquire MUST be released. Call `complete_job` when done with each task, and `finalize_session` before ending your session. Dangling locks block all other agents.",
       inputSchema: {
         type: "object",
         properties: {
