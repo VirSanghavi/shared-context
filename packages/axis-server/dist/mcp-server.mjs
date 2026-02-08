@@ -47,7 +47,9 @@ function getEffectiveInstructionsDir() {
 var ContextManager = class {
   mutex;
   apiUrl;
+  // Made public so NerveCenter can access it
   apiSecret;
+  // Made public so NerveCenter can access it
   constructor(apiUrl, apiSecret) {
     this.mutex = new Mutex();
     this.apiUrl = apiUrl;
