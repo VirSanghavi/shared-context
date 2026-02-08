@@ -66,6 +66,10 @@
     transition: color 0.2s, transform 0.2s;
 }
 
+.dock-item--active .dock-icon {
+    color: rgba(255, 255, 255, 0.95);
+}
+
 .dock-item:hover .dock-icon {
     color: #fff;
 }
@@ -90,18 +94,6 @@
     letter-spacing: 0.05em;
     text-transform: lowercase;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.dock-active-indicator {
-    position: absolute;
-    bottom: 5px;
-    left: 0;
-    width: 10px;
-    height: 2px;
-    border-radius: 1px;
-    background-color: rgba(255, 255, 255, 0.85);
-    pointer-events: none;
-    transform: translateX(-50%);
 }
 
 /* Desktop only: mouse tracking uses transforms — avoid on mobile for responsiveness */
