@@ -18,6 +18,7 @@ export default function Docs() {
     const tabs = [
         { id: 'quickstart', label: 'quickstart' },
         { id: 'mcp', label: 'mcp config' },
+        { id: 'multi-ide', label: 'multi-ide setup' },
         { id: 'tools', label: 'tools' },
         { id: 'orchestration', label: 'orchestration' },
         { id: 'sessions', label: 'sessions & usage' },
@@ -75,6 +76,7 @@ export default function Docs() {
                         >
                             {activeTab === 'quickstart' && <QuickstartSection />}
                             {activeTab === 'mcp' && <MCPSection />}
+                            {activeTab === 'multi-ide' && <MultiIDESection />}
                             {activeTab === 'tools' && <ToolsSection />}
                             {activeTab === 'orchestration' && <OrchestrationSection />}
                             {activeTab === 'sessions' && <SessionsUsageSection />}
@@ -394,6 +396,166 @@ function MCPSection() {
                         ))}
                     </div>
                 </div>
+            </div>
+        </Section>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Tab: Tools
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Tab: Multi-IDE Setup
+// ---------------------------------------------------------------------------
+
+function MultiIDESection() {
+    return (
+        <Section title="multi-ide setup" subtitle="run cursor, claude code & windsurf together">
+            <p className="text-lg text-neutral-500 leading-relaxed mb-8">
+                axis lets multiple ai coding agents work on the same project at the same time without stepping on each other.
+                here&apos;s how to set it up. it&apos;s the same 3 steps for every ide.
+            </p>
+
+            <Callout type="info">
+                every ide gets the <strong>exact same config</strong>. same api key, same project name, same url. axis handles the rest.
+            </Callout>
+
+            {/* What you need */}
+            <div className="p-8 bg-neutral-50 rounded-2xl border border-neutral-100 my-8">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-4">before you start</h3>
+                <p className="text-[13px] text-neutral-600 mb-4">you need exactly two things:</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-white rounded-xl border border-neutral-200">
+                        <div className="font-bold text-[13px] mb-1">1. an api key</div>
+                        <p className="text-[12px] text-neutral-500">get one from your <Link href="/dashboard" className="underline">dashboard</Link>. it starts with <code>sk_sc_</code>.</p>
+                    </div>
+                    <div className="p-4 bg-white rounded-xl border border-neutral-200">
+                        <div className="font-bold text-[13px] mb-1">2. axis-server installed</div>
+                        <p className="text-[12px] text-neutral-500">run <code>npm install -g @virsanghavi/axis-server</code> once. done.</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* The universal config */}
+            <div className="space-y-6 mb-10">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-2">the config (same for every ide)</h3>
+                <p className="text-[13px] text-neutral-600">
+                    copy this json. paste it into your ide&apos;s mcp settings. replace the two placeholders. that&apos;s it.
+                </p>
+                <CodeBlock lang="json" code={`{
+  "mcpServers": {
+    "axis": {
+      "command": "axis-server",
+      "args": ["/path/to/your/project"],
+      "env": {
+        "AXIS_API_KEY": "sk_sc_YOUR_KEY_HERE",
+        "SHARED_CONTEXT_API_URL": "https://aicontext.vercel.app/api/v1"
+      }
+    }
+  }
+}`} />
+                <p className="text-[12px] text-neutral-400 italic">
+                    replace <code>/path/to/your/project</code> with your actual project folder. replace <code>sk_sc_YOUR_KEY_HERE</code> with your real key. everything else stays exactly as-is.
+                </p>
+            </div>
+
+            {/* Per-IDE instructions */}
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-6">where to paste it in each ide</h3>
+
+            <div className="space-y-4 mb-10">
+                {[
+                    {
+                        ide: 'cursor',
+                        where: 'settings → features → mcp → add new server',
+                        note: 'or edit ~/.cursor/mcp.json directly',
+                    },
+                    {
+                        ide: 'claude code',
+                        where: '~/.claude/claude_desktop_config.json',
+                        note: 'add axis inside the mcpServers object',
+                    },
+                    {
+                        ide: 'windsurf',
+                        where: 'preferences → ai path → mcp configuration',
+                        note: 'same json format',
+                    },
+                    {
+                        ide: 'vs code',
+                        where: '~/.vscode/mcp.json or .vscode/mcp.json in your project',
+                        note: 'requires an mcp-compatible extension',
+                    },
+                ].map(item => (
+                    <div key={item.ide} className="p-5 bg-neutral-50 rounded-xl border border-neutral-100">
+                        <div className="flex items-center gap-3 mb-2">
+                            <span className="bg-neutral-900 text-white px-2.5 py-1 rounded text-[10px] font-bold tracking-widest uppercase">{item.ide}</span>
+                        </div>
+                        <p className="text-[13px] text-neutral-700 font-medium">{item.where}</p>
+                        <p className="text-[12px] text-neutral-400 mt-1">{item.note}</p>
+                    </div>
+                ))}
+            </div>
+
+            {/* How it works */}
+            <div className="p-8 bg-neutral-50 rounded-2xl border border-neutral-100 mb-8">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-6">what happens when you run them together</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="text-center">
+                        <div className="text-3xl mb-3">🔒</div>
+                        <div className="font-bold text-[12px] uppercase tracking-widest mb-2">file locks</div>
+                        <p className="text-[12px] text-neutral-500">if cursor is editing a file, claude code sees it&apos;s locked and works on something else. no merge conflicts.</p>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-3xl mb-3">📋</div>
+                        <div className="font-bold text-[12px] uppercase tracking-widest mb-2">job board</div>
+                        <p className="text-[12px] text-neutral-500">post tasks and agents auto-claim them. two agents can&apos;t grab the same task — it&apos;s atomic.</p>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-3xl mb-3">📝</div>
+                        <div className="font-bold text-[12px] uppercase tracking-widest mb-2">shared notepad</div>
+                        <p className="text-[12px] text-neutral-500">every agent writes to the same live notepad. they can see what the other agents are doing in real time.</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Example: two agents working together */}
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-4">example: cursor + claude code on the same project</h3>
+            <div className="space-y-3 mb-8">
+                {[
+                    { agent: 'cursor', action: 'posts a job: "refactor auth module"', color: 'bg-blue-100 text-blue-800' },
+                    { agent: 'claude code', action: 'calls claim_next_job → gets assigned "refactor auth module"', color: 'bg-purple-100 text-purple-800' },
+                    { agent: 'claude code', action: 'calls propose_file_access on auth.ts → GRANTED', color: 'bg-purple-100 text-purple-800' },
+                    { agent: 'cursor', action: 'tries to edit auth.ts → sees it\'s locked by claude code → works on tests instead', color: 'bg-blue-100 text-blue-800' },
+                    { agent: 'claude code', action: 'finishes, calls complete_job → lock released', color: 'bg-purple-100 text-purple-800' },
+                    { agent: 'cursor', action: 'sees the job is done in the shared notepad → moves on', color: 'bg-blue-100 text-blue-800' },
+                ].map((step, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                        <span className="text-[11px] font-mono text-neutral-300 mt-1 w-4 text-right shrink-0">{i + 1}.</span>
+                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded shrink-0 ${step.color}`}>{step.agent}</span>
+                        <span className="text-[13px] text-neutral-600">{step.action}</span>
+                    </div>
+                ))}
+            </div>
+
+            <Callout type="info">
+                you don&apos;t need to configure anything special for multi-agent mode. if two ides have the same api key and project name, they&apos;re already coordinating. axis handles locks, jobs, and shared memory automatically.
+            </Callout>
+
+            {/* FAQ */}
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mt-10 mb-4">common questions</h3>
+            <div className="space-y-4">
+                {[
+                    { q: 'do all ides need the same api key?', a: 'yes. same key = same user = same project access. axis knows they\'re on the same team because they share a key.' },
+                    { q: 'do i need to set PROJECT_NAME?', a: 'only if you have multiple projects. if you leave it out, axis auto-detects from .axis/axis.json or defaults to "default".' },
+                    { q: 'what if an agent crashes while holding a lock?', a: 'locks expire after 30 minutes. another agent can also call force_unlock to clear it immediately.' },
+                    { q: 'can i use different api keys per ide?', a: 'only if they belong to the same user account. different users = different projects = no shared state.' },
+                    { q: 'does github copilot work?', a: 'copilot\'s chat agent does not call mcp tools today. it will work independently but won\'t participate in axis coordination.' },
+                ].map((faq, i) => (
+                    <div key={i} className="p-4 bg-neutral-50 rounded-xl border border-neutral-100">
+                        <p className="font-bold text-[13px] text-neutral-900 mb-1">{faq.q}</p>
+                        <p className="text-[12px] text-neutral-500">{faq.a}</p>
+                    </div>
+                ))}
             </div>
         </Section>
     );
