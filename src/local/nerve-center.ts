@@ -862,6 +862,20 @@ export class NerveCenter {
                     // If the API returned 409 (conflict), parse the DENIED response
                     if (e.message && e.message.includes("409")) {
                         logger.info(`[proposeFileAccess] Lock conflict (409)`);
+
+                        // Extract the blocking agent from the 409 JSON body embedded in the error
+                        let blockingAgent: string | undefined;
+                        try {
+                            const jsonMatch = e.message.match(/\{.*\}/s);
+                            if (jsonMatch) {
+                                const parsed = JSON.parse(jsonMatch[0]);
+                                blockingAgent = parsed.current_lock?.agent_id;
+                            }
+                        } catch { /* best-effort extraction */ }
+
+                        // Log the BLOCKED event so it shows in the dashboard conflicts count
+                        this.logLockEvent("BLOCKED", filePath, agentId, blockingAgent, intent);
+
                         return {
                             status: "REQUIRES_ORCHESTRATION",
                             message: `File '${filePath}' is locked by another agent`,
