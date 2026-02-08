@@ -43,8 +43,8 @@ function getEffectiveInstructionsDir() {
 
 export class ContextManager {
     private mutex: Mutex;
-    private apiUrl?: string;
-    private apiSecret?: string;
+    public apiUrl?: string;  // Made public so NerveCenter can access it
+    public apiSecret?: string;  // Made public so NerveCenter can access it
 
     constructor(apiUrl?: string, apiSecret?: string) {
         this.mutex = new Mutex();
