@@ -75,7 +75,7 @@ export default function SignupPage() {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
-                                        className="w-full bg-white/[0.02] border border-white/5 rounded px-4 py-3 outline-none focus:border-white/10 transition-colors text-sm lowercase pr-10"
+                                        className="w-full bg-white/[0.02] border border-white/5 rounded px-4 py-3 outline-none focus:border-white/10 transition-colors text-sm normal-case pr-10"
                                         placeholder="••••••••"
                                     />
                                     <button

@@ -10,6 +10,7 @@ import { Eye, EyeOff } from "lucide-react";
 function LoginForm() {
   const search = useSearchParams();
   const next = search.get("next") || "/dashboard";
+  const message = search.get("message");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -70,6 +71,11 @@ function LoginForm() {
       </div>
 
       <div className="bg-[#0D0D0D]/40 backdrop-blur-xl border border-white/5 p-8 rounded">
+        {message && (
+          <div className="mb-6 text-emerald-400 text-[12px] font-mono bg-emerald-500/5 border border-emerald-500/10 p-3 rounded">
+            {message}
+          </div>
+        )}
         <form onSubmit={submit} className="space-y-6">
           <div>
             <label className="block text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] mb-2 lowercase opacity-40">email address</label>
@@ -91,7 +97,7 @@ function LoginForm() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/[0.02] border border-white/5 rounded px-4 py-3 outline-none focus:border-white/10 transition-colors text-sm pr-10"
+                className="w-full bg-white/[0.02] border border-white/5 rounded px-4 py-3 outline-none focus:border-white/10 transition-colors text-sm pr-10 normal-case"
                 placeholder="••••••••"
               />
               <button
