@@ -32,7 +32,7 @@ export default function Docs() {
             <div className="bg-avalanche" />
             <Navbar />
 
-            <main className="min-h-screen flex items-center justify-center py-20 px-6 relative z-10">
+            <main className="min-h-screen flex items-center justify-center pt-14 pb-20 px-6 relative z-10">
                 <div className="max-w-5xl w-full mx-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-0 text-neutral-900 overflow-hidden flex flex-col md:flex-row min-h-[700px]">
 
                     {/* Sidebar */}
