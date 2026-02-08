@@ -14,7 +14,6 @@ interface DockItemProps {
     distance: number;
     magnification: number;
     baseItemSize: number;
-    isActive?: boolean;
 }
 
 function DockItem({
@@ -26,13 +25,10 @@ function DockItem({
     distance,
     magnification,
     baseItemSize,
-    isActive
 }: DockItemProps) {
     const ref = useRef<HTMLDivElement>(null);
     const isHovered = useMotionValue(0);
 
-    // To prevent jitter, we calculate distance relative to a STABLE center.
-    // We use a ref to store the initial/stable left position.
     const stableX = useRef<number>(0);
 
     useEffect(() => {
@@ -45,7 +41,6 @@ function DockItem({
 
         updateStableX();
         window.addEventListener('resize', updateStableX);
-        // Also update after a short delay since layout might shift after initial mount
         const timer = setTimeout(updateStableX, 500);
 
         return () => {
@@ -56,7 +51,6 @@ function DockItem({
 
     const mouseDistance = useTransform(mouseX, (val) => {
         if (val === Infinity) return Infinity;
-        // Use the stableX collected in useEffect to avoid getBoundingClientRect() on every frame
         return val - stableX.current;
     });
 
@@ -69,38 +63,29 @@ function DockItem({
     const size = useSpring(targetSize, spring);
 
     return (
-        <div className="dock-item-wrapper">
-            <motion.div
-                ref={ref}
-                style={{
-                    width: size,
-                    height: size
-                }}
-                onHoverStart={() => isHovered.set(1)}
-                onHoverEnd={() => isHovered.set(0)}
-                onFocus={() => isHovered.set(1)}
-                onBlur={() => isHovered.set(0)}
-                onClick={onClick}
-                className={`dock-item ${className}`}
-                tabIndex={0}
-                role="button"
-                aria-haspopup="true"
-            >
-                {Children.map(children, child => {
-                    if (typeof child === 'object' && child !== null) {
-                        return cloneElement(child as ReactElement<{ isHovered: MotionValue<number> }>, { isHovered });
-                    }
-                    return child;
-                })}
-            </motion.div>
-            {isActive && (
-                <motion.div
-                    layoutId="dock-active-indicator"
-                    className="dock-active-indicator"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-            )}
-        </div>
+        <motion.div
+            ref={ref}
+            style={{
+                width: size,
+                height: size
+            }}
+            onHoverStart={() => isHovered.set(1)}
+            onHoverEnd={() => isHovered.set(0)}
+            onFocus={() => isHovered.set(1)}
+            onBlur={() => isHovered.set(0)}
+            onClick={onClick}
+            className={`dock-item ${className}`}
+            tabIndex={0}
+            role="button"
+            aria-haspopup="true"
+        >
+            {Children.map(children, child => {
+                if (typeof child === 'object' && child !== null) {
+                    return cloneElement(child as ReactElement<{ isHovered: MotionValue<number> }>, { isHovered });
+                }
+                return child;
+            })}
+        </motion.div>
     );
 }
 
@@ -165,6 +150,41 @@ export default function Dock({
 }) {
     const mouseX = useMotionValue(Infinity);
     const [isMobile, setIsMobile] = useState(false);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+    const activeIndex = items.findIndex(i => i.isActive);
+
+    // Pure motion value for indicator position — no React state, no re-renders
+    const indicatorTarget = useMotionValue(0);
+    const indicatorX = useSpring(indicatorTarget, { stiffness: 500, damping: 30, mass: 0.5 });
+    const indicatorOpacity = useMotionValue(activeIndex >= 0 ? 1 : 0);
+
+    // Get the center-x of item[i] relative to panel left
+    const getItemCenterInPanel = (index: number): number | null => {
+        const panel = panelRef.current;
+        const items = panel?.children;
+        if (!panel || !items || !items[index]) return null;
+        const panelRect = panel.getBoundingClientRect();
+        const itemEl = items[index] as HTMLElement;
+        const itemRect = itemEl.getBoundingClientRect();
+        return itemRect.left + itemRect.width / 2 - panelRect.left;
+    };
+
+    // Set indicator to active item on mount and when active changes
+    useEffect(() => {
+        if (activeIndex < 0) {
+            indicatorOpacity.set(0);
+            return;
+        }
+        indicatorOpacity.set(1);
+        // Wait for layout to settle
+        const raf = requestAnimationFrame(() => {
+            const x = getItemCenterInPanel(activeIndex);
+            if (x !== null) indicatorTarget.set(x);
+        });
+        return () => cancelAnimationFrame(raf);
+    }, [activeIndex, indicatorTarget, indicatorOpacity]);
 
     useEffect(() => {
         const checkMobile = () => {
@@ -177,10 +197,56 @@ export default function Dock({
 
     const effectiveMagnification = isMobile ? baseItemSize : magnification;
 
+    // On pointer move: find which item the cursor is closest to and move indicator there
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (isMobile) return;
+        mouseX.set(e.pageX);
+
+        const panel = panelRef.current;
+        if (!panel) return;
+        const panelRect = panel.getBoundingClientRect();
+        const cursorXInPanel = e.clientX - panelRect.left;
+
+        // Find the closest item center
+        let closestDist = Infinity;
+        let closestX = indicatorTarget.get();
+
+        const children = panel.children;
+        for (let i = 0; i < items.length; i++) {
+            const el = children[i] as HTMLElement | undefined;
+            if (!el) continue;
+            const elRect = el.getBoundingClientRect();
+            const center = elRect.left + elRect.width / 2 - panelRect.left;
+            const dist = Math.abs(cursorXInPanel - center);
+            if (dist < closestDist) {
+                closestDist = dist;
+                closestX = center;
+            }
+        }
+
+        indicatorTarget.set(closestX);
+        indicatorOpacity.set(1);
+    };
+
+    const handlePointerLeave = () => {
+        mouseX.set(Infinity);
+
+        // Spring back to active item
+        if (activeIndex >= 0) {
+            requestAnimationFrame(() => {
+                const x = getItemCenterInPanel(activeIndex);
+                if (x !== null) indicatorTarget.set(x);
+            });
+        } else {
+            indicatorOpacity.set(0);
+        }
+    };
+
     return (
-        <div className={`dock-outer ${isMobile ? 'dock-mobile' : 'dock-desktop'}`} onPointerLeave={() => mouseX.set(Infinity)}>
+        <div className={`dock-outer ${isMobile ? 'dock-mobile' : 'dock-desktop'}`} onPointerLeave={handlePointerLeave}>
             <motion.div
-                onPointerMove={(e) => !isMobile && mouseX.set(e.pageX)}
+                ref={panelRef}
+                onPointerMove={handlePointerMove}
                 className={`dock-panel ${className}`}
                 style={{ height: isMobile ? panelHeight - 10 : panelHeight }}
                 role="toolbar"
@@ -196,12 +262,17 @@ export default function Dock({
                         distance={isMobile ? 0 : distance}
                         magnification={effectiveMagnification}
                         baseItemSize={isMobile ? baseItemSize - 4 : baseItemSize}
-                        isActive={item.isActive}
                     >
                         <DockIcon>{item.icon}</DockIcon>
                         {!isMobile && <DockLabel>{item.label}</DockLabel>}
                     </DockItem>
                 ))}
+
+                {/* Page indicator */}
+                <motion.div
+                    className="dock-active-indicator"
+                    style={{ left: indicatorX, opacity: indicatorOpacity }}
+                />
             </motion.div>
         </div>
     );
