@@ -152,6 +152,7 @@ export default function Dock({
     const mouseX = useMotionValue(Infinity);
     const [isMobile, setIsMobile] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
+    const leaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const activeIndex = items.findIndex((i) => i.isActive);
     const indicatorTarget = useMotionValue(0);
@@ -202,11 +203,44 @@ export default function Dock({
 
     const handlePointerMove = (e: React.PointerEvent) => {
         if (isMobile) return;
+        if (leaveTimeoutRef.current) {
+            clearTimeout(leaveTimeoutRef.current);
+            leaveTimeoutRef.current = null;
+        }
         mouseX.set(e.pageX);
+
+        const panel = panelRef.current;
+        if (!panel || activeIndex < 0) return;
+        const panelRect = panel.getBoundingClientRect();
+        const borderLeft = parseInt(getComputedStyle(panel).borderLeftWidth, 10) || 0;
+        const cursorXInPanel = e.clientX - panelRect.left - borderLeft;
+
+        let closestDist = Infinity;
+        let closestX = indicatorTarget.get();
+        const dockItems = panel.querySelectorAll('[data-dock-item]');
+        for (let i = 0; i < dockItems.length; i++) {
+            const x = getItemCenterInPanel(i);
+            if (x === null) continue;
+            const dist = Math.abs(cursorXInPanel - x);
+            if (dist < closestDist) {
+                closestDist = dist;
+                closestX = x;
+            }
+        }
+        indicatorTarget.set(closestX);
     };
 
     const handlePointerLeave = () => {
         mouseX.set(Infinity);
+        if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+        if (activeIndex >= 0) {
+            const idx = activeIndex;
+            leaveTimeoutRef.current = setTimeout(() => {
+                leaveTimeoutRef.current = null;
+                const x = getItemCenterInPanel(idx);
+                if (x !== null) indicatorTarget.set(x);
+            }, 120);
+        }
     };
 
     return (
