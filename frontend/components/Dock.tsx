@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence, MotionValue, SpringOptions } from 'framer-motion';
-import { Children, cloneElement, useEffect, useRef, useState, ReactElement } from 'react';
+import { Children, cloneElement, useEffect, useLayoutEffect, useRef, useState, ReactElement } from 'react';
 
 import './Dock.css';
 
@@ -153,6 +153,42 @@ export default function Dock({
     const [isMobile, setIsMobile] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
 
+    const activeIndex = items.findIndex((i) => i.isActive);
+    const indicatorTarget = useMotionValue(0);
+    const indicatorX = useSpring(indicatorTarget, { stiffness: 500, damping: 30, mass: 0.5 });
+    const indicatorOpacity = useMotionValue(0);
+
+    const getItemCenterInPanel = (index: number): number | null => {
+        const panel = panelRef.current;
+        if (!panel) return null;
+        const dockItems = panel.querySelectorAll('[data-dock-item]');
+        const itemEl = dockItems[index] as HTMLElement | undefined;
+        if (!itemEl) return null;
+        const panelRect = panel.getBoundingClientRect();
+        const itemRect = itemEl.getBoundingClientRect();
+        const borderLeft = parseInt(getComputedStyle(panel).borderLeftWidth, 10) || 0;
+        return itemRect.left + itemRect.width / 2 - panelRect.left - borderLeft;
+    };
+
+    useLayoutEffect(() => {
+        if (activeIndex < 0) {
+            indicatorOpacity.set(0);
+            return;
+        }
+        indicatorOpacity.set(1);
+        const updatePos = () => {
+            const x = getItemCenterInPanel(activeIndex);
+            if (x !== null) indicatorTarget.set(x);
+        };
+        updatePos();
+        const id = requestAnimationFrame(updatePos);
+        const id2 = requestAnimationFrame(updatePos);
+        return () => {
+            cancelAnimationFrame(id);
+            cancelAnimationFrame(id2);
+        };
+    }, [activeIndex, indicatorTarget, indicatorOpacity]);
+
     useEffect(() => {
         const checkMobile = () => {
             setIsMobile(window.innerWidth < 768);
@@ -199,8 +235,12 @@ export default function Dock({
                     </DockItem>
                 ))}
 
-                {/* Page indicator — hidden (same as mobile) */}
-                <div className="dock-active-indicator" aria-hidden="true" />
+                {/* Current page indicator — same on desktop and mobile: under active item only */}
+                <motion.div
+                    className="dock-active-indicator"
+                    style={{ left: indicatorX, opacity: indicatorOpacity }}
+                    aria-hidden="true"
+                />
             </motion.div>
         </div>
     );

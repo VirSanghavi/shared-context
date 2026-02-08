@@ -5,10 +5,32 @@ import { Home, Info, MessageCircle, BookOpen, Github, LogOut, LogIn } from "luci
 import Dock, { DockItemConfig } from "./Dock";
 import { useRef, useState, useEffect, useMemo, useCallback } from "react";
 
+const AUTH_STORAGE_KEY = "axis_dock_auth";
+
+function getStoredAuth(): boolean | null {
+    if (typeof window === "undefined") return null;
+    try {
+        const v = sessionStorage.getItem(AUTH_STORAGE_KEY);
+        if (v === "true") return true;
+        if (v === "false") return false;
+    } catch {
+        /* ignore */
+    }
+    return null;
+}
+
+function setStoredAuth(authenticated: boolean) {
+    try {
+        sessionStorage.setItem(AUTH_STORAGE_KEY, String(authenticated));
+    } catch {
+        /* ignore */
+    }
+}
+
 export default function Navbar() {
     const pathname = usePathname();
     const router = useRouter();
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => getStoredAuth());
     const logoutFormRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
@@ -17,12 +39,16 @@ export default function Navbar() {
                 const res = await fetch("/api/auth/session");
                 if (res.ok) {
                     const data = await res.json();
-                    setIsAuthenticated(data.authenticated);
+                    const auth = !!data.authenticated;
+                    setIsAuthenticated(auth);
+                    setStoredAuth(auth);
                 } else {
                     setIsAuthenticated(false);
+                    setStoredAuth(false);
                 }
             } catch {
                 setIsAuthenticated(false);
+                setStoredAuth(false);
             }
         };
         checkAuth();
@@ -38,6 +64,7 @@ export default function Navbar() {
     }, [shouldLogout]);
 
     const handleLogout = useCallback(() => {
+        setStoredAuth(false);
         setShouldLogout(true);
     }, []);
 
