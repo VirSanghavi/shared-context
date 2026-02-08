@@ -2,6 +2,7 @@
 
 import { useMachineMode } from '@/context/MachineModeContext';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import ReactMarkdown from 'react-markdown';
 
@@ -159,7 +160,38 @@ export default function AboutPage() {
                             </div>
                         </div>
 
-                        <div className="pt-6 border-t border-neutral-100 flex justify-between items-center">
+                        <div className="space-y-4 pt-6 border-t border-neutral-100">
+                            <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-900">how it works</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">1. install</div>
+                                    <p className="text-[12px] text-neutral-600 leading-relaxed">install axis-server globally. add your api key and project path to your ide&apos;s mcp config.</p>
+                                </div>
+                                <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">2. connect</div>
+                                    <p className="text-[12px] text-neutral-600 leading-relaxed">open the same project in cursor, claude code, windsurf, or any mcp-compatible tool. they share locks and jobs automatically.</p>
+                                </div>
+                                <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">3. orchestrate</div>
+                                    <p className="text-[12px] text-neutral-600 leading-relaxed">agents claim tasks from the job board, lock files before editing, and sync context via the live notepad. no collisions.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 pt-6 border-t border-neutral-100">
+                            <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-900">integrations</h2>
+                            <p className="text-[12px] text-neutral-600 leading-relaxed">
+                                axis exposes tools via the model context protocol (mcp). works with cursor, claude code, windsurf, vs code, and any mcp client. same config in every ide — one api key, one project path.
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                {['cursor', 'claude code', 'windsurf', 'vs code'].map((ide) => (
+                                    <span key={ide} className="px-2.5 py-1 bg-neutral-100 rounded text-[11px] font-mono text-neutral-600">{ide}</span>
+                                ))}
+                            </div>
+                            <Link href="/docs" className="inline-block mt-2 text-[11px] font-bold uppercase tracking-wider text-neutral-900 hover:text-neutral-600 transition-colors">get started → docs</Link>
+                        </div>
+
+                        <div className="pt-4 border-t border-neutral-100 flex justify-between items-center">
                             <p className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest">
                                 axis v1.0.0-prod // sf, ca
                             </p>
