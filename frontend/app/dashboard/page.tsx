@@ -301,7 +301,7 @@ export default function Dashboard() {
       <Navbar />
 
       <main className="pt-32 pb-20 px-6 relative z-10 flex items-center justify-center">
-        <div className="w-full max-w-5xl bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-10 text-neutral-900 flex flex-col min-h-[60vh] max-h-[90vh]">
+        <div className="w-full max-w-5xl bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-10 text-neutral-900 flex flex-col h-[75vh]">
           <div className="flex justify-between items-end mb-6">
             <div>
               <h1 className="text-3xl font-medium tracking-tight mb-2">dashboard</h1>

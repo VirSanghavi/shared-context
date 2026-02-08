@@ -116,7 +116,7 @@ export default function AboutPage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-5xl bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-10 text-neutral-900 overflow-y-auto min-h-[60vh] max-h-[90vh]"
+                    className="w-full max-w-5xl bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-10 text-neutral-900 overflow-y-auto h-[75vh]"
                 >
                     <div className="space-y-8">
                         <div className="space-y-2">
