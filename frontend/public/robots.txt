@@ -1,2 +1,9 @@
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /dashboard
+Disallow: /billing
+Disallow: /api
+Disallow: /login
+Disallow: /signup
+
+Sitemap: https://useaxis.dev/sitemap.xml

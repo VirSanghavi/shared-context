@@ -173,21 +173,21 @@ export default function BillingPage() {
                         {/* Plan Details */}
                         <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-5">
                             <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-400 mb-3">
-                                {isActive ? 'your plan includes' : 'upgrade to pro'}
+                                {isActive ? 'your plan includes' : 'pro includes'}
                             </div>
                             <div className="space-y-2">
                                 {[
-                                    { feature: 'api keys', free: 'none', pro: 'unlimited' },
-                                    { feature: 'mcp tool calls', free: 'none', pro: 'unlimited' },
-                                    { feature: 'parallel agents', free: 'none', pro: 'unlimited' },
-                                    { feature: 'file locking', free: 'none', pro: 'atomic, cross-ide' },
-                                    { feature: 'job board', free: 'none', pro: 'priority + dependencies' },
-                                    { feature: 'session history', free: 'none', pro: 'unlimited + rag search' },
+                                    { feature: 'api keys', value: 'unlimited' },
+                                    { feature: 'mcp tool calls', value: 'unlimited' },
+                                    { feature: 'parallel agents', value: 'unlimited' },
+                                    { feature: 'file locking', value: 'atomic, cross-ide' },
+                                    { feature: 'job board', value: 'priority + dependencies' },
+                                    { feature: 'session history', value: 'unlimited + rag search' },
                                 ].map(row => (
                                     <div key={row.feature} className="flex justify-between items-center text-[11px]">
                                         <span className="text-neutral-600">{row.feature}</span>
-                                        <span className={`font-mono text-[10px] ${isActive ? 'text-neutral-900' : 'text-neutral-400'}`}>
-                                            {isActive ? row.pro : row.free}
+                                        <span className={`font-mono text-[10px] ${isActive ? 'text-neutral-900' : 'text-neutral-500'}`}>
+                                            {row.value}
                                         </span>
                                     </div>
                                 ))}

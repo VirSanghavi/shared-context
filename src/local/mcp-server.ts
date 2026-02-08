@@ -47,7 +47,7 @@ if (process.env.SHARED_CONTEXT_API_URL || process.env.AXIS_API_KEY) {
 
   if (!envLoaded) {
     logger.warn("No configuration found from MCP client (mcp.json) or .env.local");
-    logger.warn("MCP server will use default API URL: https://aicontext.vercel.app/api/v1");
+    logger.warn("MCP server will use default API URL: https://useaxis.dev/api/v1");
   }
 }
 
@@ -64,7 +64,7 @@ logger.info("Environment check:", {
 
 // Configuration from MCP client (mcp.json) or environment
 // These should be set in mcp.json as env vars passed to the server
-const apiUrl = process.env.SHARED_CONTEXT_API_URL || process.env.AXIS_API_URL || "https://aicontext.vercel.app/api/v1";
+const apiUrl = process.env.SHARED_CONTEXT_API_URL || process.env.AXIS_API_URL || "https://useaxis.dev/api/v1";
 const apiSecret = process.env.AXIS_API_KEY || process.env.SHARED_CONTEXT_API_SECRET || process.env.AXIS_API_SECRET;
 
 // For customer deployments: Only use Supabase if explicitly enabled AND API URL is not the primary

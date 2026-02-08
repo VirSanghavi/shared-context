@@ -30,6 +30,6 @@ program
             console.log(chalk.green('  ✓ initialized governance config'));
         }
         console.log(chalk.white('\n  ready to bridge your agents.'));
-        console.log(chalk.dim('  visit https://aicontext.vercel.app for more info.\n'));
+        console.log(chalk.dim('  visit https://useaxis.dev for more info.\n'));
     });
 program.parse();

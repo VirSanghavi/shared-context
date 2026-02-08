@@ -13,12 +13,29 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = "https://useaxis.dev";
+
 export const metadata: Metadata = {
   title: "Axis - Parallel Agent Workflows & Distributed Orchestration",
   description: "The high-performance orchestration layer for parallel AI agent workflows. Coordinate distributed agent swarms with shared memory and atomic task management.",
   icons: {
     icon: "/favicon.ico",
     apple: "/favicon.ico",
+  },
+  metadataBase: new URL(siteUrl),
+  openGraph: {
+    title: "Axis - Parallel Agent Workflows",
+    description: "Coordinate distributed AI agent swarms with shared memory, file locking, and atomic task management.",
+    url: siteUrl,
+    siteName: "Axis",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Axis - Parallel Agent Workflows",
+    description: "Coordinate distributed AI agent swarms with shared memory, file locking, and atomic task management.",
+    creator: "@VirSanghavi13",
   },
 };
 

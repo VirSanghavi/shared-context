@@ -276,7 +276,7 @@ function QuickstartSection() {
       "args": ["/path/to/your/project"],
       "env": {
         "AXIS_API_KEY": "sk_sc_YOUR_KEY_HERE",
-        "SHARED_CONTEXT_API_URL": "https://aicontext.vercel.app/api/v1"
+        "SHARED_CONTEXT_API_URL": "https://useaxis.dev/api/v1"
       }
     }
   }
@@ -330,7 +330,7 @@ function MCPSection() {
       "env": {
         "AXIS_API_KEY": "sk_sc_YOUR_KEY_HERE",
         "PROJECT_NAME": "my-project",
-        "SHARED_CONTEXT_API_URL": "https://aicontext.vercel.app/api/v1"
+        "SHARED_CONTEXT_API_URL": "https://useaxis.dev/api/v1"
       }
     }
   }
@@ -354,7 +354,7 @@ function MCPSection() {
                             </thead>
                             <tbody className="divide-y divide-neutral-200">
                                 <tr><td className="px-4 py-3 font-mono text-neutral-900">AXIS_API_KEY</td><td className="px-4 py-3">yes</td><td className="px-4 py-3">your api key (starts with <code>sk_sc_</code>)</td></tr>
-                                <tr><td className="px-4 py-3 font-mono text-neutral-900">SHARED_CONTEXT_API_URL</td><td className="px-4 py-3">yes</td><td className="px-4 py-3">axis api endpoint (<code>https://aicontext.vercel.app/api/v1</code>)</td></tr>
+                                <tr><td className="px-4 py-3 font-mono text-neutral-900">SHARED_CONTEXT_API_URL</td><td className="px-4 py-3">yes</td><td className="px-4 py-3">axis api endpoint (<code>https://useaxis.dev/api/v1</code>)</td></tr>
                                 <tr><td className="px-4 py-3 font-mono text-neutral-900">PROJECT_NAME</td><td className="px-4 py-3">no</td><td className="px-4 py-3">project identifier. defaults to <code>default</code> or auto-detects from <code>.axis/axis.json</code></td></tr>
                             </tbody>
                         </table>
@@ -448,7 +448,7 @@ function MultiIDESection() {
       "args": ["/path/to/your/project"],
       "env": {
         "AXIS_API_KEY": "sk_sc_YOUR_KEY_HERE",
-        "SHARED_CONTEXT_API_URL": "https://aicontext.vercel.app/api/v1"
+        "SHARED_CONTEXT_API_URL": "https://useaxis.dev/api/v1"
       }
     }
   }
@@ -535,7 +535,7 @@ function MultiIDESection() {
                     <CodeBlock lang="bash" code={`claude mcp add axis \\
   --scope user \\
   -e AXIS_API_KEY=sk_sc_YOUR_KEY_HERE \\
-  -e SHARED_CONTEXT_API_URL=https://aicontext.vercel.app/api/v1 \\
+  -e SHARED_CONTEXT_API_URL=https://useaxis.dev/api/v1 \\
   -- axis-server /path/to/your/project`} />
 
                     <p className="text-[12px] text-neutral-600 mb-3 mt-6 font-medium">
@@ -551,7 +551,7 @@ function MultiIDESection() {
       "args": ["/path/to/your/project"],
       "env": {
         "AXIS_API_KEY": "sk_sc_YOUR_KEY_HERE",
-        "SHARED_CONTEXT_API_URL": "https://aicontext.vercel.app/api/v1"
+        "SHARED_CONTEXT_API_URL": "https://useaxis.dev/api/v1"
       }
     }
   }
@@ -872,7 +872,7 @@ function SessionsUsageSection() {
                     </ul>
 
                     <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mt-8 mb-4">api: fetch sessions</h4>
-                    <CodeBlock lang="bash" code={`curl -X GET "https://aicontext.vercel.app/api/v1/sessions" \\
+                    <CodeBlock lang="bash" code={`curl -X GET "https://useaxis.dev/api/v1/sessions" \\
   -H "Authorization: Bearer sk_sc_YOUR_KEY"`} />
                     <p className="text-[12px] text-neutral-500">returns an array of session objects ordered by most recent first.</p>
                 </div>
@@ -923,7 +923,7 @@ const usage = await mcp.callTool('get_usage_stats', {
 // will only ever be callable by pro subscribers.`} />
 
                     <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mt-8 mb-4">api: fetch usage</h4>
-                    <CodeBlock lang="bash" code={`curl -X GET "https://aicontext.vercel.app/api/v1/usage" \\
+                    <CodeBlock lang="bash" code={`curl -X GET "https://useaxis.dev/api/v1/usage" \\
   -H "Authorization: Bearer sk_sc_YOUR_KEY"`} />
                     <p className="text-[12px] text-neutral-500">returns plan, status, usage count, and billing period end date.</p>
 
@@ -1049,7 +1049,7 @@ function APISection() {
     return (
         <Section title="api reference" subtitle="all rest endpoints">
             <p className="mb-6 text-neutral-500">
-                base url: <code className="text-neutral-900">https://aicontext.vercel.app/api/v1</code>. all endpoints require a <code>Bearer sk_sc_...</code> authorization header.
+                base url: <code className="text-neutral-900">https://useaxis.dev/api/v1</code>. all endpoints require a <code>Bearer sk_sc_...</code> authorization header.
             </p>
 
             <div className="space-y-8">

@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     const origin = req.headers.get("origin")
       || req.headers.get("referer")?.replace(/\/billing.*$/, '')
       || process.env.NEXT_PUBLIC_APP_URL
-      || 'https://aicontext.vercel.app';
+      || 'https://useaxis.dev';
     const returnUrl = `${origin}/billing`;
 
     console.log(`[Stripe Portal] Creating portal for customer ${customerId}, return_url: ${returnUrl}`);

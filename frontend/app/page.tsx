@@ -14,9 +14,14 @@ export default function Home() {
     const [query, setQuery] = useState("");
     const [isSearching, setIsSearching] = useState(false);
     const [answer, setAnswer] = useState<string | null>(null);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
         setMounted(true);
+        fetch("/api/auth/session")
+            .then(res => res.ok ? res.json() : null)
+            .then(data => { if (data?.authenticated) setIsLoggedIn(true); })
+            .catch(() => {});
     }, []);
 
     const handleSearch = async (e: React.FormEvent) => {
@@ -288,8 +293,8 @@ Axis exposes a standardized toolset via the **Model Context Protocol**:
                                 </div>
                             </div>
                             <div className="mt-auto">
-                                <Link href="/signup" className="block w-full bg-neutral-900 text-white py-5 rounded-xl text-[12px] font-black tracking-[0.4em] uppercase hover:bg-black transition-all shadow-xl scale-105">
-                                    deploy axis
+                                <Link href={isLoggedIn ? "/dashboard" : "/signup"} className="block w-full bg-neutral-900 text-white py-5 rounded-xl text-[12px] font-black tracking-[0.4em] uppercase hover:bg-black transition-all shadow-xl scale-105">
+                                    {isLoggedIn ? "go to dashboard" : "deploy axis"}
                                 </Link>
                                 <p className="mt-10 text-[10px] text-neutral-500 font-mono tracking-widest uppercase font-black">no trials. zero friction.</p>
                             </div>
