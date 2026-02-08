@@ -877,13 +877,57 @@ ${notepad}`;
   }
   // --- Decision & Orchestration ---
   /**
+   * Normalize a lock path to be relative to the project root.
+   * Strips the project root prefix (process.cwd()) so that absolute and relative
+   * paths resolve to the same key.
+   * Examples (assuming cwd = /Users/vir/Projects/MyApp):
+   *   "/Users/vir/Projects/MyApp/src/api/v1/route.ts" => "src/api/v1/route.ts"
+   *   "src/api/v1/route.ts"                            => "src/api/v1/route.ts"
+   *   "/Users/vir/Projects/MyApp/"                     => ""  (project root)
+   */
+  static normalizeLockPath(filePath) {
+    let normalized = filePath.replace(/\/+$/, "");
+    const cwd = process.cwd().replace(/\/+$/, "");
+    if (normalized.startsWith(cwd + "/")) {
+      normalized = normalized.slice(cwd.length + 1);
+    } else if (normalized === cwd) {
+      normalized = "";
+    }
+    normalized = normalized.replace(/^\/+/, "");
+    return normalized;
+  }
+  /**
+   * Validate that a lock path is not overly broad.
+   * Directory locks (last segment has no file extension) must have at least
+   * MIN_DIR_LOCK_DEPTH segments from the project root.
+   * This prevents agents from locking huge swaths of the codebase like
+   * "src/" or "frontend/" which would block every other agent.
+   */
+  static MIN_DIR_LOCK_DEPTH = 2;
+  static validateLockScope(normalizedPath) {
+    if (!normalizedPath || normalizedPath === "." || normalizedPath === "/") {
+      return { valid: false, reason: "Cannot lock the entire project root. Lock specific files or subdirectories instead." };
+    }
+    const segments = normalizedPath.split("/").filter(Boolean);
+    const lastSegment = segments[segments.length - 1] || "";
+    const hasExtension = lastSegment.includes(".");
+    if (!hasExtension && segments.length < _NerveCenter.MIN_DIR_LOCK_DEPTH) {
+      return {
+        valid: false,
+        reason: `Directory lock '${normalizedPath}' is too broad (depth ${segments.length}, minimum ${_NerveCenter.MIN_DIR_LOCK_DEPTH}). Lock a more specific subdirectory or individual files instead.`
+      };
+    }
+    return { valid: true };
+  }
+  /**
    * Check if two file paths conflict hierarchically.
+   * Both paths should be normalized (relative to project root) before comparison.
    * A lock on a directory blocks locks on any file within it, and vice versa.
    * Examples:
-   *   pathsConflict("/foo/bar", "/foo/bar/baz.ts") => true  (parent blocks child)
-   *   pathsConflict("/foo/bar/baz.ts", "/foo/bar") => true  (child blocks parent)
-   *   pathsConflict("/foo/bar", "/foo/bar")         => true  (exact match)
-   *   pathsConflict("/foo/bar", "/foo/baz")         => false (siblings)
+   *   pathsConflict("src/api", "src/api/route.ts") => true  (parent blocks child)
+   *   pathsConflict("src/api/route.ts", "src/api") => true  (child blocks parent)
+   *   pathsConflict("src/api", "src/api")           => true  (exact match)
+   *   pathsConflict("src/api", "src/lib")           => false (siblings)
    */
   static pathsConflict(pathA, pathB) {
     const a = pathA.replace(/\/+$/, "");
@@ -896,13 +940,16 @@ ${notepad}`;
   /**
    * Find any existing lock that conflicts hierarchically with the requested path.
    * Skips locks owned by the same agent and stale locks.
+   * All paths are normalized before comparison.
    */
   findHierarchicalConflict(requestedPath, requestingAgent, locks) {
+    const normalizedRequested = _NerveCenter.normalizeLockPath(requestedPath);
     for (const lock of locks) {
       if (lock.agentId === requestingAgent) continue;
       const isStale = Date.now() - lock.timestamp > this.lockTimeout;
       if (isStale) continue;
-      if (_NerveCenter.pathsConflict(requestedPath, lock.filePath)) {
+      const normalizedLock = _NerveCenter.normalizeLockPath(lock.filePath);
+      if (_NerveCenter.pathsConflict(normalizedRequested, normalizedLock)) {
         return lock;
       }
     }
@@ -911,6 +958,16 @@ ${notepad}`;
   async proposeFileAccess(agentId, filePath, intent, userPrompt) {
     return await this.mutex.runExclusive(async () => {
       logger.info(`[proposeFileAccess] Starting - agentId: ${agentId}, filePath: ${filePath}`);
+      const normalizedPath = _NerveCenter.normalizeLockPath(filePath);
+      logger.info(`[proposeFileAccess] Normalized path: '${normalizedPath}' (from '${filePath}')`);
+      const scopeCheck = _NerveCenter.validateLockScope(normalizedPath);
+      if (!scopeCheck.valid) {
+        logger.warn(`[proposeFileAccess] REJECTED \u2014 scope too broad: ${scopeCheck.reason}`);
+        return {
+          status: "REJECTED",
+          message: scopeCheck.reason
+        };
+      }
       if (this.contextManager.apiUrl) {
         try {
           const result = await this.callCoordination("locks", "POST", {
@@ -2012,7 +2069,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     // --- Decision & Orchestration ---
     {
       name: "propose_file_access",
-      description: "**CRITICAL: REQUEST FILE LOCK** \u2014 call this before EVERY file edit, no exceptions.\n- Checks if another agent currently holds a lock.\n- Returns `GRANTED` if safe to proceed, or `REQUIRES_ORCHESTRATION` if someone else is editing.\n- **Hierarchical matching**: Locking a directory also blocks locks on files within it, and vice versa. E.g. locking `src/api/` blocks `src/api/auth/login.ts`.\n- Usage: Provide your `agentId` (e.g., 'cursor-agent'), `filePath` (absolute), and `intent` (descriptive \u2014 e.g. 'Refactor auth to use JWT', NOT 'editing file').\n- Locks expire after 30 minutes. Use `force_unlock` only as a last resort for crashed agents.\n- **IMPORTANT**: Every lock you acquire MUST be released. Call `complete_job` when done with each task, and `finalize_session` before ending your session. Dangling locks block all other agents.",
+      description: "**CRITICAL: REQUEST FILE LOCK** \u2014 call this before EVERY file edit, no exceptions.\n- Checks if another agent currently holds a lock.\n- Returns `GRANTED` if safe to proceed, `REQUIRES_ORCHESTRATION` if someone else is editing, or `REJECTED` if the lock scope is too broad.\n- **Hierarchical matching**: Locking a directory also blocks locks on files within it, and vice versa. E.g. locking `src/api/` blocks `src/api/auth/login.ts`.\n- **Scope guard**: Overly broad directory locks are rejected. You cannot lock top-level directories like `src/` or `frontend/` \u2014 lock specific subdirectories (e.g. `src/api/auth/`) or individual files instead.\n- Paths are normalized relative to the project root, so absolute and relative paths are treated equivalently.\n- Usage: Provide your `agentId` (e.g., 'cursor-agent'), `filePath` (absolute or relative), and `intent` (descriptive \u2014 e.g. 'Refactor auth to use JWT', NOT 'editing file').\n- Locks expire after 30 minutes. Use `force_unlock` only as a last resort for crashed agents.\n- **IMPORTANT**: Every lock you acquire MUST be released. Call `complete_job` when done with each task, and `finalize_session` before ending your session. Dangling locks block all other agents.",
       inputSchema: {
         type: "object",
         properties: {
