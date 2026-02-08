@@ -385,6 +385,7 @@ function MCPSection() {
                             { ide: 'vs code', loc: '~/.vscode/mcp.json or workspace .vscode/mcp.json' },
                             { ide: 'windsurf', loc: 'preferences → ai path → mcp configuration' },
                             { ide: 'claude desktop', loc: '~/Library/Application Support/Claude/claude_desktop_config.json' },
+                            { ide: 'claude code', loc: '~/.claude.json (user) or .mcp.json in project root (project)' },
                         ].map(i => (
                             <div key={i.ide} className="p-4 bg-neutral-50 rounded-xl border border-neutral-100">
                                 <div className="font-bold text-[11px] uppercase tracking-widest mb-1">{i.ide}</div>
@@ -469,8 +470,8 @@ function MultiIDESection() {
                     },
                     {
                         ide: 'claude code',
-                        where: '~/.claude/claude_desktop_config.json',
-                        note: 'add axis inside the mcpServers object',
+                        where: '~/.claude.json (user) or .mcp.json in project root',
+                        note: 'add axis inside the mcpServers object. use ${VAR} in config for env vars.',
                     },
                     {
                         ide: 'windsurf',
@@ -495,13 +496,13 @@ function MultiIDESection() {
 
             {/* Claude Code CLI deep-dive */}
             <div className="p-8 bg-neutral-50 rounded-2xl border border-neutral-100 mb-8">
-                <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-6">claude code cli — full walkthrough</h3>
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-6">claude code (terminal) — full walkthrough</h3>
                 <p className="text-[13px] text-neutral-600 mb-6">
                     claude code runs entirely in your terminal. no gui, no electron app. here&apos;s how to wire axis into it from scratch.
                 </p>
 
                 {/* Step 1 */}
-                <div className="mb-6">
+                <div className="mb-8">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">1</span>
                         <span className="font-bold text-[13px]">install claude code</span>
@@ -511,7 +512,7 @@ function MultiIDESection() {
                 </div>
 
                 {/* Step 2 */}
-                <div className="mb-6">
+                <div className="mb-8">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">2</span>
                         <span className="font-bold text-[13px]">install axis-server</span>
@@ -520,25 +521,28 @@ function MultiIDESection() {
                 </div>
 
                 {/* Step 3 */}
-                <div className="mb-6">
+                <div className="mb-8">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">3</span>
-                        <span className="font-bold text-[13px]">create the config file</span>
+                        <span className="font-bold text-[13px]">add axis to claude code</span>
                     </div>
-                    <p className="text-[12px] text-neutral-500 mb-2">
-                        claude code reads mcp config from <code className="bg-neutral-200 px-1.5 py-0.5 rounded text-[11px]">~/.claude/claude_desktop_config.json</code>. create it if it doesn&apos;t exist:
+                    <p className="text-[12px] text-neutral-600 mb-3 font-medium">
+                        option a: one command (recommended)
                     </p>
-                    <CodeBlock lang="bash" code={`mkdir -p ~/.claude && touch ~/.claude/claude_desktop_config.json`} />
-                </div>
-
-                {/* Step 4 */}
-                <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">4</span>
-                        <span className="font-bold text-[13px]">paste this into the file</span>
-                    </div>
                     <p className="text-[12px] text-neutral-500 mb-2">
-                        open the file in any editor and paste:
+                        run this from your terminal. it registers axis globally so it&apos;s available in every project:
+                    </p>
+                    <CodeBlock lang="bash" code={`claude mcp add axis \\
+  --scope user \\
+  -e AXIS_API_KEY=sk_sc_YOUR_KEY_HERE \\
+  -e SHARED_CONTEXT_API_URL=https://aicontext.vercel.app/api/v1 \\
+  -- axis-server /path/to/your/project`} />
+
+                    <p className="text-[12px] text-neutral-600 mb-3 mt-6 font-medium">
+                        option b: manual config file
+                    </p>
+                    <p className="text-[12px] text-neutral-500 mb-2">
+                        create a <code className="bg-neutral-200 px-1.5 py-0.5 rounded text-[11px]">.mcp.json</code> file in your project root:
                     </p>
                     <CodeBlock lang="json" code={`{
   "mcpServers": {
@@ -552,41 +556,54 @@ function MultiIDESection() {
     }
   }
 }`} />
-                    <p className="text-[12px] text-neutral-400 italic mt-2">
-                        replace the two placeholders. everything else stays exactly as-is.
+                    <Callout type="info">
+                        <strong>scope matters.</strong> use <code>--scope user</code> (saved to <code>~/.claude.json</code>) to make axis available across all projects. use <code>--scope project</code> (saved to <code>.mcp.json</code>) for a single repo — this file can be version controlled for team sharing.
+                    </Callout>
+                </div>
+
+                {/* Step 4 */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">4</span>
+                        <span className="font-bold text-[13px]">start claude code & verify</span>
+                    </div>
+                    <p className="text-[12px] text-neutral-500 mb-2">
+                        cd into your project and launch claude code:
+                    </p>
+                    <CodeBlock lang="bash" code={`cd /path/to/your/project
+claude`} />
+                    <p className="text-[12px] text-neutral-500 mt-3 mb-2">
+                        once inside, type <code className="bg-neutral-200 px-1.5 py-0.5 rounded text-[11px]">/mcp</code> to verify axis is connected. you should see <code>axis</code> listed with all 16 tools. you can also ask:
+                    </p>
+                    <CodeBlock lang="bash" code={`> call get_project_soul to verify axis is working`} />
+                    <p className="text-[12px] text-neutral-500 mt-2">
+                        if axis returns your project context, you&apos;re connected.
                     </p>
                 </div>
 
                 {/* Step 5 */}
-                <div className="mb-6">
+                <div className="mb-8">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">5</span>
-                        <span className="font-bold text-[13px]">start claude code</span>
-                    </div>
-                    <p className="text-[12px] text-neutral-500 mb-2">
-                        cd into your project folder and run:
-                    </p>
-                    <CodeBlock lang="bash" code={`cd /path/to/your/project
-claude`} />
-                    <p className="text-[12px] text-neutral-500 mt-2">
-                        that&apos;s it. claude code starts, picks up the mcp config, and axis tools appear automatically. you can verify by asking claude: <em>&quot;what mcp tools do you have?&quot;</em>
-                    </p>
-                </div>
-
-                {/* Step 6 */}
-                <div className="mb-2">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">6</span>
                         <span className="font-bold text-[13px]">run it alongside cursor</span>
                     </div>
                     <p className="text-[12px] text-neutral-500">
-                        open the same project in cursor. both agents now share locks, jobs, and the live notepad. no extra config needed — the api key ties them together.
+                        open the same project in cursor with the same axis config. both agents share locks, jobs, and the live notepad automatically. no extra setup needed.
                     </p>
+                </div>
+
+                {/* Managing servers */}
+                <div className="mt-8 pt-6 border-t border-neutral-200">
+                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-600 mb-3">managing mcp servers</h4>
+                    <CodeBlock lang="bash" code={`claude mcp list            # see all configured servers
+claude mcp get axis        # check axis config details
+claude mcp remove axis     # remove axis
+claude mcp add-from-claude-desktop  # import servers from claude desktop`} />
                 </div>
             </div>
 
             <Callout type="warn">
-                if claude code doesn&apos;t pick up the tools, quit with <code>/exit</code> and re-run <code>claude</code>. mcp config is only read at startup.
+                claude code only reads mcp config at startup. if you change your config, quit with <code>/exit</code> and re-run <code>claude</code> to pick up the changes.
             </Callout>
 
             {/* How it works */}
