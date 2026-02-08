@@ -7,10 +7,17 @@ const WINDOW_MS = 60 * 1000;
 const LIMIT = 10;
 
 export async function POST(request: Request) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey || supabaseUrl.includes("YOUR_") || supabaseServiceKey.includes("YOUR_")) {
+    return NextResponse.json(
+      { error: "Supabase is not configured. Please update .env.local with valid credentials." },
+      { status: 503 }
+    );
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const ip = getClientIp(request.headers);
   const { allowed, remaining, reset } = await rateLimit(`login:${ip}`, LIMIT, WINDOW_MS);
   if (!allowed) {
@@ -40,6 +47,12 @@ export async function POST(request: Request) {
       .eq('email', email)
       .single();
     userId = profile?.id;
+    if (!userId) {
+      return NextResponse.json(
+        { error: "No account found for this email" },
+        { status: 401, headers: rateHeaders(remaining, reset) }
+      );
+    }
   } else {
     // Try Supabase Auth
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -47,12 +60,28 @@ export async function POST(request: Request) {
       password
     });
     if (error || !data.user) {
-      // Check for specific email confirmation error
-      if (error?.message === "Email not confirmed") {
-        return NextResponse.json(
-          { error: "Email not confirmed" },
-          { status: 403, headers: rateHeaders(remaining, reset) }
-        );
+      // Modern Supabase returns "Invalid login credentials" for BOTH wrong
+      // passwords AND unconfirmed emails (security feature). Check the user's
+      // actual confirmation status via profiles table + admin API.
+      if (email) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', email)
+            .single();
+          if (profile?.id) {
+            const { data: { user: authUser } } = await supabase.auth.admin.getUserById(profile.id);
+            if (authUser && !authUser.email_confirmed_at) {
+              return NextResponse.json(
+                { error: "Email not confirmed" },
+                { status: 403, headers: rateHeaders(remaining, reset) }
+              );
+            }
+          }
+        } catch {
+          // Admin lookup failed — fall through to generic error
+        }
       }
 
       return NextResponse.json(

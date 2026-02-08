@@ -17,8 +17,16 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-  console.log(`[Middleware] Path: ${pathname}, Public: ${isPublic}`);
+  // If authenticated, redirect away from auth pages (must run BEFORE public paths early return)
+  if (pathname === "/login" || pathname === "/signup") {
+    const session = await getSessionFromRequest(req);
+    if (session) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
@@ -28,7 +36,6 @@ export async function middleware(req: NextRequest) {
   // The route handler will do the actual validation
   if (pathname.startsWith("/api/v1")) {
     const session = await getSessionFromRequest(req);
-    console.log(`[Middleware] /api/v1 route - session:`, session ? { email: session.email, role: session.role } : "null");
     if (!session) {
       // Let the route handler return the error with more context
       // This allows API key validation to happen in the route
@@ -38,13 +45,6 @@ export async function middleware(req: NextRequest) {
   }
 
   const session = await getSessionFromRequest(req);
-
-  // If authenticated, redirect away from auth pages
-  if (session && (pathname === "/login" || pathname === "/signup")) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
 
   if (!session) {
     if (pathname.startsWith("/api")) {

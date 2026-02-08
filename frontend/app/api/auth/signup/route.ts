@@ -46,8 +46,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 400 });
         }
 
+        // Supabase returns a user with empty identities if the email already exists
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+            return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });
+        }
+
         if (data.user) {
-            // Create profile
             await supabase.from('profiles').insert({
                 id: data.user.id,
                 email: email,

@@ -41,34 +41,16 @@ async function hashKey(key: string) {
 }
 
 export async function validateApiKey(key: string): Promise<SessionPayload | null> {
-  console.log("[validateApiKey] Starting validation for key:", key.substring(0, 15) + "...");
-  
-  if (!key.startsWith("sk_sc_")) {
-    console.log("[validateApiKey] ❌ Key doesn't start with sk_sc_:", key.substring(0, 10));
-    return null;
-  }
+  if (!key.startsWith("sk_sc_")) return null;
 
   const hash = await hashKey(key);
-  console.log("[validateApiKey] Key hash (first 20 chars):", hash.substring(0, 20) + "...");
 
-  // Create Supabase client inside function to avoid stale clients
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
-  console.log("[validateApiKey] Supabase config check:", { 
-    hasUrl: !!url, 
-    hasKey: !!serviceKey,
-    urlPrefix: url ? url.substring(0, 30) + "..." : "none"
-  });
-  
-  if (!url || !serviceKey) {
-    console.error("[validateApiKey] ❌ Missing Supabase env vars:", { hasUrl: !!url, hasKey: !!serviceKey });
-    return null;
-  }
+  if (!url || !serviceKey) return null;
 
   try {
     const supabase = createClient(url, serviceKey);
-    console.log("[validateApiKey] Supabase client created, querying api_keys table...");
 
     const { data, error } = await supabase
       .from("api_keys")
@@ -76,22 +58,7 @@ export async function validateApiKey(key: string): Promise<SessionPayload | null
       .eq("key_hash", hash)
       .single();
 
-    if (error) {
-      console.error("[validateApiKey] ❌ Database error:", error);
-      return null;
-    }
-    
-    if (!data) {
-      console.log("[validateApiKey] ❌ No API key found in database for hash:", hash.substring(0, 20) + "...");
-      return null;
-    }
-    
-    if (!data.is_active) {
-      console.log("[validateApiKey] ❌ API key found but is not active:", data.id);
-      return null;
-    }
-    
-    console.log("[validateApiKey] ✅ API key validated successfully:", { keyId: data.id, userId: data.user_id });
+    if (error || !data || !data.is_active) return null;
 
     // Fire and forget update last_used_at
     supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", data.id).then();
@@ -102,45 +69,26 @@ export async function validateApiKey(key: string): Promise<SessionPayload | null
       keyId: data.id,
       role: "api_key"
     };
-  } catch (e: any) {
-    console.error("[validateApiKey] ❌ Exception during validation:", e.message, e.stack);
+  } catch {
     return null;
   }
 }
 
 export async function getSessionFromRequest(req: NextRequest): Promise<SessionPayload | null> {
-  console.log("[getSessionFromRequest] Starting validation");
-  
   // 1. Check Cookie
   const cookieToken = req.cookies.get(SESSION_COOKIE)?.value;
-  if (cookieToken) {
-    console.log("[getSessionFromRequest] Found cookie token");
-    return verifySession(cookieToken);
-  }
+  if (cookieToken) return verifySession(cookieToken);
 
   // 2. Check Authorization Header (Bearer Token or API Key)
   const authHeader = req.headers.get("Authorization");
-  console.log("[getSessionFromRequest] Authorization header:", authHeader ? `${authHeader.substring(0, 30)}...` : "missing");
-  
   if (authHeader) {
     const [scheme, token] = authHeader.split(" ");
-    console.log("[getSessionFromRequest] Scheme:", scheme, "Token prefix:", token ? token.substring(0, 10) + "..." : "none");
-    
     if (scheme === "Bearer" && token) {
-      // Check if it's an API Key
-      if (token.startsWith("sk_sc_")) {
-        console.log("[getSessionFromRequest] Detected API key, validating...");
-        const result = await validateApiKey(token);
-        console.log("[getSessionFromRequest] API key validation result:", result ? "SUCCESS" : "FAILED");
-        return result;
-      }
-      // Otherwise try as JWT
-      console.log("[getSessionFromRequest] Trying as JWT...");
+      if (token.startsWith("sk_sc_")) return validateApiKey(token);
       return verifySession(token);
     }
   }
 
-  console.log("[getSessionFromRequest] No valid session found");
   return null;
 }
 
