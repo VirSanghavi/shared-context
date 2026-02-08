@@ -132,7 +132,7 @@ function CodeBlock({ code, lang = 'bash' }: { code: string; lang?: string }) {
     }, [code]);
 
     return (
-        <div className="rounded-xl overflow-hidden border border-neutral-200 shadow-sm my-6">
+        <div className="rounded-xl overflow-hidden border border-neutral-200 shadow-sm my-6 w-full">
             <div className="bg-neutral-50 px-5 py-3 text-[10px] text-neutral-400 font-mono border-b border-neutral-200 flex justify-between items-center tracking-widest uppercase font-bold">
                 <span>{lang}</span>
                 <button
@@ -160,17 +160,9 @@ function CodeBlock({ code, lang = 'bash' }: { code: string; lang?: string }) {
     );
 }
 
-function Callout({ type = 'info', children }: { type?: 'info' | 'warn' | 'danger'; children: React.ReactNode }) {
-    const styles = {
-        info: 'border-blue-200 bg-blue-50/50 text-blue-900',
-        warn: 'border-amber-200 bg-amber-50/50 text-amber-900',
-        danger: 'border-red-200 bg-red-50/50 text-red-900',
-    };
-    const icons = { info: 'ℹ', warn: '⚠', danger: '✖' };
-
+function Callout({ children }: { type?: 'info' | 'warn' | 'danger'; children: React.ReactNode }) {
     return (
-        <div className={`rounded-xl border px-5 py-4 my-6 text-[13px] leading-relaxed ${styles[type]}`}>
-            <span className="mr-2 font-bold">{icons[type]}</span>
+        <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-5 py-4 my-6 text-[13px] leading-relaxed text-neutral-600">
             {children}
         </div>
     );
@@ -496,6 +488,102 @@ function MultiIDESection() {
                 ))}
             </div>
 
+            {/* Claude Code CLI deep-dive */}
+            <div className="p-8 bg-neutral-50 rounded-2xl border border-neutral-100 mb-8">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-6">claude code cli — full walkthrough</h3>
+                <p className="text-[13px] text-neutral-600 mb-6">
+                    claude code runs entirely in your terminal. no gui, no electron app. here&apos;s how to wire axis into it from scratch.
+                </p>
+
+                {/* Step 1 */}
+                <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">1</span>
+                        <span className="font-bold text-[13px]">install claude code</span>
+                    </div>
+                    <p className="text-[12px] text-neutral-500 mb-2">if you don&apos;t have it yet:</p>
+                    <CodeBlock lang="bash" code={`npm install -g @anthropic-ai/claude-code`} />
+                </div>
+
+                {/* Step 2 */}
+                <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">2</span>
+                        <span className="font-bold text-[13px]">install axis-server</span>
+                    </div>
+                    <CodeBlock lang="bash" code={`npm install -g @virsanghavi/axis-server`} />
+                </div>
+
+                {/* Step 3 */}
+                <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">3</span>
+                        <span className="font-bold text-[13px]">create the config file</span>
+                    </div>
+                    <p className="text-[12px] text-neutral-500 mb-2">
+                        claude code reads mcp config from <code className="bg-neutral-200 px-1.5 py-0.5 rounded text-[11px]">~/.claude/claude_desktop_config.json</code>. create it if it doesn&apos;t exist:
+                    </p>
+                    <CodeBlock lang="bash" code={`mkdir -p ~/.claude && touch ~/.claude/claude_desktop_config.json`} />
+                </div>
+
+                {/* Step 4 */}
+                <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">4</span>
+                        <span className="font-bold text-[13px]">paste this into the file</span>
+                    </div>
+                    <p className="text-[12px] text-neutral-500 mb-2">
+                        open the file in any editor and paste:
+                    </p>
+                    <CodeBlock lang="json" code={`{
+  "mcpServers": {
+    "axis": {
+      "command": "axis-server",
+      "args": ["/path/to/your/project"],
+      "env": {
+        "AXIS_API_KEY": "sk_sc_YOUR_KEY_HERE",
+        "SHARED_CONTEXT_API_URL": "https://aicontext.vercel.app/api/v1"
+      }
+    }
+  }
+}`} />
+                    <p className="text-[12px] text-neutral-400 italic mt-2">
+                        replace the two placeholders. everything else stays exactly as-is.
+                    </p>
+                </div>
+
+                {/* Step 5 */}
+                <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">5</span>
+                        <span className="font-bold text-[13px]">start claude code</span>
+                    </div>
+                    <p className="text-[12px] text-neutral-500 mb-2">
+                        cd into your project folder and run:
+                    </p>
+                    <CodeBlock lang="bash" code={`cd /path/to/your/project
+claude`} />
+                    <p className="text-[12px] text-neutral-500 mt-2">
+                        that&apos;s it. claude code starts, picks up the mcp config, and axis tools appear automatically. you can verify by asking claude: <em>&quot;what mcp tools do you have?&quot;</em>
+                    </p>
+                </div>
+
+                {/* Step 6 */}
+                <div className="mb-2">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-neutral-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0">6</span>
+                        <span className="font-bold text-[13px]">run it alongside cursor</span>
+                    </div>
+                    <p className="text-[12px] text-neutral-500">
+                        open the same project in cursor. both agents now share locks, jobs, and the live notepad. no extra config needed — the api key ties them together.
+                    </p>
+                </div>
+            </div>
+
+            <Callout type="warn">
+                if claude code doesn&apos;t pick up the tools, quit with <code>/exit</code> and re-run <code>claude</code>. mcp config is only read at startup.
+            </Callout>
+
             {/* How it works */}
             <div className="p-8 bg-neutral-50 rounded-2xl border border-neutral-100 mb-8">
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-6">what happens when you run them together</h3>
@@ -522,16 +610,16 @@ function MultiIDESection() {
             <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-4">example: cursor + claude code on the same project</h3>
             <div className="space-y-3 mb-8">
                 {[
-                    { agent: 'cursor', action: 'posts a job: "refactor auth module"', color: 'bg-blue-100 text-blue-800' },
-                    { agent: 'claude code', action: 'calls claim_next_job → gets assigned "refactor auth module"', color: 'bg-purple-100 text-purple-800' },
-                    { agent: 'claude code', action: 'calls propose_file_access on auth.ts → GRANTED', color: 'bg-purple-100 text-purple-800' },
-                    { agent: 'cursor', action: 'tries to edit auth.ts → sees it\'s locked by claude code → works on tests instead', color: 'bg-blue-100 text-blue-800' },
-                    { agent: 'claude code', action: 'finishes, calls complete_job → lock released', color: 'bg-purple-100 text-purple-800' },
-                    { agent: 'cursor', action: 'sees the job is done in the shared notepad → moves on', color: 'bg-blue-100 text-blue-800' },
+                    { agent: 'cursor', action: 'posts a job: "refactor auth module"' },
+                    { agent: 'claude code', action: 'calls claim_next_job → gets assigned "refactor auth module"' },
+                    { agent: 'claude code', action: 'calls propose_file_access on auth.ts → GRANTED' },
+                    { agent: 'cursor', action: 'tries to edit auth.ts → sees it\'s locked by claude code → works on tests instead' },
+                    { agent: 'claude code', action: 'finishes, calls complete_job → lock released' },
+                    { agent: 'cursor', action: 'sees the job is done in the shared notepad → moves on' },
                 ].map((step, i) => (
                     <div key={i} className="flex items-start gap-3">
                         <span className="text-[11px] font-mono text-neutral-300 mt-1 w-4 text-right shrink-0">{i + 1}.</span>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded shrink-0 ${step.color}`}>{step.agent}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded shrink-0 bg-neutral-100 text-neutral-700 border border-neutral-200">{step.agent}</span>
                         <span className="text-[13px] text-neutral-600">{step.action}</span>
                     </div>
                 ))}
@@ -660,12 +748,14 @@ function OrchestrationSection() {
                     </ul>
                 </div>
 
-                <div>
+                <div className="p-8 bg-neutral-50 rounded-2xl border border-neutral-100">
                     <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-900 mb-4">the job board</h3>
                     <p className="mb-4">
                         centralized orchestration for autonomous teams. break down complex objectives into <strong>atomic jobs</strong> and let agents claim them based on priority and dependencies.
                     </p>
-                    <CodeBlock lang="bash" code={`# swarm orchestration lifecycle
+                    <div className="overflow-hidden rounded-xl border border-neutral-200">
+                        <div className="bg-neutral-100 px-5 py-3 text-[10px] text-neutral-400 font-mono border-b border-neutral-200 tracking-widest uppercase font-bold">bash</div>
+                        <pre className="bg-[#0a0a0a] text-neutral-300 p-5 text-[13px] font-mono overflow-x-auto whitespace-pre-wrap">{`# swarm orchestration lifecycle
 post_job(title="refactor auth", priority="high")
 -> { jobId: "486b47b2-...", completionKey: "GFA8H7DJ" }
 
@@ -673,11 +763,12 @@ claim_next_job(agent_id="agent-A")
 -> { status: "CLAIMED", job: { title: "refactor auth", ... } }
 
 complete_job(agent_id="agent-A", job_id="486b47b2-...", outcome="done")
--> { status: "COMPLETED" }`} />
+-> { status: "COMPLETED" }`}</pre>
+                    </div>
 
-                    <Callout type="info">
+                    <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-5 py-4 my-6 text-[13px] leading-relaxed text-neutral-600">
                         jobs with <code>dependencies</code> are only claimable after all prerequisite jobs reach &quot;done&quot; status. this ensures correct execution order.
-                    </Callout>
+                    </div>
                 </div>
 
                 <div className="p-8 bg-neutral-50 rounded-2xl border border-neutral-100">
@@ -702,9 +793,9 @@ complete_job(agent_id="agent-A", job_id="486b47b2-...", outcome="done")
                         </table>
                     </div>
 
-                    <Callout type="warn">
+                    <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-5 py-4 my-6 text-[13px] leading-relaxed text-neutral-600">
                         locks expire automatically after <strong>30 minutes</strong>. if an agent crashes, another agent can safely call <code>force_unlock</code> after the timeout.
-                    </Callout>
+                    </div>
                 </div>
             </div>
         </Section>
