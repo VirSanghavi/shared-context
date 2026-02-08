@@ -50,11 +50,15 @@ export default function FeedbackPage() {
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-center py-12"
+                            className="py-12"
                         >
-                            <div className="text-4xl mb-4">✨</div>
-                            <h2 className="text-xl font-medium mb-2">thank you!</h2>
-                            <p className="text-[12px] text-neutral-500 mb-6">your feedback has been received.</p>
+                            <h2 className="text-xl font-medium mb-3">thank you</h2>
+                            <p className="text-[13px] text-neutral-600 leading-relaxed mb-2">
+                                Your feedback has been received. We read everything and use it to prioritize fixes and features.
+                            </p>
+                            <p className="text-[12px] text-neutral-500 leading-relaxed mb-8">
+                                We can&apos;t reply to every message, but your input helps shape Axis. If you left an email and we need to follow up, we&apos;ll be in touch.
+                            </p>
                             <Link
                                 href="/dashboard"
                                 className="inline-block bg-neutral-900 text-white px-6 py-3 rounded text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-neutral-800 transition-colors"

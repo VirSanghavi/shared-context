@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
           email: session.email,
           limit: 1,
         });
-        const stripeCustomer = customers.data[0];
+        const stripeCustomer = customers[0];
         if (stripeCustomer) {
           const correctId = stripeCustomer.id;
           console.log(`[Stripe Portal] Recovered correct customer ID for ${session.email}: ${correctId}`);
