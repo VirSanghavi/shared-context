@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     let customerId = profile?.stripe_customer_id;
-    if (!customerId && isSuperUser) {
+    if (isSuperUser) {
       customerId = 'cus_Tw7wDGE1jIXikB';
       console.log(`[Stripe Portal] Using bypass customer ID for ${session.email}`);
     }

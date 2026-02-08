@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
             .single();
 
         let customerId = profile?.stripe_customer_id;
-        if (!customerId && isSuperUser) {
+        if (isSuperUser) {
             customerId = 'cus_Tw7wDGE1jIXikB';
             console.log(`[Stripe Cancel] Using bypass customer ID for ${session.email}`);
         }

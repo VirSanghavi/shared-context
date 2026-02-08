@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
         let customerId = profile?.stripe_customer_id;
 
         // Manual override for debug if DB record is missing but we know the user
-        if (!customerId && isSuperUser) {
-            customerId = 'cus_Tw7wDGE1jIXikB'; // The ID from your stripe screenshot
+        if (isSuperUser) {
+            customerId = 'cus_Tw7wDGE1jIXikB';
             console.log(`[Stripe Retention] Using bypass customer ID for ${session.email}`);
         }
 
