@@ -66,24 +66,49 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Stripe Portal] Creating portal for customer ${customerId}, return_url: ${returnUrl}`);
 
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: returnUrl,
-    });
-
-    return NextResponse.json({ url: portalSession.url });
+    try {
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: returnUrl,
+      });
+      return NextResponse.json({ url: portalSession.url });
+    } catch (portalErr: unknown) {
+      const portalMsg = portalErr instanceof Error ? portalErr.message : String(portalErr);
+      // Stripe customer IDs are case-sensitive; DB may have wrong case (e.g. lowercased)
+      const isNoSuchCustomer = portalMsg.includes("no such customer");
+      if (isNoSuchCustomer && session.email) {
+        const { data: customers } = await stripe.customers.list({
+          email: session.email,
+          limit: 1,
+        });
+        const stripeCustomer = customers.data[0];
+        if (stripeCustomer) {
+          const correctId = stripeCustomer.id;
+          console.log(`[Stripe Portal] Recovered correct customer ID for ${session.email}: ${correctId}`);
+          await supabase
+            .from("profiles")
+            .update({ stripe_customer_id: correctId })
+            .ilike("email", session.email);
+          const portalSession = await stripe.billingPortal.sessions.create({
+            customer: correctId,
+            return_url: returnUrl,
+          });
+          return NextResponse.json({ url: portalSession.url });
+        }
+      }
+      throw portalErr;
+    }
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error(`[Stripe Portal] Error for ${session.email}:`, msg);
 
-    // Surface Stripe-specific errors
-    if (error && typeof error === 'object' && 'type' in error) {
+    if (error && typeof error === "object" && "type" in error) {
       const stripeErr = error as { type: string; message: string };
-      if (stripeErr.type === 'StripeInvalidRequestError') {
-        return NextResponse.json(
-          { error: stripeErr.message || "invalid stripe request" },
-          { status: 400 }
-        );
+      if (stripeErr.type === "StripeInvalidRequestError") {
+        const friendlyMsg = msg.includes("no such customer")
+          ? "Billing account not found or invalid. Please contact support."
+          : stripeErr.message || "invalid stripe request";
+        return NextResponse.json({ error: friendlyMsg }, { status: 400 });
       }
     }
 

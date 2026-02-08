@@ -36,13 +36,13 @@ export default function Docs() {
                 <div className="w-full max-w-5xl bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-0 text-neutral-900 overflow-hidden flex flex-col md:flex-row h-[80vh] md:h-[75vh]">
 
                     {/* Sidebar — horizontal scroll on mobile, vertical on desktop */}
-                    <nav className="flex-shrink-0 md:w-64 bg-neutral-50 border-b md:border-b-0 md:border-r border-neutral-200 p-4 md:p-8 flex flex-row md:flex-col gap-2 md:gap-0 overflow-x-auto md:overflow-visible" aria-label="Documentation navigation">
-                        <div className="hidden md:block mb-10">
+                    <nav className="flex-shrink-0 md:w-64 bg-neutral-50 border-b md:border-b-0 md:border-r border-neutral-200 flex flex-col md:flex-col" aria-label="Documentation navigation">
+                        <div className="hidden md:block p-8 pb-0 mb-2">
                             <h1 className="text-2xl font-medium tracking-tighter mb-1">documentation</h1>
                             <p className="text-[10px] text-neutral-400 uppercase tracking-[0.2em]">axis v1.0</p>
                         </div>
 
-                        <div className="flex md:flex-col gap-2 md:gap-1 md:space-y-0 flex-1 md:flex-initial min-w-0">
+                        <div className="flex md:flex-col gap-2 md:gap-1 md:space-y-0 flex-1 md:flex-initial min-w-0 overflow-x-auto md:overflow-visible px-4 py-4 md:px-8 md:py-8">
                             {tabs.map(tab => (
                                 <button
                                     key={tab.id}
@@ -59,14 +59,16 @@ export default function Docs() {
                             ))}
                         </div>
 
-                        <div className="hidden md:block mt-auto pt-8 border-t border-neutral-200">
+                        <div className="hidden md:block mt-auto p-8 pt-8 border-t border-neutral-200">
                             <Link href="/support" className="text-[10px] font-mono text-neutral-400 hover:text-neutral-900 transition-colors uppercase tracking-widest">
                                 need help? support ↗
                             </Link>
                         </div>
-                        <Link href="/support" className="md:hidden flex-shrink-0 text-[10px] font-mono text-neutral-400 hover:text-neutral-900 uppercase tracking-widest self-center ml-2">
-                            support ↗
-                        </Link>
+                        <div className="md:hidden flex-shrink-0 px-4 py-3 border-t border-neutral-200">
+                            <Link href="/support" className="text-[10px] font-mono text-neutral-400 hover:text-neutral-900 uppercase tracking-widest">
+                                need help? support ↗
+                            </Link>
+                        </div>
                     </nav>
 
                     {/* Content Area */}

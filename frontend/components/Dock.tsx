@@ -161,7 +161,7 @@ export default function Dock({
     const indicatorX = useSpring(indicatorTarget, { stiffness: 500, damping: 30, mass: 0.5 });
     const indicatorOpacity = useMotionValue(0);
 
-    // Get the center-x of item[i] relative to panel left (only dock items, exclude indicator)
+    // Get the center-x of item[i] relative to panel padding edge (where position:absolute left is anchored)
     const getItemCenterInPanel = (index: number): number | null => {
         const panel = panelRef.current;
         if (!panel) return null;
@@ -170,7 +170,8 @@ export default function Dock({
         if (!itemEl) return null;
         const panelRect = panel.getBoundingClientRect();
         const itemRect = itemEl.getBoundingClientRect();
-        return itemRect.left + itemRect.width / 2 - panelRect.left;
+        const borderLeft = parseInt(getComputedStyle(panel).borderLeftWidth, 10) || 0;
+        return itemRect.left + itemRect.width / 2 - panelRect.left - borderLeft;
     };
 
     // Set indicator to active item on mount, when active changes, or when isMobile changes

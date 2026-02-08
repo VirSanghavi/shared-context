@@ -64,15 +64,15 @@ export async function POST(req: NextRequest) {
 
         const sub = subscriptions.data[0];
 
-        // Apply coupon CvcPuGJs (RETENTION_50)
+        // Apply coupon MsMDlEed (RETENTION_12.5)
         await stripe.subscriptions.update(sub.id, {
-            coupon: 'CvcPuGJs',
+            coupon: 'MsMDlEed',
         });
 
         // Log activity
         const userId = session.sub || session.id || await resolveUserId(session.email);
         if (userId) {
-            await logActivity(userId as string, "DISCOUNT_APPLIED", "RETENTION_12.5", { subscription_id: sub.id, coupon: 'CvcPuGJs' });
+            await logActivity(userId as string, "DISCOUNT_APPLIED", "RETENTION_12.5", { subscription_id: sub.id, coupon: 'MsMDlEed' });
         }
 
         return NextResponse.json({ success: true, message: "Retention offer applied" });
