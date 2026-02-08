@@ -31,12 +31,21 @@ export const metadata: Metadata = {
     siteName: "Axis",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: `${siteUrl}/og.png`,
+        width: 1200,
+        height: 630,
+        alt: "Axis — Parallel Agent Workflows & Distributed Orchestration",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Axis - Parallel Agent Workflows",
     description: "Coordinate distributed AI agent swarms with shared memory, file locking, and atomic task management.",
     creator: "@VirSanghavi13",
+    images: [`${siteUrl}/og.png`],
   },
 };
 
