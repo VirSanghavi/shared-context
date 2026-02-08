@@ -830,13 +830,11 @@ export class NerveCenter {
     /**
      * Normalize a lock path to be relative to the project root.
      * Strips the project root prefix (process.cwd()) so that absolute and relative
-     * paths resolve to the same key.
-     * Examples (assuming cwd = /Users/vir/Projects/MyApp):
-     *   "/Users/vir/Projects/MyApp/src/api/v1/route.ts" => "src/api/v1/route.ts"
-     *   "src/api/v1/route.ts"                            => "src/api/v1/route.ts"
-     *   "/Users/vir/Projects/MyApp/"                     => ""  (project root)
+     * paths resolve to the same key. This ensures that:
+     *   "/Users/vir/Projects/MyApp/src/api/route.ts" and "src/api/route.ts"
+     * are treated as the same lock.
      */
-    private static normalizeLockPath(filePath: string): string {
+    static normalizeLockPath(filePath: string): string {
         let normalized = filePath.replace(/\/+$/, "");
         const cwd = process.cwd().replace(/\/+$/, "");
 
@@ -853,29 +851,45 @@ export class NerveCenter {
     }
 
     /**
-     * Validate that a lock path is not overly broad.
-     * Directory locks (last segment has no file extension) must have at least
-     * MIN_DIR_LOCK_DEPTH segments from the project root.
-     * This prevents agents from locking huge swaths of the codebase like
-     * "src/" or "frontend/" which would block every other agent.
+     * Validate that a lock targets an individual file, not a directory.
+     * Agents must lock specific files — directory locks are rejected because
+     * they block all other agents from working on ANY file in that tree,
+     * even for completely unrelated features.
+     *
+     * Detection strategy:
+     * 1. If the path exists on disk, use fs.stat to check (handles extensionless files like Makefile)
+     * 2. If the path doesn't exist, use file extension heuristic
      */
-    private static readonly MIN_DIR_LOCK_DEPTH = 2;
+    private static async validateFileOnly(filePath: string): Promise<{ valid: boolean; reason?: string }> {
+        const normalized = NerveCenter.normalizeLockPath(filePath);
 
-    private static validateLockScope(normalizedPath: string): { valid: boolean; reason?: string } {
-        // Reject locking the project root entirely
-        if (!normalizedPath || normalizedPath === "." || normalizedPath === "/") {
-            return { valid: false, reason: "Cannot lock the entire project root. Lock specific files or subdirectories instead." };
+        // Reject empty / root paths
+        if (!normalized || normalized === "." || normalized === "/") {
+            return { valid: false, reason: "Cannot lock the project root. Lock individual files instead." };
         }
 
-        const segments = normalizedPath.split("/").filter(Boolean);
-        const lastSegment = segments[segments.length - 1] || "";
-        const hasExtension = lastSegment.includes(".");
+        // Try filesystem check first (handles extensionless files like Makefile, Dockerfile, LICENSE)
+        const absolutePath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
+        try {
+            const stat = await fs.stat(absolutePath);
+            if (stat.isDirectory()) {
+                return {
+                    valid: false,
+                    reason: `'${normalized}' is a directory. Lock individual files instead — directory locks block all agents from the entire tree, preventing parallel work on different features.`
+                };
+            }
+            // It's a file (even without an extension) — allow it
+            return { valid: true };
+        } catch {
+            // Path doesn't exist on disk — fall through to heuristic
+        }
 
-        // If it looks like a directory (no file extension), enforce minimum depth
-        if (!hasExtension && segments.length < NerveCenter.MIN_DIR_LOCK_DEPTH) {
+        // Heuristic: if the last segment has no file extension, it's likely a directory
+        const lastSegment = normalized.split("/").filter(Boolean).pop() || "";
+        if (!lastSegment.includes(".")) {
             return {
                 valid: false,
-                reason: `Directory lock '${normalizedPath}' is too broad (depth ${segments.length}, minimum ${NerveCenter.MIN_DIR_LOCK_DEPTH}). Lock a more specific subdirectory or individual files instead.`
+                reason: `'${normalized}' looks like a directory (no file extension). Lock individual files instead — directory locks block all agents from the entire tree, preventing parallel work on different features.`
             };
         }
 
@@ -883,37 +897,18 @@ export class NerveCenter {
     }
 
     /**
-     * Check if two file paths conflict hierarchically.
-     * Both paths should be normalized (relative to project root) before comparison.
-     * A lock on a directory blocks locks on any file within it, and vice versa.
-     * Examples:
-     *   pathsConflict("src/api", "src/api/route.ts") => true  (parent blocks child)
-     *   pathsConflict("src/api/route.ts", "src/api") => true  (child blocks parent)
-     *   pathsConflict("src/api", "src/api")           => true  (exact match)
-     *   pathsConflict("src/api", "src/lib")           => false (siblings)
+     * Find an existing lock that conflicts with the requested path (exact match).
+     * Paths are normalized before comparison so absolute and relative paths
+     * targeting the same file are correctly detected as conflicts.
      */
-    private static pathsConflict(pathA: string, pathB: string): boolean {
-        const a = pathA.replace(/\/+$/, "");
-        const b = pathB.replace(/\/+$/, "");
-        if (a === b) return true;
-        if (b.startsWith(a + "/")) return true;
-        if (a.startsWith(b + "/")) return true;
-        return false;
-    }
-
-    /**
-     * Find any existing lock that conflicts hierarchically with the requested path.
-     * Skips locks owned by the same agent and stale locks.
-     * All paths are normalized before comparison.
-     */
-    private findHierarchicalConflict(requestedPath: string, requestingAgent: string, locks: FileLock[]): FileLock | null {
+    private findExactConflict(requestedPath: string, requestingAgent: string, locks: FileLock[]): FileLock | null {
         const normalizedRequested = NerveCenter.normalizeLockPath(requestedPath);
         for (const lock of locks) {
             if (lock.agentId === requestingAgent) continue;
             const isStale = (Date.now() - lock.timestamp) > this.lockTimeout;
             if (isStale) continue;
             const normalizedLock = NerveCenter.normalizeLockPath(lock.filePath);
-            if (NerveCenter.pathsConflict(normalizedRequested, normalizedLock)) {
+            if (normalizedRequested === normalizedLock) {
                 return lock;
             }
         }
@@ -924,27 +919,27 @@ export class NerveCenter {
         return await this.mutex.runExclusive(async () => {
             logger.info(`[proposeFileAccess] Starting - agentId: ${agentId}, filePath: ${filePath}`);
 
-            // --- Normalize and validate lock scope ---
+            // --- Normalize and validate: file-only locks ---
             const normalizedPath = NerveCenter.normalizeLockPath(filePath);
             logger.info(`[proposeFileAccess] Normalized path: '${normalizedPath}' (from '${filePath}')`);
 
-            const scopeCheck = NerveCenter.validateLockScope(normalizedPath);
-            if (!scopeCheck.valid) {
-                logger.warn(`[proposeFileAccess] REJECTED — scope too broad: ${scopeCheck.reason}`);
+            const fileCheck = await NerveCenter.validateFileOnly(filePath);
+            if (!fileCheck.valid) {
+                logger.warn(`[proposeFileAccess] REJECTED — not a file: ${fileCheck.reason}`);
                 return {
                     status: "REJECTED",
-                    message: scopeCheck.reason
+                    message: fileCheck.reason
                 };
             }
 
             // --- Path 1: Remote API (customer mode) ---
-            // Atomicity is handled server-side via try_acquire_lock RPC.
-            // Hierarchical conflict checking is done server-side in the locks API route.
+            // Atomicity handled server-side via try_acquire_lock RPC.
+            // File-only validation also enforced server-side.
             if (this.contextManager.apiUrl) {
                 try {
                     const result = await this.callCoordination("locks", "POST", {
                         action: "lock",
-                        filePath,
+                        filePath: normalizedPath,
                         agentId,
                         intent,
                         userPrompt
@@ -952,24 +947,28 @@ export class NerveCenter {
 
                     if (result.status === "DENIED") {
                         logger.info(`[proposeFileAccess] DENIED by server: ${result.message}`);
-                        this.logLockEvent("BLOCKED", filePath, agentId, result.current_lock?.agent_id, intent);
+                        this.logLockEvent("BLOCKED", normalizedPath, agentId, result.current_lock?.agent_id, intent);
                         return {
                             status: "REQUIRES_ORCHESTRATION",
-                            message: result.message || `File '${filePath}' is locked by another agent`,
+                            message: result.message || `File '${normalizedPath}' is locked by another agent`,
                             currentLock: result.current_lock
                         };
                     }
 
+                    if (result.status === "REJECTED") {
+                        logger.warn(`[proposeFileAccess] REJECTED by server: ${result.message}`);
+                        return { status: "REJECTED", message: result.message };
+                    }
+
                     logger.info(`[proposeFileAccess] GRANTED by server`);
-                    this.logLockEvent("GRANTED", filePath, agentId, undefined, intent);
-                    await this.appendToNotepad(`\n- [LOCK] ${agentId} locked ${filePath}\n  Intent: ${intent}`);
-                    return { status: "GRANTED", message: `Access granted for ${filePath}` };
+                    this.logLockEvent("GRANTED", normalizedPath, agentId, undefined, intent);
+                    await this.appendToNotepad(`\n- [LOCK] ${agentId} locked ${normalizedPath}\n  Intent: ${intent}`);
+                    return { status: "GRANTED", message: `Access granted for ${normalizedPath}` };
                 } catch (e: any) {
                     // If the API returned 409 (conflict), parse the DENIED response
                     if (e.message && e.message.includes("409")) {
                         logger.info(`[proposeFileAccess] Lock conflict (409)`);
 
-                        // Extract the blocking agent from the 409 JSON body embedded in the error
                         let blockingAgent: string | undefined;
                         try {
                             const jsonMatch = e.message.match(/\{.*\}/s);
@@ -979,12 +978,11 @@ export class NerveCenter {
                             }
                         } catch { /* best-effort extraction */ }
 
-                        // Log the BLOCKED event so it shows in the dashboard conflicts count
-                        this.logLockEvent("BLOCKED", filePath, agentId, blockingAgent, intent);
+                        this.logLockEvent("BLOCKED", normalizedPath, agentId, blockingAgent, intent);
 
                         return {
                             status: "REQUIRES_ORCHESTRATION",
-                            message: `File '${filePath}' is locked by another agent`,
+                            message: `File '${normalizedPath}' is locked by another agent`,
                         };
                     }
                     logger.error(`[proposeFileAccess] API lock failed: ${e.message}`, e);
@@ -993,40 +991,12 @@ export class NerveCenter {
             }
 
             // --- Path 2: Direct Supabase (development mode) ---
-            // Uses atomic try_acquire_lock RPC for exact-path locks.
-            // Hierarchical conflict check: query existing locks first, then check path overlap.
+            // Uses atomic try_acquire_lock RPC. Exact-path conflict only (no hierarchy).
             if (this.useSupabase && this.supabase && this._projectId) {
                 try {
-                    // Pre-flight: check for hierarchical conflicts among existing locks
-                    const { data: existingLocks } = await this.supabase
-                        .from("locks")
-                        .select("agent_id, file_path, intent, updated_at")
-                        .eq("project_id", this._projectId);
-
-                    if (existingLocks && existingLocks.length > 0) {
-                        const asFileLocks: FileLock[] = existingLocks.map((row: any) => ({
-                            agentId: row.agent_id,
-                            filePath: row.file_path,
-                            intent: row.intent,
-                            userPrompt: "",
-                            timestamp: row.updated_at ? Date.parse(row.updated_at) : Date.now()
-                        }));
-                        const conflict = this.findHierarchicalConflict(filePath, agentId, asFileLocks);
-                        if (conflict) {
-                            logger.info(`[proposeFileAccess] Hierarchical conflict: '${filePath}' overlaps with locked '${conflict.filePath}' (owner: ${conflict.agentId})`);
-                            this.logLockEvent("BLOCKED", filePath, agentId, conflict.agentId, intent);
-                            return {
-                                status: "REQUIRES_ORCHESTRATION",
-                                message: `Conflict: '${filePath}' overlaps with '${conflict.filePath}' locked by '${conflict.agentId}'`,
-                                currentLock: conflict
-                            };
-                        }
-                    }
-
-                    // No hierarchical conflict — proceed with atomic exact-path lock
                     const { data, error } = await this.supabase.rpc("try_acquire_lock", {
                         p_project_id: this._projectId,
-                        p_file_path: filePath,
+                        p_file_path: normalizedPath,
                         p_agent_id: agentId,
                         p_intent: intent,
                         p_user_prompt: userPrompt,
@@ -1038,46 +1008,45 @@ export class NerveCenter {
                     const row = Array.isArray(data) ? data[0] : data;
 
                     if (row && row.status === "DENIED") {
-                        this.logLockEvent("BLOCKED", filePath, agentId, row.owner_id, intent);
+                        this.logLockEvent("BLOCKED", normalizedPath, agentId, row.owner_id, intent);
                         return {
                             status: "REQUIRES_ORCHESTRATION",
-                            message: `Conflict: File '${filePath}' is locked by '${row.owner_id}'`,
+                            message: `Conflict: File '${normalizedPath}' is locked by '${row.owner_id}'`,
                             currentLock: {
                                 agentId: row.owner_id,
-                                filePath,
+                                filePath: normalizedPath,
                                 intent: row.intent,
                                 timestamp: row.updated_at ? Date.parse(row.updated_at) : Date.now()
                             }
                         };
                     }
 
-                    this.logLockEvent("GRANTED", filePath, agentId, undefined, intent);
-                    await this.appendToNotepad(`\n- [LOCK] ${agentId} locked ${filePath}\n  Intent: ${intent}`);
-                    return { status: "GRANTED", message: `Access granted for ${filePath}` };
+                    this.logLockEvent("GRANTED", normalizedPath, agentId, undefined, intent);
+                    await this.appendToNotepad(`\n- [LOCK] ${agentId} locked ${normalizedPath}\n  Intent: ${intent}`);
+                    return { status: "GRANTED", message: `Access granted for ${normalizedPath}` };
                 } catch (e: any) {
                     logger.warn("[NerveCenter] Lock RPC failed. Falling back to local.", e);
                 }
             }
 
             // --- Path 3: Local-only fallback ---
-            // Full hierarchical conflict check against all local locks.
+            // Exact-path conflict check with normalized paths.
             const allLocks = Object.values(this.state.locks);
-            const conflict = this.findHierarchicalConflict(filePath, agentId, allLocks);
+            const conflict = this.findExactConflict(filePath, agentId, allLocks);
             if (conflict) {
-                logger.info(`[proposeFileAccess] Hierarchical conflict (local): '${filePath}' overlaps with locked '${conflict.filePath}' (owner: ${conflict.agentId})`);
-                this.logLockEvent("BLOCKED", filePath, agentId, conflict.agentId, intent);
+                this.logLockEvent("BLOCKED", normalizedPath, agentId, conflict.agentId, intent);
                 return {
                     status: "REQUIRES_ORCHESTRATION",
-                    message: `Conflict: '${filePath}' overlaps with '${conflict.filePath}' locked by '${conflict.agentId}'`,
+                    message: `Conflict: File '${normalizedPath}' is locked by '${conflict.agentId}'`,
                     currentLock: conflict
                 };
             }
 
-            this.state.locks[filePath] = { agentId, filePath, intent, userPrompt, timestamp: Date.now() };
+            this.state.locks[normalizedPath] = { agentId, filePath: normalizedPath, intent, userPrompt, timestamp: Date.now() };
             await this.saveState();
-            this.logLockEvent("GRANTED", filePath, agentId, undefined, intent);
-            await this.appendToNotepad(`\n- [LOCK] ${agentId} locked ${filePath}\n  Intent: ${intent}`);
-            return { status: "GRANTED", message: `Access granted for ${filePath}` };
+            this.logLockEvent("GRANTED", normalizedPath, agentId, undefined, intent);
+            await this.appendToNotepad(`\n- [LOCK] ${agentId} locked ${normalizedPath}\n  Intent: ${intent}`);
+            return { status: "GRANTED", message: `Access granted for ${normalizedPath}` };
         });
     }
 
