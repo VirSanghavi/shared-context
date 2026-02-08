@@ -119,52 +119,6 @@ function UsageChart({ data }: { data: { day: string; requests: number }[] }) {
   );
 }
 
-// Conflicts chart — stacked blocked/granted bars
-function ConflictsChart({ data }: { data: DailyLockData[] }) {
-  const max = Math.max(...data.map(d => d.blocked + d.granted), 1);
-  const getPercent = (val: number) => {
-    if (val === 0) return 0;
-    return Math.max(8, (val / max) * 100);
-  };
-
-  return (
-    <div className="flex-1 flex items-end gap-1.5 min-h-0">
-      {data.map((d, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full">
-          <div className="flex-1 flex items-end w-full">
-            <div className="w-full flex flex-col items-stretch justify-end h-full gap-px">
-              {d.blocked > 0 && (
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: `${getPercent(d.blocked)}%` }}
-                  transition={{ duration: 0.5, delay: i * 0.05 }}
-                  className="w-full bg-red-400 rounded-t"
-                  style={{ minHeight: 4 }}
-                  title={`${d.blocked} blocked`}
-                />
-              )}
-              {d.granted > 0 && (
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: `${getPercent(d.granted)}%` }}
-                  transition={{ duration: 0.5, delay: i * 0.05 + 0.1 }}
-                  className="w-full bg-emerald-400 rounded-t"
-                  style={{ minHeight: 4 }}
-                  title={`${d.granted} granted`}
-                />
-              )}
-            </div>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-[9px] font-mono text-neutral-900 font-medium">{d.blocked + d.granted}</span>
-            <span className="text-[8px] text-neutral-400 font-mono">{d.day}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default function Dashboard() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -523,44 +477,55 @@ export default function Dashboard() {
 
                 {activeTab === 'conflicts' && (
                   <div className="flex flex-col h-full">
-                    {/* Summary cards */}
-                    <div className="grid grid-cols-4 gap-3 mb-5">
-                      <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-center">
-                        <div className="text-[20px] font-bold text-red-600">{conflictSummary?.blocked || 0}</div>
-                        <div className="text-[9px] font-mono text-red-400 uppercase tracking-wider">blocked</div>
-                      </div>
-                      <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-center">
-                        <div className="text-[20px] font-bold text-emerald-600">{conflictSummary?.granted || 0}</div>
-                        <div className="text-[9px] font-mono text-emerald-400 uppercase tracking-wider">granted</div>
-                      </div>
-                      <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-center">
-                        <div className="text-[20px] font-bold text-amber-600">{conflictSummary?.force_unlocked || 0}</div>
-                        <div className="text-[9px] font-mono text-amber-400 uppercase tracking-wider">forced</div>
-                      </div>
-                      <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3 text-center">
-                        <div className="text-[20px] font-bold text-neutral-600">{conflictSummary?.released || 0}</div>
-                        <div className="text-[9px] font-mono text-neutral-400 uppercase tracking-wider">released</div>
-                      </div>
+                    {/* Summary stats — inline, not cards */}
+                    <div className="flex items-center gap-6 mb-5 text-[11px] font-mono">
+                      <div><span className="text-[18px] font-bold text-red-600">{conflictSummary?.blocked || 0}</span> <span className="text-neutral-400">conflicts blocked</span></div>
+                      <div><span className="text-[18px] font-bold text-amber-600">{conflictSummary?.force_unlocked || 0}</span> <span className="text-neutral-400">force unlocks</span></div>
+                      <div className="ml-auto text-[10px] text-neutral-400">last 7 days</div>
                     </div>
 
-                    {/* Chart */}
+                    {/* Chart — only blocked, no legend badges */}
                     {conflictDaily.length > 0 && (
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-[11px] font-mono text-neutral-500 uppercase tracking-widest">last 7 days</span>
-                          <div className="flex gap-3">
-                            <span className="text-[9px] font-mono text-red-400 flex items-center gap-1"><span className="w-2 h-2 bg-red-400 rounded-sm inline-block" /> blocked</span>
-                            <span className="text-[9px] font-mono text-emerald-400 flex items-center gap-1"><span className="w-2 h-2 bg-emerald-400 rounded-sm inline-block" /> granted</span>
+                      <div className="mb-5">
+                        <div className="h-[120px] flex items-end gap-1.5">
+                          {conflictDaily.map((d, i) => {
+                            const total = d.blocked + d.granted;
+                            const maxTotal = Math.max(...conflictDaily.map(x => x.blocked + x.granted), 1);
+                            const barH = total === 0 ? 0 : Math.max(8, (total / maxTotal) * 100);
+                            const blockedRatio = total > 0 ? d.blocked / total : 0;
+                            return (
+                              <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full">
+                                <div className="flex-1 flex items-end w-full">
+                                  <motion.div
+                                    initial={{ height: 0 }}
+                                    animate={{ height: `${barH}%` }}
+                                    transition={{ duration: 0.4, delay: i * 0.04 }}
+                                    className="w-full rounded-t overflow-hidden flex flex-col justify-end"
+                                    style={{ minHeight: total > 0 ? 4 : 0 }}
+                                  >
+                                    {d.blocked > 0 && (
+                                      <div className="bg-red-400" style={{ height: `${blockedRatio * 100}%`, minHeight: 2 }} />
+                                    )}
+                                    {d.granted > 0 && (
+                                      <div className="bg-neutral-200" style={{ height: `${(1 - blockedRatio) * 100}%`, minHeight: 2 }} />
+                                    )}
+                                  </motion.div>
+                                </div>
+                                <div className="text-[8px] text-neutral-400 font-mono">{d.day}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {conflictDaily.some(d => d.blocked > 0) && (
+                          <div className="mt-3 text-[10px] font-mono text-neutral-500">
+                            axis prevented <span className="font-medium text-red-500">{conflictSummary?.blocked || 0}</span> file {(conflictSummary?.blocked || 0) === 1 ? 'collision' : 'collisions'} across <span className="font-medium text-neutral-700">{conflictDaily.filter(d => d.blocked > 0).length}</span> {conflictDaily.filter(d => d.blocked > 0).length === 1 ? 'day' : 'days'} this week
                           </div>
-                        </div>
-                        <div className="h-[140px]">
-                          <ConflictsChart data={conflictDaily} />
-                        </div>
+                        )}
                       </div>
                     )}
 
                     {/* Recent blocked events */}
-                    <div className="mt-2">
+                    <div className="mt-auto">
                       <h4 className="text-[10px] font-mono text-neutral-500 uppercase tracking-[0.2em] mb-3">recent conflicts</h4>
                       {recentBlocked.length === 0 ? (
                         <div className="text-center py-8 opacity-40 font-mono text-[11px]">no conflicts this week — all clear</div>
