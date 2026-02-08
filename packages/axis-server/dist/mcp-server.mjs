@@ -1229,61 +1229,50 @@ async function ensureFileSystem() {
         ["context.md", `# Project Context
 
 ## Overview
-<!-- Describe your project's core value proposition and goals here -->
-<!-- This file is read by all agents via get_project_soul and read_context -->
+This project uses Axis \u2014 an open-source coordination layer for AI agents.
+Axis provides shared context, atomic file locks, a job board, and real-time
+activity feeds so that multiple agents (Cursor, Claude, Windsurf, Codex, etc.)
+can work on the same codebase without conflicts.
 
 ## Architecture
-<!-- High-level design patterns and stack choices -->
+- **MCP Server**: Exposes tools (locks, jobs, context, search) via the Model Context Protocol.
+- **Supabase Backend**: Postgres for state (locks, jobs, profiles); Realtime for live feeds.
+- **Frontend**: Next.js App Router + Tailwind CSS dashboard at useaxis.dev.
+- **npm Packages**: @virsanghavi/axis-server (runtime), @virsanghavi/axis-init (scaffolding).
 
 ## Core Features
-<!-- List your main capabilities -->
+1. File Locking \u2014 atomic, cross-IDE locks with 30-min TTL.
+2. Job Board \u2014 post / claim / complete tasks with priorities and dependencies.
+3. Shared Context \u2014 live notepad visible to every agent in real time.
+4. RAG Search \u2014 vector search over the indexed codebase.
+5. Soul Files \u2014 context.md, conventions.md, activity.md define project identity.
 `],
-        ["conventions.md", `# Coding Conventions & Agent Norms
+        ["conventions.md", `# Coding Conventions
 
-## Language Standards
-<!-- Your TypeScript, Python, etc. guidelines go here -->
-
-## Styling
-<!-- CSS/Tailwind rules -->
-
-## Testing
-<!-- Test framework and strategy -->
-
----
+## Language & Style
+- TypeScript everywhere (strict mode).
+- Tailwind CSS for styling; no raw CSS unless unavoidable.
+- Functional React components; prefer server components in Next.js App Router.
 
 ## Agent Behavioral Norms
 
-These norms apply to **all** AI coding agents working on this project.
+### Plan Before Write
+Every non-trivial task must follow: post_job -> claim_next_job -> propose_file_access -> (edit) -> complete_job.
+Skip only for single-line typo fixes.
 
-### Plan Before Write — The Core Invariant
+### Force-Unlock Policy
+force_unlock is a LAST RESORT. Before using it:
+1. Verify the lock is > 25 minutes old.
+2. Confirm the locking agent is unresponsive.
+3. Provide a specific reason string.
+Never casually unlock files \u2014 always try propose_file_access first.
 
-**No agent writes code unless it either owns a file lock OR has explicitly declined the job board for a scoped reason.**
-
-On non-trivial tasks (2+ files, new features, refactors):
-1. Break work into jobs → \`post_job\`
-2. Claim before editing → \`claim_next_job\`
-3. Lock before writing → \`propose_file_access\` with a **descriptive intent**
-4. Complete when done → \`complete_job\` with outcome
-
-Direct edits without a job are allowed only for single-line fixes, typos, config tweaks, or clearly scoped user requests.
-
-### Force Unlock Policy
-
-\`force_unlock\` is a **last resort, not a convenience tool.**
-- Only use when a lock is >25 minutes old AND the locking agent is clearly crashed.
-- Always provide a specific reason. Never force-unlock to skip coordination.
-- Prefer waiting for TTL expiry (30 min) over force-unlocking.
-
-### Lock Hygiene
-- Always provide descriptive \`intent\` when locking.
-- Release locks early by completing jobs.
-- Call \`finalize_session\` at end of session to clean up.
-
-### Shared Memory
-- Call \`update_shared_context\` after meaningful steps.
-- Log decisions, not just actions. Other agents read the notepad in real-time.
+### Proactive Tool Usage
+Agents must use Axis MCP tools by default \u2014 do not wait for the user to say "use Axis".
+On session start, call get_project_soul or read_context to load project state.
+After significant progress, call update_shared_context.
 `],
-        ["activity.md", "# Activity Log\n\n## Session History\n<!-- Agents log major actions and decisions here via update_shared_context -->\n"]
+        ["activity.md", "# Activity Log\n\n"]
       ];
       for (const [file, content] of defaults) {
         const p = path4.join(axisInstructions, file);

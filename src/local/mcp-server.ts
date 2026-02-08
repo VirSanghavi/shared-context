@@ -148,8 +148,52 @@ async function ensureFileSystem() {
       await fs.mkdir(axisInstructions, { recursive: true }).catch(() => { });
 
       const defaults = [
-        ["context.md", "# Project Context\n\n"],
-        ["conventions.md", "# Coding Conventions\n\n"],
+        ["context.md", `# Project Context
+
+## Overview
+This project uses Axis — an open-source coordination layer for AI agents.
+Axis provides shared context, atomic file locks, a job board, and real-time
+activity feeds so that multiple agents (Cursor, Claude, Windsurf, Codex, etc.)
+can work on the same codebase without conflicts.
+
+## Architecture
+- **MCP Server**: Exposes tools (locks, jobs, context, search) via the Model Context Protocol.
+- **Supabase Backend**: Postgres for state (locks, jobs, profiles); Realtime for live feeds.
+- **Frontend**: Next.js App Router + Tailwind CSS dashboard at useaxis.dev.
+- **npm Packages**: @virsanghavi/axis-server (runtime), @virsanghavi/axis-init (scaffolding).
+
+## Core Features
+1. File Locking — atomic, cross-IDE locks with 30-min TTL.
+2. Job Board — post / claim / complete tasks with priorities and dependencies.
+3. Shared Context — live notepad visible to every agent in real time.
+4. RAG Search — vector search over the indexed codebase.
+5. Soul Files — context.md, conventions.md, activity.md define project identity.
+`],
+        ["conventions.md", `# Coding Conventions
+
+## Language & Style
+- TypeScript everywhere (strict mode).
+- Tailwind CSS for styling; no raw CSS unless unavoidable.
+- Functional React components; prefer server components in Next.js App Router.
+
+## Agent Behavioral Norms
+
+### Plan Before Write
+Every non-trivial task must follow: post_job -> claim_next_job -> propose_file_access -> (edit) -> complete_job.
+Skip only for single-line typo fixes.
+
+### Force-Unlock Policy
+force_unlock is a LAST RESORT. Before using it:
+1. Verify the lock is > 25 minutes old.
+2. Confirm the locking agent is unresponsive.
+3. Provide a specific reason string.
+Never casually unlock files — always try propose_file_access first.
+
+### Proactive Tool Usage
+Agents must use Axis MCP tools by default — do not wait for the user to say "use Axis".
+On session start, call get_project_soul or read_context to load project state.
+After significant progress, call update_shared_context.
+`],
         ["activity.md", "# Activity Log\n\n"]
       ];
 
