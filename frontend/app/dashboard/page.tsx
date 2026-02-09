@@ -72,6 +72,7 @@ interface DailyLockData {
   date: string;
   blocked: number;
   granted: number;
+  force_unlocked: number;
 }
 
 interface RecentBlocked {
@@ -485,15 +486,17 @@ export default function Dashboard() {
                       <div className="ml-auto text-[10px] text-neutral-400">last 7 days</div>
                     </div>
 
-                    {/* Chart — only blocked, no legend badges */}
+                    {/* Chart — blocked (red) + force unlocks (amber) + granted (gray) */}
                     {conflictDaily.length > 0 && (
                       <div className="mb-5">
                         <div className="h-[120px] flex items-end gap-1.5">
                           {conflictDaily.map((d, i) => {
-                            const total = d.blocked + d.granted;
-                            const maxTotal = Math.max(...conflictDaily.map(x => x.blocked + x.granted), 1);
+                            const total = d.blocked + d.force_unlocked + d.granted;
+                            const maxTotal = Math.max(...conflictDaily.map(x => x.blocked + x.force_unlocked + x.granted), 1);
                             const barH = total === 0 ? 0 : Math.max(8, (total / maxTotal) * 100);
-                            const blockedRatio = total > 0 ? d.blocked / total : 0;
+                            const blockedPct = total > 0 ? (d.blocked / total) * 100 : 0;
+                            const forceUnlockedPct = total > 0 ? (d.force_unlocked / total) * 100 : 0;
+                            const grantedPct = total > 0 ? (d.granted / total) * 100 : 0;
                             return (
                               <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full">
                                 <div className="flex-1 flex items-end w-full">
@@ -505,10 +508,13 @@ export default function Dashboard() {
                                     style={{ minHeight: total > 0 ? 4 : 0 }}
                                   >
                                     {d.blocked > 0 && (
-                                      <div className="bg-red-400" style={{ height: `${blockedRatio * 100}%`, minHeight: 2 }} />
+                                      <div className="bg-red-400" style={{ height: `${blockedPct}%`, minHeight: 2 }} />
+                                    )}
+                                    {d.force_unlocked > 0 && (
+                                      <div className="bg-amber-400" style={{ height: `${forceUnlockedPct}%`, minHeight: 2 }} />
                                     )}
                                     {d.granted > 0 && (
-                                      <div className="bg-neutral-200" style={{ height: `${(1 - blockedRatio) * 100}%`, minHeight: 2 }} />
+                                      <div className="bg-neutral-200" style={{ height: `${grantedPct}%`, minHeight: 2 }} />
                                     )}
                                   </motion.div>
                                 </div>
@@ -517,7 +523,7 @@ export default function Dashboard() {
                             );
                           })}
                         </div>
-                        {conflictDaily.some(d => d.blocked > 0) && (
+                        {(conflictDaily.some(d => d.blocked > 0) || conflictDaily.some(d => d.force_unlocked > 0)) && (
                           <div className="mt-3 text-[10px] font-mono text-neutral-500">
                             axis prevented <span className="font-medium text-red-500">{conflictSummary?.blocked || 0}</span> file {(conflictSummary?.blocked || 0) === 1 ? 'collision' : 'collisions'} across <span className="font-medium text-neutral-700">{conflictDaily.filter(d => d.blocked > 0).length}</span> {conflictDaily.filter(d => d.blocked > 0).length === 1 ? 'day' : 'days'} this week
                           </div>

@@ -54,15 +54,16 @@ export async function GET(req: NextRequest) {
             force_unlocked: 0,
             released: 0,
         };
-        const daily: Record<string, { blocked: number; granted: number }> = {};
+        const daily: Record<string, { blocked: number; granted: number; force_unlocked: number }> = {};
 
         for (const row of (stats || [])) {
             const key = row.event_type.toLowerCase() as keyof typeof summary;
             if (key in summary) summary[key] += Number(row.event_count);
 
-            if (!daily[row.day]) daily[row.day] = { blocked: 0, granted: 0 };
+            if (!daily[row.day]) daily[row.day] = { blocked: 0, granted: 0, force_unlocked: 0 };
             if (row.event_type === "BLOCKED") daily[row.day].blocked += Number(row.event_count);
             if (row.event_type === "GRANTED") daily[row.day].granted += Number(row.event_count);
+            if (row.event_type === "FORCE_UNLOCKED") daily[row.day].force_unlocked += Number(row.event_count);
         }
 
         // Fill in missing days — use UTC consistently (Supabase stores in UTC)
@@ -80,6 +81,7 @@ export async function GET(req: NextRequest) {
                 date: key,
                 blocked: daily[key]?.blocked || 0,
                 granted: daily[key]?.granted || 0,
+                force_unlocked: daily[key]?.force_unlocked || 0,
             });
         }
 
