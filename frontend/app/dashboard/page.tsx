@@ -483,6 +483,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-6 mb-5 text-[11px] font-mono">
                       <div><span className="text-[18px] font-bold text-red-600">{conflictSummary?.blocked || 0}</span> <span className="text-neutral-400">conflicts blocked</span></div>
                       <div><span className="text-[18px] font-bold text-amber-600">{conflictSummary?.force_unlocked || 0}</span> <span className="text-neutral-400">force unlocks</span></div>
+                      <div><span className="text-[18px] font-bold text-neutral-200">{conflictSummary?.granted || 0}</span> <span className="text-neutral-400">granted</span></div>
                       <div className="ml-auto text-[10px] text-neutral-400">last 7 days</div>
                     </div>
 
