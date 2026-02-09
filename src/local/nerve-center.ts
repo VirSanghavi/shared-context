@@ -775,7 +775,7 @@ export class NerveCenter {
                 await this.saveState();
             }
 
-            this.logLockEvent("FORCE_UNLOCKED", filePath, "admin", undefined, reason);
+            await this.logLockEvent("FORCE_UNLOCKED", filePath, "admin", undefined, reason);
             await this.appendToNotepad(`\n- [FORCE UNLOCK] ${filePath} unlocked by admin. Reason: ${reason}`);
             return `File ${filePath} has been forcibly unlocked.`;
         });
@@ -803,6 +803,7 @@ export class NerveCenter {
     private async logLockEvent(eventType: string, filePath: string, requestingAgent: string, blockingAgent?: string, intent?: string) {
         try {
             if (this.contextManager.apiUrl) {
+                logger.info(`[logLockEvent] Logging ${eventType} event via API for ${filePath} (agent: ${requestingAgent}, blocker: ${blockingAgent || 'none'})`);
                 await this.callCoordination("lock-events", "POST", {
                     eventType,
                     filePath,
@@ -810,7 +811,9 @@ export class NerveCenter {
                     blockingAgent: blockingAgent || null,
                     intent: intent || null,
                 });
+                logger.info(`[logLockEvent] Successfully logged ${eventType} event`);
             } else if (this.useSupabase && this.supabase && this._projectId) {
+                logger.info(`[logLockEvent] Logging ${eventType} event via Supabase for ${filePath}`);
                 await this.supabase.from("lock_events").insert({
                     project_id: this._projectId,
                     event_type: eventType,
@@ -819,9 +822,12 @@ export class NerveCenter {
                     blocking_agent: blockingAgent || null,
                     intent: intent || null,
                 });
+                logger.info(`[logLockEvent] Successfully logged ${eventType} event`);
+            } else {
+                logger.warn(`[logLockEvent] No persistence backend available — ${eventType} event for ${filePath} will not be recorded`);
             }
         } catch (e: any) {
-            logger.warn(`[logLockEvent] Failed to log ${eventType} event: ${e.message}`);
+            logger.error(`[logLockEvent] Failed to log ${eventType} event for ${filePath}: ${e.message}`);
         }
     }
 
@@ -947,7 +953,7 @@ export class NerveCenter {
 
                     if (result.status === "DENIED") {
                         logger.info(`[proposeFileAccess] DENIED by server: ${result.message}`);
-                        this.logLockEvent("BLOCKED", normalizedPath, agentId, result.current_lock?.agent_id, intent);
+                        await this.logLockEvent("BLOCKED", normalizedPath, agentId, result.current_lock?.agent_id, intent);
                         return {
                             status: "REQUIRES_ORCHESTRATION",
                             message: result.message || `File '${normalizedPath}' is locked by another agent`,
@@ -961,7 +967,7 @@ export class NerveCenter {
                     }
 
                     logger.info(`[proposeFileAccess] GRANTED by server`);
-                    this.logLockEvent("GRANTED", normalizedPath, agentId, undefined, intent);
+                    await this.logLockEvent("GRANTED", normalizedPath, agentId, undefined, intent);
                     await this.appendToNotepad(`\n- [LOCK] ${agentId} locked ${normalizedPath}\n  Intent: ${intent}`);
                     return { status: "GRANTED", message: `Access granted for ${normalizedPath}` };
                 } catch (e: any) {
@@ -978,7 +984,7 @@ export class NerveCenter {
                             }
                         } catch { /* best-effort extraction */ }
 
-                        this.logLockEvent("BLOCKED", normalizedPath, agentId, blockingAgent, intent);
+                        await this.logLockEvent("BLOCKED", normalizedPath, agentId, blockingAgent, intent);
 
                         return {
                             status: "REQUIRES_ORCHESTRATION",
@@ -1008,7 +1014,7 @@ export class NerveCenter {
                     const row = Array.isArray(data) ? data[0] : data;
 
                     if (row && row.status === "DENIED") {
-                        this.logLockEvent("BLOCKED", normalizedPath, agentId, row.owner_id, intent);
+                        await this.logLockEvent("BLOCKED", normalizedPath, agentId, row.owner_id, intent);
                         return {
                             status: "REQUIRES_ORCHESTRATION",
                             message: `Conflict: File '${normalizedPath}' is locked by '${row.owner_id}'`,
@@ -1021,7 +1027,7 @@ export class NerveCenter {
                         };
                     }
 
-                    this.logLockEvent("GRANTED", normalizedPath, agentId, undefined, intent);
+                    await this.logLockEvent("GRANTED", normalizedPath, agentId, undefined, intent);
                     await this.appendToNotepad(`\n- [LOCK] ${agentId} locked ${normalizedPath}\n  Intent: ${intent}`);
                     return { status: "GRANTED", message: `Access granted for ${normalizedPath}` };
                 } catch (e: any) {
@@ -1034,7 +1040,7 @@ export class NerveCenter {
             const allLocks = Object.values(this.state.locks);
             const conflict = this.findExactConflict(filePath, agentId, allLocks);
             if (conflict) {
-                this.logLockEvent("BLOCKED", normalizedPath, agentId, conflict.agentId, intent);
+                await this.logLockEvent("BLOCKED", normalizedPath, agentId, conflict.agentId, intent);
                 return {
                     status: "REQUIRES_ORCHESTRATION",
                     message: `Conflict: File '${normalizedPath}' is locked by '${conflict.agentId}'`,
@@ -1044,7 +1050,7 @@ export class NerveCenter {
 
             this.state.locks[normalizedPath] = { agentId, filePath: normalizedPath, intent, userPrompt, timestamp: Date.now() };
             await this.saveState();
-            this.logLockEvent("GRANTED", normalizedPath, agentId, undefined, intent);
+            await this.logLockEvent("GRANTED", normalizedPath, agentId, undefined, intent);
             await this.appendToNotepad(`\n- [LOCK] ${agentId} locked ${normalizedPath}\n  Intent: ${intent}`);
             return { status: "GRANTED", message: `Access granted for ${normalizedPath}` };
         });
