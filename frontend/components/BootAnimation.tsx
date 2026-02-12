@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
-const BOOT_LOGS = [
+const STATIC_LOGS = [
     "[ 0.000000] axis: kernel v1.0.0-prod",
     "[ 0.000312] loading context modules...",
     "[ 0.001024] mem: 16384MB available",
@@ -11,7 +11,7 @@ const BOOT_LOGS = [
     "[ 0.002048] init: mounting /dev/knowledge",
     "[ 0.002561] init: vector_db connected",
     "[ 0.003072] init: embedding_engine ready",
-    "[ 0.003584] ███████████████████████████ 100%",
+    "__PROGRESS__",
     "[ 0.004096] axis: machine mode activated",
     "root@axis:~# ./render --mode=machine",
 ];
@@ -21,17 +21,57 @@ export default function BootAnimation({ onComplete }: { onComplete: () => void }
 
     useEffect(() => {
         let currentLine = 0;
-        const interval = setInterval(() => {
-            if (currentLine < BOOT_LOGS.length) {
-                setLines(prev => [...prev, BOOT_LOGS[currentLine]]);
+        let lineInterval: ReturnType<typeof setInterval> | null = null;
+        let progressInterval: ReturnType<typeof setInterval> | null = null;
+        let completionTimeout: ReturnType<typeof setTimeout> | null = null;
+
+        const buildProgressLine = (percent: number) => {
+            const BAR_LENGTH = 26;
+            const filled = Math.round((percent / 100) * BAR_LENGTH);
+            const bar = `${'█'.repeat(filled)}${'░'.repeat(BAR_LENGTH - filled)}`;
+            return `[ 0.003584] ${bar} ${percent}%`;
+        };
+
+        const cleanup = () => {
+            if (lineInterval) clearInterval(lineInterval);
+            if (progressInterval) clearInterval(progressInterval);
+            if (completionTimeout) clearTimeout(completionTimeout);
+        };
+
+        const startProgressSequence = () => {
+            let progress = 0;
+            setLines(prev => [...prev, buildProgressLine(progress)]);
+            progressInterval = setInterval(() => {
+                progress = Math.min(progress + 4, 100);
+                setLines(prev => [...prev.slice(0, -1), buildProgressLine(progress)]);
+
+                if (progress >= 100) {
+                    if (progressInterval) clearInterval(progressInterval);
+                    currentLine++;
+                    lineInterval = setInterval(appendNextLine, 250);
+                }
+            }, 65);
+        };
+
+        const appendNextLine = () => {
+            if (currentLine < STATIC_LOGS.length) {
+                const nextLine = STATIC_LOGS[currentLine];
+                if (nextLine === "__PROGRESS__") {
+                    if (lineInterval) clearInterval(lineInterval);
+                    startProgressSequence();
+                    return;
+                }
+                setLines(prev => [...prev, nextLine]);
                 currentLine++;
             } else {
-                clearInterval(interval);
-                setTimeout(onComplete, 500);
+                if (lineInterval) clearInterval(lineInterval);
+                completionTimeout = setTimeout(onComplete, 500);
             }
-        }, 250);
+        };
 
-        return () => clearInterval(interval);
+        lineInterval = setInterval(appendNextLine, 250);
+
+        return cleanup;
     }, [onComplete]);
 
     return (
@@ -47,7 +87,7 @@ export default function BootAnimation({ onComplete }: { onComplete: () => void }
                         {line}
                     </div>
                 ))}
-                {lines.length === BOOT_LOGS.length && (
+                {lines.length === STATIC_LOGS.length && (
                     <motion.span
                         animate={{ opacity: [1, 0] }}
                         transition={{ repeat: Infinity, duration: 0.8 }}

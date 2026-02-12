@@ -9,7 +9,7 @@ import MachineToggle from "@/components/MachineToggle";
 import { useMachineMode } from "@/context/MachineModeContext";
 
 export default function Home() {
-    const { mode } = useMachineMode();
+    const { mode, setMode } = useMachineMode();
     const [mounted, setMounted] = useState(false);
     const [query, setQuery] = useState("");
     const [isSearching, setIsSearching] = useState(false);
@@ -57,7 +57,15 @@ export default function Home() {
             <div className="min-h-screen bg-black text-white font-mono p-10 leading-relaxed selection:bg-white/20">
                 <div className="max-w-3xl mx-auto space-y-8">
                     <div className="flex items-center gap-6 mb-12">
-                        <img src="/alogo.jpg" alt="Axis" className="w-16 h-16 rounded-full border border-emerald-500/20 grayscale" />
+                        <button
+                            type="button"
+                            onClick={() => setMode('human')}
+                            className="relative w-16 h-16 rounded-full border border-emerald-400/35 p-0.5 grayscale hover:grayscale-0 transition-all"
+                            title="Switch to human mode"
+                            aria-label="Switch to human mode"
+                        >
+                            <img src="/alogo.jpg" alt="Axis" className="w-full h-full rounded-full object-cover" />
+                        </button>
                         <pre className="text-emerald-500 m-0">
                             {`
  ▄▄▄▄▄▄▄▄▄▄▄  ▄       ▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄ 
@@ -133,7 +141,6 @@ Axis exposes a standardized toolset via the **Model Context Protocol**:
 `}</ReactMarkdown>
                     </div>
                 </div>
-                <MachineToggle />
             </div>
         );
     }
@@ -173,22 +180,25 @@ Axis exposes a standardized toolset via the **Model Context Protocol**:
                     transition={{ delay: 0.3, duration: 0.8 }}
                     className="w-full max-w-2xl search-container rounded-lg overflow-hidden border border-white/10 relative z-20"
                 >
-                    <form onSubmit={handleSearch} className="relative">
-                        <input
-                            type="text"
-                            placeholder="ask axis anything..."
-                            className="w-full bg-black/40 p-6 pr-32 outline-none text-[15px] font-mono placeholder:text-white/40 text-white mix-blend-difference drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"
-                            value={query}
-                            onChange={(e) => setQuery((e.target as HTMLInputElement).value)}
-                        />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                            <button
-                                type="submit"
-                                disabled={isSearching}
-                                className="bg-white/5 text-white/40 px-5 py-2 rounded text-[10px] font-bold tracking-widest uppercase hover:bg-white/10 transition-all border border-white/5"
-                            >
-                                {isSearching ? "..." : "run"}
-                            </button>
+                    <form onSubmit={handleSearch} className="relative flex items-stretch h-[72px] p-2">
+                        <MachineToggle placement="inline" />
+                        <div className="relative flex-1">
+                            <input
+                                type="text"
+                                placeholder="ask axis anything..."
+                                className="w-full h-full bg-black/40 p-5 pr-32 outline-none text-[15px] font-mono placeholder:text-white/40 text-white mix-blend-difference drop-shadow-[0_0_10px_rgba(0,0,0,0.5)] rounded-md"
+                                value={query}
+                                onChange={(e) => setQuery((e.target as HTMLInputElement).value)}
+                            />
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                <button
+                                    type="submit"
+                                    disabled={isSearching}
+                                    className="bg-white/5 text-white/40 px-5 py-2 rounded text-[10px] font-bold tracking-widest uppercase hover:bg-white/10 transition-all border border-white/5"
+                                >
+                                    {isSearching ? "..." : "run"}
+                                </button>
+                            </div>
                         </div>
                     </form>
 
@@ -347,7 +357,6 @@ Axis exposes a standardized toolset via the **Model Context Protocol**:
                     </div>
                 </div>
             </section>
-            <MachineToggle />
         </div>
     );
 }

@@ -72,14 +72,22 @@ Axis exists to be the **SRC_OF_COORDINATION** they can trust. Zero race conditio
 `;
 
 export default function AboutPage() {
-    const { mode } = useMachineMode();
+    const { mode, setMode } = useMachineMode();
 
     if (mode === 'machine') {
         return (
             <div className="min-h-screen bg-black text-white font-mono p-10 leading-relaxed selection:bg-white/20">
                 <div className="max-w-3xl mx-auto space-y-8">
                     <div className="flex items-center gap-6 mb-12">
-                        <img src="/alogo.jpg" alt="Axis" className="w-16 h-16 rounded-full border border-emerald-500/20 grayscale" />
+                        <button
+                            type="button"
+                            onClick={() => setMode('human')}
+                            className="relative w-16 h-16 rounded-full border border-emerald-400/35 p-0.5 grayscale hover:grayscale-0 transition-all"
+                            title="Switch to human mode"
+                            aria-label="Switch to human mode"
+                        >
+                            <img src="/alogo.jpg" alt="Axis" className="w-full h-full rounded-full object-cover" />
+                        </button>
                         <pre className="text-emerald-500 m-0">
                             {`
  ▄▄▄▄▄▄▄▄▄▄▄  ▄       ▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄ 
