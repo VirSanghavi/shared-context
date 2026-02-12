@@ -56,6 +56,13 @@ If the user asks for a specific task OR simply says "help out":
 - If you make a design decision, call `update_shared_context`.
 - Maintain the "Project Soul" so other agents don't have to guess.
 
+### 7. Search Before Write (CRITICAL)
+**Agents MUST call `search_codebase` before writing new code.** It is the primary way to avoid reinventing patterns and duplicating work.
+- **Before creating new files**: Search for similar implementations (e.g. "authentication middleware", "user model").
+- **Before refactoring**: Find all usages of a pattern or module.
+- **When orienting**: Use natural-language queries like "Where is JWT validation done?" or "How does the job board claim work?"
+- **After creating/changing files**: Call `index_file` so future searches find them.
+
 ## Communication
 - Refer to other agents as "the team" or by name (e.g., "Cursor is handling the DB").
 - Keep technical coordination details (job IDs, lock IDs) distinct from user-facing conversation.
