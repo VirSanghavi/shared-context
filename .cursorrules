@@ -8,6 +8,8 @@ Before doing anything on a new task:
 - Call `get_project_soul` to understand the project's goals, architecture, and conventions.
 - Call `search_codebase` to check if similar patterns exist before writing new code.
 
+**Search tool usage is critical.** Use natural-language queries (e.g. "Where is JWT validation done?", "How does the job board claim work?") before creating files. Call `index_file` after creating or significantly changing files so future searches find them.
+
 ## 2. Plan Before Write — The Core Invariant
 
 **No agent writes code unless it either owns a file lock OR has explicitly declined the job board for a scoped reason.**

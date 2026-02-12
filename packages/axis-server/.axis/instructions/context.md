@@ -21,7 +21,7 @@ The core value proposition: **agents that coordinate like a team, not individual
 2. **File Locking**: Atomic, per-file locks with 30-minute TTL. Agents call `propose_file_access` before editing. Prevents merge conflicts.
 3. **Live Notepad**: Real-time shared memory. Agents log progress so others know what's happening. Cleared on `finalize_session`.
 4. **Context Mirroring**: `get_project_soul` returns this file + conventions to ground agents in project reality.
-5. **RAG Search**: `search_codebase` and `search_docs` for semantic search over indexed files and documentation.
+5. **RAG Search**: `search_codebase` and `search_docs` for semantic search over indexed files and documentation. **Agents MUST use `search_codebase` before writing new code** — search for similar patterns (e.g. "authentication flow", "API route handler") before creating files. Call `index_file` after creating or significantly changing files.
 6. **Session Management**: `finalize_session` archives the notepad, clears locks, resets for new work.
 7. **Billing**: Stripe-based Pro tier ($25/mo) with API key management, usage tracking, and retention flow.
 
