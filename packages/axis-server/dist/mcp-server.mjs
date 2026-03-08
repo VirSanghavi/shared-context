@@ -1140,9 +1140,13 @@ ${conventions}`;
 
 ### MANDATORY: Project soul is not yet filled
 You MUST fill the project soul before doing any other work. Do not proceed with other tasks until it is filled.
-- If the codebase has content to search: use \`search_codebase\` to explore, then \`read_context\` and \`update_context\` to populate \`context.md\` and \`conventions.md\`.
-- If there is nothing in the directory to search through: you MUST ask the user what the project is about, then update the soul files with their answer.
-This requirement is mandatory; ignoring it means working without context.`;
+
+**How to fill the project soul:**
+1. Use \`search_codebase\` to explore the repo and infer what this project is about.
+2. Call \`update_project_soul\` with \`context\` (project overview, architecture, core features, deployment) and \`conventions\` (language standards, styling, code patterns, agent norms).
+3. If the codebase is empty or has nothing to search: ask the user what the project is about, then call \`update_project_soul\` with their answer.
+
+Do NOT skip this. Do NOT proceed with other work until the soul is populated. Working without a filled soul means every decision you make lacks context.`;
     }
     return soul;
   }
@@ -1995,7 +1999,10 @@ async function ensureFileSystem() {
         ["context.md", `# Project Context
 
 ## Overview
-<!-- Describe your project's goals and what it does. If this file is still just placeholders, agents MUST fill it: use search_codebase to infer content from the repo, or if there is nothing to search, ask the user what the project is about, then update via update_context. Do not proceed with other work until the soul is filled. -->
+<!-- THIS FILE IS PART OF THE PROJECT SOUL. If it still contains placeholders, agents MUST fill it before doing any other work.
+How to fill: use search_codebase to explore the repo, then call update_project_soul(context: "...your content...") to replace this placeholder.
+If the repo is empty: ask the user what the project is about, then call update_project_soul with their answer.
+Do not proceed with other tasks until this file has real content. -->
 
 ## Architecture
 <!-- Stack, high-level design, and key systems -->
@@ -2130,11 +2137,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     },
     {
       name: UPDATE_CONTEXT_TOOL,
-      description: "**APPEND OR OVERWRITE** shared context files.\n- Use this to update the project's long-term memory (e.g., adding a new convention, updating the architectural goal).\n- For short-term updates (like 'I just fixed bug X'), use `update_shared_context` (Notepad) instead.\n- Supports `append: true` (default: false) to add to the end of a file.",
+      description: "**APPEND OR OVERWRITE** any shared context file.\n- To update the project soul (context.md / conventions.md), prefer `update_project_soul` instead \u2014 it handles both files in one call.\n- Use this tool for other context files (e.g., `activity.md`) or when you need to append to a file.\n- For short-term updates (like 'I just fixed bug X'), use `update_shared_context` (Notepad) instead.\n- Supports `append: true` (default: false) to add to the end of a file.",
       inputSchema: {
         type: "object",
         properties: {
-          filename: { type: "string", description: "File to update (e.g. 'activity.md')" },
+          filename: { type: "string", description: "File to update (e.g. 'activity.md'). For soul files, prefer update_project_soul instead." },
           content: { type: "string", description: "The new content to write or append." },
           append: { type: "boolean", description: "Whether to append to the end of the file (true) or overwrite it (false). Default: false." }
         },
@@ -2219,8 +2226,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     },
     {
       name: "get_project_soul",
-      description: "**MANDATORY FIRST CALL**: Returns the project's goals, architecture, conventions, and active state.\n- Combines `context.md`, `conventions.md`, and other core directives into a single prompt.\n- You MUST call this as your FIRST action in every new session or task \u2014 before reading files, before responding to the user, before anything else.\n- If the project soul is not yet filled, you MUST fill it before any other work: use search_codebase then update_context, or if there is nothing to search, you MUST ask the user what the project is about and then update the soul files. Do not proceed with other tasks until the soul is filled.\n- Skipping this call means you are working without context and will make wrong decisions.",
+      description: "**MANDATORY FIRST CALL**: Returns the project's goals, architecture, conventions, and active state.\n- Combines `context.md` (project goals/architecture) and `conventions.md` (coding standards/norms) into a single prompt.\n- You MUST call this as your FIRST action in every new session or task \u2014 before reading files, before responding to the user, before anything else.\n- If the project soul is not yet filled (you'll see a 'MANDATORY: Project soul is not yet filled' message), you MUST fill it before any other work:\n  1. Use `search_codebase` to explore the repo and infer project details.\n  2. Call `update_project_soul` with `context` and/or `conventions` params to populate the soul in one call.\n  3. If there is nothing to search, ask the user what the project is about, then call `update_project_soul`.\n- Skipping this call means you are working without context and will make wrong decisions.",
       inputSchema: { type: "object", properties: {}, required: [] }
+    },
+    {
+      name: "update_project_soul",
+      description: "**UPDATE THE PROJECT SOUL** \u2014 write project context and/or conventions in a single call.\n- The project soul consists of `context.md` (goals, architecture, core features) and `conventions.md` (coding standards, agent norms).\n- Provide `context` to update `context.md`, `conventions` to update `conventions.md`, or both.\n- Use this when `get_project_soul` says the soul is unfilled, or whenever you need to update long-term project knowledge.\n- This replaces the file contents entirely (not append). For appending, use `update_context` instead.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          context: { type: "string", description: "Full content for context.md (project overview, architecture, core features, deployment). Omit to leave unchanged." },
+          conventions: { type: "string", description: "Full content for conventions.md (language standards, styling, code patterns, agent norms). Omit to leave unchanged." }
+        },
+        required: []
+      }
     },
     // --- Job Board (Task Orchestration) ---
     {
@@ -2468,6 +2487,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (name === "get_project_soul") {
     const result = await nerveCenter.getProjectSoul();
     return { content: [{ type: "text", text: result }] };
+  }
+  if (name === "update_project_soul") {
+    const { context, conventions } = args;
+    const updated = [];
+    if (context) {
+      await manager.updateFile("context.md", context, false);
+      updated.push("context.md");
+    }
+    if (conventions) {
+      await manager.updateFile("conventions.md", conventions, false);
+      updated.push("conventions.md");
+    }
+    if (updated.length === 0) {
+      return { content: [{ type: "text", text: "No changes \u2014 provide `context` and/or `conventions` parameters." }] };
+    }
+    return { content: [{ type: "text", text: `Project soul updated: ${updated.join(", ")}` }] };
   }
   if (name === "post_job") {
     const { title, description, priority, dependencies } = args;
