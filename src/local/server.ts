@@ -183,8 +183,20 @@ app.get("/sse", async (req, res) => {
                 },
                 {
                     name: "get_project_soul",
-                    description: "Get high-level project goals and context.",
+                    description: "**MANDATORY FIRST CALL**: Returns the project soul — `context.md` (goals, architecture) and `conventions.md` (coding standards). If the soul is unfilled, you MUST populate it via `update_project_soul` before doing any other work.",
                     inputSchema: { type: "object", properties: {}, required: [] }
+                },
+                {
+                    name: "update_project_soul",
+                    description: "Update the project soul. Provide `context` (for context.md) and/or `conventions` (for conventions.md).",
+                    inputSchema: {
+                        type: "object",
+                        properties: {
+                            context: { type: "string", description: "Full content for context.md (project overview, architecture, core features)." },
+                            conventions: { type: "string", description: "Full content for conventions.md (coding standards, agent norms)." }
+                        },
+                        required: []
+                    }
                 },
                 // --- Job Board (Task Orchestration) ---
                 {
@@ -278,6 +290,22 @@ app.get("/sse", async (req, res) => {
             if (name === "get_project_soul") {
                 const result = await nerveCenter.getProjectSoul();
                 return { content: [{ type: "text", text: result }] };
+            }
+            if (name === "update_project_soul") {
+                const { context, conventions } = args as any;
+                const updated: string[] = [];
+                if (context) {
+                    await manager.updateFile("context.md", context, false);
+                    updated.push("context.md");
+                }
+                if (conventions) {
+                    await manager.updateFile("conventions.md", conventions, false);
+                    updated.push("conventions.md");
+                }
+                if (updated.length === 0) {
+                    return { content: [{ type: "text", text: "No changes — provide `context` and/or `conventions` parameters." }] };
+                }
+                return { content: [{ type: "text", text: `Project soul updated: ${updated.join(", ")}` }] };
             }
 
             // Job Board

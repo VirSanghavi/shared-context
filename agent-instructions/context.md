@@ -44,8 +44,9 @@ The core value proposition: **agents that coordinate like a team, not individual
 
 ### Workflow
 1. **Orient**: `get_project_soul` → `search_codebase` (for your task domain)
-2. **Plan**: Search before designing; avoid writing code that already exists
-3. **Index**: After creating/refactoring files, call `index_file` so the next agent can find them
+2. **Fill soul if needed**: If `get_project_soul` says unfilled, call `update_project_soul` with `context` and/or `conventions` params
+3. **Plan**: Search before designing; avoid writing code that already exists
+4. **Index**: After creating/refactoring files, call `index_file` so the next agent can find them
 6. **Session Management**: `finalize_session` archives the notepad, clears locks, resets for new work.
 7. **Billing**: Stripe-based Pro tier ($25/mo) with API key management, usage tracking, and retention flow.
 
