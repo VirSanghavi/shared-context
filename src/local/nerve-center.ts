@@ -1152,9 +1152,13 @@ export class NerveCenter {
 
 ### MANDATORY: Project soul is not yet filled
 You MUST fill the project soul before doing any other work. Do not proceed with other tasks until it is filled.
-- If the codebase has content to search: use \`search_codebase\` to explore, then \`read_context\` and \`update_context\` to populate \`context.md\` and \`conventions.md\`.
-- If there is nothing in the directory to search through: you MUST ask the user what the project is about, then update the soul files with their answer.
-This requirement is mandatory; ignoring it means working without context.`;
+
+**How to fill the project soul:**
+1. Use \`search_codebase\` to explore the repo and infer what this project is about.
+2. Call \`update_project_soul\` with \`context\` (project overview, architecture, core features, deployment) and \`conventions\` (language standards, styling, code patterns, agent norms).
+3. If the codebase is empty or has nothing to search: ask the user what the project is about, then call \`update_project_soul\` with their answer.
+
+Do NOT skip this. Do NOT proceed with other work until the soul is populated. Working without a filled soul means every decision you make lacks context.`;
         }
         return soul;
     }

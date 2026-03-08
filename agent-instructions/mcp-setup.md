@@ -76,11 +76,18 @@ npx tsx src/local/mcp-server.ts
 Reads a file from the shared context directory (`agent-instructions/`).
 - **Arguments**: `filename` (string) - e.g., `context.md`
 
+#### `update_project_soul`
+Updates the project soul in a single call.
+- The project soul = `context.md` (goals, architecture, features) + `conventions.md` (coding standards, agent norms).
+- **Arguments**:
+  - `context` (string, optional) — full content for `context.md`
+  - `conventions` (string, optional) — full content for `conventions.md`
+
 #### `update_context`
-Updates a shared context file.
-- **Arguments**: 
-  - `filename` (string)
-  - `content` (string)
+Updates any shared context file (for files beyond the soul, or for appending).
+- **Arguments**:
+  - `filename` (string) — e.g., `"activity.md"`
+  - `content` (string) — the full file content (or text to append)
   - `append` (boolean, default: false)
 
 #### `search_context` / `search_docs`
