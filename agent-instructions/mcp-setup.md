@@ -86,6 +86,7 @@ the `mcp-remote` bridge:
 } } }
 ```
 
+```toml
 
 ### Running the Server (local dev)
 
