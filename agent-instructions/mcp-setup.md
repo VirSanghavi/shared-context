@@ -79,6 +79,7 @@ that supports remote MCP at the URL; for stdio-only clients (incl. Codex), use
 the `mcp-remote` bridge:
 
 ```jsonc
+// native remote MCP (Claude Code, etc.)
 
 ### Running the Server (local dev)
 
