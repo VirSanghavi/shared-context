@@ -38,6 +38,7 @@ If the user asks for a specific task OR simply says "help out":
 - **If job found**: Work on that job. Lock the necessary files.
 - **If no job**: Ask the user for specific direction.
 
+
 ### 3. The "Completion Loop" (Autonomy)
 **When you finish a task, do not stop.**
 - **Call**: `complete_job(..., outcome="Done", completionKey="...")`. 
