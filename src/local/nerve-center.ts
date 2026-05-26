@@ -14,6 +14,7 @@ function findProjectRoot(start: string): string {
     let dir = start;
     for (let i = 0; i < 40; i++) {
         if (existsSync(path.join(dir, ".git")) || existsSync(path.join(dir, "package.json"))) return dir;
+        const parent = path.dirname(dir);
 function deriveProjectNameFromCwd(): string {
     const base = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
     return base || "default";
