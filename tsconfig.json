@@ -29,4 +29,5 @@
   "exclude": [
     "node_modules",
     "frontend",
+    "sandbox",
 }
