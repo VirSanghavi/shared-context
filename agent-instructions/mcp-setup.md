@@ -44,7 +44,7 @@ For high-fidelity context without token bloat, Axis supports specialized HTTP he
 
 ### Configuration
 
-Create a `.env.local` file in the `shared-context` directory with the following variables:
+**You only need your Axis API key.** Everything else has sensible defaults:
 
 ```bash
 # Supabase Configuration
