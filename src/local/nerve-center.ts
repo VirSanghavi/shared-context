@@ -138,7 +138,6 @@ export class NerveCenter {
         // Default to the working-directory name so each project gets its own Axis
         // project with zero config. .axis/axis.json (checked in init) still wins.
         this.projectName = explicitProjectName || deriveProjectNameFromCwd();
-        }
 
         this.state = {
             locks: {},
