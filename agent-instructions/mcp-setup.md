@@ -68,6 +68,7 @@ to update (recommended):
 
 ```jsonc
 {
+  "mcpServers": {
 
 ```bash
 cd shared-context
