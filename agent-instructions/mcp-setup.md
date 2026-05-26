@@ -85,7 +85,7 @@ you want to — set `PROJECT_NAME`, or commit a `.axis/axis.json` with `{ "proje
 
 ```bash
 cd shared-context
-npx tsx src/local/mcp-server.ts
+AXIS_API_KEY=sk_sc_your_key npx tsx src/local/mcp-server.ts
 ```
 
 ## Tools Reference
