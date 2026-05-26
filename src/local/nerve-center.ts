@@ -27,7 +27,7 @@ function findProjectRoot(start: string): string {
  * slug; falls back to "default" for odd/edge cases (e.g. filesystem root).
  */
 function deriveProjectNameFromCwd(): string {
-    const base = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+    const root = findProjectRoot(process.cwd());
     return base || "default";
 }
 
