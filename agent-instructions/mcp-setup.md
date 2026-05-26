@@ -80,6 +80,7 @@ to update (recommended):
 **Project auto-detection:** the project name defaults to the current directory's
 name, so each repo maps to its own Axis project automatically. Override only if
 you want to — set `PROJECT_NAME`, or commit a `.axis/axis.json` with `{ "project": "name" }`.
+
 ```bash
 cd shared-context
 npx tsx src/local/mcp-server.ts
