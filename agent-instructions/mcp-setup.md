@@ -49,7 +49,7 @@ the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
 
-Add Axis to your agent's MCP config (`mcp.json` for Cursor/Claude, etc.):
+**Cursor / Claude Code / Windsurf** — add to your MCP config (`.cursor/mcp.json`,
 
 ```jsonc
 {
