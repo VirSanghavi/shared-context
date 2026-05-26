@@ -63,7 +63,7 @@ Add Axis to your agent's MCP config (`mcp.json` for Cursor/Claude, etc.):
 }
 ```
 
-### Running the Server
+Or connect to the **hosted** MCP server directly by URL — zero install, nothing
 
 To start the MCP server locally (using stdio transport for Agent integration):
 
