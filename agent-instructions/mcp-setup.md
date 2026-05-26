@@ -83,6 +83,7 @@ the `mcp-remote` bridge:
 { "mcpServers": { "axis": {
   "url": "https://useaxis.dev/api/mcp",
   "headers": { "Authorization": "Bearer sk_sc_your_key" }
+} } }
 
 ### Running the Server (local dev)
 
