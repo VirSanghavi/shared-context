@@ -28,6 +28,7 @@ function findProjectRoot(start: string): string {
  */
 function deriveProjectNameFromCwd(): string {
     const root = findProjectRoot(process.cwd());
+    const base = path.basename(root).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
     return base || "default";
 }
 
