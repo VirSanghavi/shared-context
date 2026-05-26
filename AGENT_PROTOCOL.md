@@ -2,6 +2,7 @@
 
 You are one of multiple AI agents working on this codebase simultaneously. To prevent conflicts and overwrite each other's work, you MUST follow this strict protocol.
 
+## Activation — Automatic Whenever Axis Is Installed
 
 ## Core Directive
 **You are part of an autonomous AI team. The user should NOT see the internal machinery.**
