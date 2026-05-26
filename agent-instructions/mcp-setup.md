@@ -67,7 +67,7 @@ keys are needed locally (all of that lives server-side).
 **OpenAI Codex CLI** — add to `~/.codex/config.toml` (Codex uses TOML and stdio
 MCP servers):
 
-```jsonc
+```toml
 {
   "mcpServers": {
     "axis": {
