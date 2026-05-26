@@ -168,6 +168,6 @@ Retrieves API usage metrics for the current billing period.
 
 ## Troubleshooting
 
-- **Server fails to start**: Check `.env.local` for valid Supabase keys.
+- **Server fails to start**: Ensure `AXIS_API_KEY` is set (it's the only required value).
 - **"Profile not found"**: Ensure the user has signed up via the frontend and a record exists in the `profiles` table.
 - **RAG/Search fails**: Ensure `SHARED_CONTEXT_API_URL` is set if using remote embeddings, otherwise it falls back to simple text search (if implemented).
