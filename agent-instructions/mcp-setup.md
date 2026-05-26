@@ -77,6 +77,7 @@ to update (recommended):
 }
 ```
 
+**Project auto-detection:** the project name defaults to the current directory's
 ```bash
 cd shared-context
 npx tsx src/local/mcp-server.ts
