@@ -134,7 +134,7 @@ export class NerveCenter {
         // Project name: prioritize explicit option, then env var, then detect from .axis/axis.json, then default
         // But if remote API is configured (customer mode), prefer env var over detected name
         const explicitProjectName = options.projectName || process.env.PROJECT_NAME;
-        if (explicitProjectName) {
+        this.projectNameExplicit = !!explicitProjectName;
             this.projectName = explicitProjectName;
         } else {
             // Will be set by detectProjectName() in init() if needed, or default to "default"
