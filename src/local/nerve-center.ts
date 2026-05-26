@@ -157,7 +157,7 @@ export class NerveCenter {
     async init() {
         await this.loadState();
 
-        // Only detect project name from .axis/axis.json if:
+        // If the caller didn't pin a project name, let a checked-in .axis/axis.json
         // 1. Project name is still "default" (wasn't set explicitly)
         // 2. We're in dev mode (not using remote API only)
         // This ensures customer mode uses consistent project names from env vars
