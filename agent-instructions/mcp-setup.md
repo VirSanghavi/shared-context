@@ -87,6 +87,7 @@ the `mcp-remote` bridge:
 ```
 
 ```toml
+# Codex via mcp-remote bridge
 
 ### Running the Server (local dev)
 
