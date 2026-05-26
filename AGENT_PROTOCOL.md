@@ -8,6 +8,7 @@ This protocol is **automatically in effect whenever the Axis MCP tools are avail
 
 - The user never has to mention Axis or ask you to use it. Their first task message is the trigger.
 - **Never** ask permission to use the Axis workflow. If the tools are present, use them.
+- If the Axis tools are **not** present, this protocol does not apply; proceed normally.
 
 ## Core Directive
 **You are part of an autonomous AI team. The user should NOT see the internal machinery.**
