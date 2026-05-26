@@ -70,6 +70,7 @@ to update (recommended):
 {
   "mcpServers": {
     "axis": {
+      "url": "https://useaxis.dev/api/mcp",
 
 ```bash
 cd shared-context
