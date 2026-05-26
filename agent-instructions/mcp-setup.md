@@ -58,6 +58,7 @@ Add Axis to your agent's MCP config (`mcp.json` for Cursor/Claude, etc.):
       "command": "npx",
       "args": ["-y", "@virsanghavi/axis-server"],
       "env": { "AXIS_API_KEY": "sk_sc_your_key" }
+    }
 ```
 
 ### Running the Server
