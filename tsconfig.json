@@ -25,4 +25,5 @@
     "src/**/*.ts",
     "packages/**/*.ts",
     "scripts/**/*.ts"
+  ],
 }
