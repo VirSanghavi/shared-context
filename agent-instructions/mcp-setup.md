@@ -64,7 +64,7 @@ keys are needed locally (all of that lives server-side).
 }
 ```
 
-Or connect to the **hosted** MCP server directly by URL — zero install, nothing
+**OpenAI Codex CLI** — add to `~/.codex/config.toml` (Codex uses TOML and stdio
 to update (recommended):
 
 ```jsonc
