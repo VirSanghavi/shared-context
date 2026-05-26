@@ -5,6 +5,7 @@ import path from "path";
 import { logger } from "../utils/logger.js";
 
 /**
+ * Derive a project name from the working directory so each project maps to its
 
 // Interfaces
 interface FileLock {
