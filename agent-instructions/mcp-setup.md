@@ -50,6 +50,7 @@ project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
 
 **Cursor / Claude Code / Windsurf** — add to your MCP config (`.cursor/mcp.json`,
+`~/.claude.json` / `.mcp.json`, or `~/.codeium/windsurf/mcp_config.json`):
 
 ```jsonc
 {
