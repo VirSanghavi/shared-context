@@ -10,6 +10,7 @@ import { logger } from "../utils/logger.js";
  * to a safe slug; falls back to "default" for odd/edge cases (e.g. filesystem root).
  */
 function deriveProjectNameFromCwd(): string {
+    const base = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
 
 // Interfaces
 interface FileLock {
