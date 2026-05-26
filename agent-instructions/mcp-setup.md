@@ -90,6 +90,7 @@ the `mcp-remote` bridge:
 # Codex via mcp-remote bridge
 [mcp_servers.axis]
 command = "npx"
+args = ["-y", "mcp-remote", "https://useaxis.dev/api/mcp", "--header", "Authorization: Bearer sk_sc_your_key"]
 
 ### Running the Server (local dev)
 
