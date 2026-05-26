@@ -70,7 +70,7 @@ MCP servers):
 ```toml
 [mcp_servers.axis]
 command = "npx"
-    "axis": {
+args = ["-y", "@virsanghavi/axis-server"]
       "url": "https://useaxis.dev/api/mcp",
       "headers": { "Authorization": "Bearer sk_sc_your_key" }
     }
