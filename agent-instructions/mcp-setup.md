@@ -75,7 +75,7 @@ env = { AXIS_API_KEY = "sk_sc_your_key" }
 ```
 
 **Hosted (zero-install, nothing to update — recommended)** — point any client
-name, so each repo maps to its own Axis project automatically. Override only if
+that supports remote MCP at the URL; for stdio-only clients (incl. Codex), use
 you want to — set `PROJECT_NAME`, or commit a `.axis/axis.json` with `{ "project": "name" }`.
 
 ### Running the Server (local dev)
