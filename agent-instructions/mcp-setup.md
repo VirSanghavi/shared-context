@@ -93,6 +93,7 @@ command = "npx"
 args = ["-y", "mcp-remote", "https://useaxis.dev/api/mcp", "--header", "Authorization: Bearer sk_sc_your_key"]
 ```
 
+**Project auto-detection:** the project name is derived from your **repo root**
 ### Running the Server (local dev)
 
 ```bash
