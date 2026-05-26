@@ -28,4 +28,5 @@
   ],
   "exclude": [
     "node_modules",
+    "frontend",
 }
