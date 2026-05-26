@@ -273,7 +273,23 @@ var ContextManager = class {
 import { Mutex as Mutex2 } from "async-mutex";
 import { createClient } from "@supabase/supabase-js";
 import fs2 from "fs/promises";
+import { existsSync as existsSync2 } from "fs";
 import path2 from "path";
+function findProjectRoot(start) {
+  let dir = start;
+  for (let i = 0; i < 40; i++) {
+    if (existsSync2(path2.join(dir, ".git")) || existsSync2(path2.join(dir, "package.json"))) return dir;
+    const parent = path2.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return start;
+}
+function deriveProjectNameFromCwd() {
+  const root = findProjectRoot(process.cwd());
+  const base = path2.basename(root).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+  return base || "default";
+}
 var STATE_FILE = process.env.NERVE_CENTER_STATE_FILE || path2.join(process.cwd(), "history", "nerve-center-state.json");
 var LOCK_TIMEOUT_DEFAULT = 30 * 60 * 1e3;
 var CIRCUIT_FAILURE_THRESHOLD = 5;
@@ -294,6 +310,7 @@ var NerveCenter = class _NerveCenter {
   _projectId;
   // Renamed backing field
   projectName;
+  projectNameExplicit = false;
   useSupabase;
   _circuitFailures = 0;
   _circuitOpenUntil = 0;
@@ -323,11 +340,8 @@ var NerveCenter = class _NerveCenter {
       logger.warn("NerveCenter: Running in local-only mode. Coordination restricted to this machine.");
     }
     const explicitProjectName = options.projectName || process.env.PROJECT_NAME;
-    if (explicitProjectName) {
-      this.projectName = explicitProjectName;
-    } else {
-      this.projectName = "default";
-    }
+    this.projectNameExplicit = !!explicitProjectName;
+    this.projectName = explicitProjectName || deriveProjectNameFromCwd();
     this.state = {
       locks: {},
       jobs: {},
@@ -342,7 +356,7 @@ var NerveCenter = class _NerveCenter {
   }
   async init() {
     await this.loadState();
-    if (this.projectName === "default" && (this.useSupabase || !this.contextManager.apiUrl)) {
+    if (!this.projectNameExplicit) {
       await this.detectProjectName();
     }
     if (this.useSupabase) {
@@ -1851,7 +1865,9 @@ logger.info("NerveCenter config:", {
 var nerveCenter = new NerveCenter(manager, {
   supabaseUrl: useRemoteApiOnly ? null : process.env.NEXT_PUBLIC_SUPABASE_URL,
   supabaseServiceRoleKey: useRemoteApiOnly ? null : process.env.SUPABASE_SERVICE_ROLE_KEY,
-  projectName: process.env.PROJECT_NAME || "default"
+  // Leave undefined when unset so NerveCenter auto-derives the project from the
+  // working directory (and .axis/axis.json) instead of pinning to "default".
+  projectName: process.env.PROJECT_NAME
 });
 logger.info("=== Axis MCP Server Initialized ===");
 var RECHECK_INTERVAL_MS = 30 * 60 * 1e3;
