@@ -50,7 +50,6 @@ project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
 
 Add Axis to your agent's MCP config (`mcp.json` for Cursor/Claude, etc.):
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # Context API (Optional, for RAG)
 SHARED_CONTEXT_API_URL=https://api.axis.dev/v1
