@@ -74,7 +74,7 @@ args = ["-y", "@virsanghavi/axis-server"]
 env = { AXIS_API_KEY = "sk_sc_your_key" }
 ```
 
-**Project auto-detection:** the project name defaults to the current directory's
+**Hosted (zero-install, nothing to update — recommended)** — point any client
 name, so each repo maps to its own Axis project automatically. Override only if
 you want to — set `PROJECT_NAME`, or commit a `.axis/axis.json` with `{ "project": "name" }`.
 
