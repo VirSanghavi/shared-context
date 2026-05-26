@@ -74,6 +74,7 @@ to update (recommended):
       "headers": { "Authorization": "Bearer sk_sc_your_key" }
     }
   }
+}
 
 ```bash
 cd shared-context
