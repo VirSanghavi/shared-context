@@ -68,7 +68,7 @@ keys are needed locally (all of that lives server-side).
 MCP servers):
 
 ```toml
-{
+[mcp_servers.axis]
   "mcpServers": {
     "axis": {
       "url": "https://useaxis.dev/api/mcp",
