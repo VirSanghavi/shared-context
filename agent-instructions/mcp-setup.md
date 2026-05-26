@@ -55,7 +55,7 @@ Add Axis to your agent's MCP config (`mcp.json` for Cursor/Claude, etc.):
 {
   "mcpServers": {
     "axis": {
-# Project Identity
+      "command": "npx",
 PROJECT_NAME=my-axis-project
 ```
 
