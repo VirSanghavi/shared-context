@@ -80,6 +80,7 @@ the `mcp-remote` bridge:
 
 ```jsonc
 // native remote MCP (Claude Code, etc.)
+{ "mcpServers": { "axis": {
 
 ### Running the Server (local dev)
 
