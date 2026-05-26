@@ -102,7 +102,7 @@ logger.info("NerveCenter config:", {
 const nerveCenter = new NerveCenter(manager, {
   supabaseUrl: useRemoteApiOnly ? null : process.env.NEXT_PUBLIC_SUPABASE_URL,
   supabaseServiceRoleKey: useRemoteApiOnly ? null : process.env.SUPABASE_SERVICE_ROLE_KEY,
-  projectName: process.env.PROJECT_NAME || "default"
+  // Leave undefined when unset so NerveCenter auto-derives the project from the
 });
 
 logger.info("=== Axis MCP Server Initialized ===");
