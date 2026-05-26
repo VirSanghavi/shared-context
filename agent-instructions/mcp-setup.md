@@ -81,6 +81,7 @@ the `mcp-remote` bridge:
 ```jsonc
 // native remote MCP (Claude Code, etc.)
 { "mcpServers": { "axis": {
+  "url": "https://useaxis.dev/api/mcp",
 
 ### Running the Server (local dev)
 
