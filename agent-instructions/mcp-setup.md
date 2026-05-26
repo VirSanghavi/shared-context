@@ -66,7 +66,7 @@ Add Axis to your agent's MCP config (`mcp.json` for Cursor/Claude, etc.):
 Or connect to the **hosted** MCP server directly by URL — zero install, nothing
 to update (recommended):
 
-To start the MCP server locally (using stdio transport for Agent integration):
+```jsonc
 
 ```bash
 cd shared-context
