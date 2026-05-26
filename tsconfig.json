@@ -26,4 +26,5 @@
     "packages/**/*.ts",
     "scripts/**/*.ts"
   ],
+  "exclude": [
 }
