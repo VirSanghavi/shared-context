@@ -89,6 +89,7 @@ the `mcp-remote` bridge:
 ```toml
 # Codex via mcp-remote bridge
 [mcp_servers.axis]
+command = "npx"
 
 ### Running the Server (local dev)
 
