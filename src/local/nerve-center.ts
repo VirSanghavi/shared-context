@@ -6,6 +6,7 @@ import { logger } from "../utils/logger.js";
 
 /**
  * Derive a project name from the working directory so each project maps to its
+ * own Axis project automatically — no PROJECT_NAME env var required. Sanitized
 
 // Interfaces
 interface FileLock {
