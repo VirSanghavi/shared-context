@@ -78,6 +78,7 @@ env = { AXIS_API_KEY = "sk_sc_your_key" }
 that supports remote MCP at the URL; for stdio-only clients (incl. Codex), use
 the `mcp-remote` bridge:
 
+
 ### Running the Server (local dev)
 
 ```bash
