@@ -136,7 +136,7 @@ export class NerveCenter {
         const explicitProjectName = options.projectName || process.env.PROJECT_NAME;
         this.projectNameExplicit = !!explicitProjectName;
         // Default to the working-directory name so each project gets its own Axis
-        } else {
+        // project with zero config. .axis/axis.json (checked in init) still wins.
             // Will be set by detectProjectName() in init() if needed, or default to "default"
             this.projectName = "default";
         }
