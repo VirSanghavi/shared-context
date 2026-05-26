@@ -67,6 +67,7 @@ Or connect to the **hosted** MCP server directly by URL — zero install, nothin
 to update (recommended):
 
 ```jsonc
+{
 
 ```bash
 cd shared-context
