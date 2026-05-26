@@ -86,6 +86,7 @@ the `mcp-remote` bridge:
 } } }
 ```
 
+
 ### Running the Server (local dev)
 
 ```bash
