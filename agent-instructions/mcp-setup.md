@@ -45,6 +45,7 @@ For high-fidelity context without token bloat, Axis supports specialized HTTP he
 ### Configuration
 
 **You only need your Axis API key.** Everything else has sensible defaults:
+the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 
 ```bash
 # Supabase Configuration
