@@ -94,6 +94,7 @@ args = ["-y", "mcp-remote", "https://useaxis.dev/api/mcp", "--header", "Authoriz
 ```
 
 **Project auto-detection:** the project name is derived from your **repo root**
+(nearest `.git`/`package.json` walking up), so every repo maps to its own Axis
 ### Running the Server (local dev)
 
 ```bash
