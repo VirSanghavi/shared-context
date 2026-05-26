@@ -72,7 +72,6 @@ MCP servers):
 command = "npx"
 args = ["-y", "@virsanghavi/axis-server"]
 env = { AXIS_API_KEY = "sk_sc_your_key" }
-      "headers": { "Authorization": "Bearer sk_sc_your_key" }
     }
   }
 }
