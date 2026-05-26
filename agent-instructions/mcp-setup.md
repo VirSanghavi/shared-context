@@ -78,6 +78,7 @@ to update (recommended):
 ```
 
 **Project auto-detection:** the project name defaults to the current directory's
+name, so each repo maps to its own Axis project automatically. Override only if
 ```bash
 cd shared-context
 npx tsx src/local/mcp-server.ts
