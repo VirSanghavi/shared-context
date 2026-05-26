@@ -1,6 +1,7 @@
 import { Mutex } from "async-mutex";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import fs from "fs/promises";
+import { existsSync } from "fs";
 import path from "path";
 import { logger } from "../utils/logger.js";
 
