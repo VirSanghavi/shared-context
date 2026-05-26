@@ -19,6 +19,7 @@ function findProjectRoot(start: string): string {
         dir = parent;
     }
     return start;
+}
 function deriveProjectNameFromCwd(): string {
     const base = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
     return base || "default";
