@@ -65,7 +65,7 @@ keys are needed locally (all of that lives server-side).
 ```
 
 **OpenAI Codex CLI** — add to `~/.codex/config.toml` (Codex uses TOML and stdio
-to update (recommended):
+MCP servers):
 
 ```jsonc
 {
