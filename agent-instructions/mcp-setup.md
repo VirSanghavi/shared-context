@@ -47,6 +47,7 @@ For high-fidelity context without token bloat, Axis supports specialized HTTP he
 **You only need your Axis API key.** Everything else has sensible defaults:
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
+keys are needed locally (all of that lives server-side).
 
 ```bash
 # Supabase Configuration
