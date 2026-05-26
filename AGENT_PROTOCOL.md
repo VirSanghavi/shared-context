@@ -4,6 +4,7 @@ You are one of multiple AI agents working on this codebase simultaneously. To pr
 
 ## Activation — Automatic Whenever Axis Is Installed
 
+This protocol is **automatically in effect whenever the Axis MCP tools are available** in your environment (i.e. Axis is installed and its Nerve Center MCP server is connected). If you can see tools such as `get_project_soul`, `post_job`, or `propose_file_access`, Axis is installed — follow this protocol from your very first action.
 
 ## Core Directive
 **You are part of an autonomous AI team. The user should NOT see the internal machinery.**
