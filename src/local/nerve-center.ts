@@ -11,6 +11,7 @@ import { logger } from "../utils/logger.js";
  * resolves to the same project, instead of using whatever subfolder you're in.
  */
 function findProjectRoot(start: string): string {
+    let dir = start;
 function deriveProjectNameFromCwd(): string {
     const base = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
     return base || "default";
