@@ -12,6 +12,7 @@ import { logger } from "../utils/logger.js";
  */
 function findProjectRoot(start: string): string {
     let dir = start;
+    for (let i = 0; i < 40; i++) {
 function deriveProjectNameFromCwd(): string {
     const base = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
     return base || "default";
