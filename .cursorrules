@@ -4,6 +4,7 @@ You have access to the **Axis MCP tools**. Use them proactively — they are you
 
 ## 0. Activation — Automatic Whenever Axis Is Installed
 
+This protocol activates **automatically whenever the Axis MCP tools are available** in your environment (i.e. Axis is installed and its MCP server is connected). If you can see tools such as `get_project_soul`, `post_job`, or `propose_file_access`, Axis is installed — this protocol is in force from your first action. The user never has to mention Axis or ask you to use it; their first task message is the trigger. Never ask permission. If the tools are not present, this protocol does not apply.
 
 ## 1. Orient — Read Before Acting
 
