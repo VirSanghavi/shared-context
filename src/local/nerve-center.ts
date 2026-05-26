@@ -160,7 +160,6 @@ export class NerveCenter {
         // If the caller didn't pin a project name, let a checked-in .axis/axis.json
         // override the directory-derived default (works in remote mode too).
         if (!this.projectNameExplicit) {
-        if (this.projectName === "default" && (this.useSupabase || !this.contextManager.apiUrl)) {
             await this.detectProjectName();
         }
 
