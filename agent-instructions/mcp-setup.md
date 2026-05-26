@@ -71,7 +71,7 @@ MCP servers):
 [mcp_servers.axis]
 command = "npx"
 args = ["-y", "@virsanghavi/axis-server"]
-      "url": "https://useaxis.dev/api/mcp",
+env = { AXIS_API_KEY = "sk_sc_your_key" }
       "headers": { "Authorization": "Bearer sk_sc_your_key" }
     }
   }
