@@ -6,7 +6,7 @@ import path from "path";
 import { logger } from "../utils/logger.js";
 
 /**
- * Derive a project name from the working directory so each project maps to its
+ * Walk up from `start` to the repository root (nearest dir with .git or
  * own Axis project automatically — no PROJECT_NAME env var required. Sanitized
  * to a safe slug; falls back to "default" for odd/edge cases (e.g. filesystem root).
  */
