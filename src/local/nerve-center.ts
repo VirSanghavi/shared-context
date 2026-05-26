@@ -8,7 +8,7 @@ import { logger } from "../utils/logger.js";
 /**
  * Walk up from `start` to the repository root (nearest dir with .git or
  * package.json). This means launching the agent from any subdirectory still
- * to a safe slug; falls back to "default" for odd/edge cases (e.g. filesystem root).
+ * resolves to the same project, instead of using whatever subfolder you're in.
  */
 function deriveProjectNameFromCwd(): string {
     const base = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
