@@ -7,7 +7,7 @@ import { logger } from "../utils/logger.js";
 
 /**
  * Walk up from `start` to the repository root (nearest dir with .git or
- * own Axis project automatically — no PROJECT_NAME env var required. Sanitized
+ * package.json). This means launching the agent from any subdirectory still
  * to a safe slug; falls back to "default" for odd/edge cases (e.g. filesystem root).
  */
 function deriveProjectNameFromCwd(): string {
