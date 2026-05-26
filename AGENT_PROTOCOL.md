@@ -38,6 +38,7 @@ If the user asks for a specific task OR simply says "help out":
 - **If job found**: Work on that job. Lock the necessary files.
 - **If no job**: Ask the user for specific direction.
 
+> **Specific vs. next:** `claim_next_job` grabs whatever is on top of the queue. When multiple agents collaborate and there's an intended division of labor, prefer `list_jobs` to see the board, then `claim_job(jobId, agentId)` to claim exactly your job. This keeps each agent's context focused on its own work instead of pulling in the next unrelated job. `claim_job` rejects a job whose dependencies aren't done yet (`BLOCKED_BY_DEPENDENCIES`).
 
 ### 3. The "Completion Loop" (Autonomy)
 **When you finish a task, do not stop.**
