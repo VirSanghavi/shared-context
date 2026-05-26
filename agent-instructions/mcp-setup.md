@@ -69,6 +69,7 @@ to update (recommended):
 ```jsonc
 {
   "mcpServers": {
+    "axis": {
 
 ```bash
 cd shared-context
