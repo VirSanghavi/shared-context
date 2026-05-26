@@ -90,6 +90,7 @@ export class NerveCenter {
     private supabase?: SupabaseClient;
     private _projectId?: string; // Renamed backing field
     private projectName: string;
+    private projectNameExplicit: boolean = false;
     private useSupabase: boolean;
     private _circuitFailures: number = 0;
     private _circuitOpenUntil: number = 0;
