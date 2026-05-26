@@ -56,7 +56,7 @@ Add Axis to your agent's MCP config (`mcp.json` for Cursor/Claude, etc.):
   "mcpServers": {
     "axis": {
       "command": "npx",
-PROJECT_NAME=my-axis-project
+      "args": ["-y", "@virsanghavi/axis-server"],
 ```
 
 ### Running the Server
