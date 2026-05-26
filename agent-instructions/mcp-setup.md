@@ -51,7 +51,7 @@ keys are needed locally (all of that lives server-side).
 
 Add Axis to your agent's MCP config (`mcp.json` for Cursor/Claude, etc.):
 
-# Context API (Optional, for RAG)
+```jsonc
 SHARED_CONTEXT_API_URL=https://api.axis.dev/v1
 SHARED_CONTEXT_API_SECRET=your-api-secret
 
