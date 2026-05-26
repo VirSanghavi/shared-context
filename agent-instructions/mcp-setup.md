@@ -71,6 +71,7 @@ to update (recommended):
   "mcpServers": {
     "axis": {
       "url": "https://useaxis.dev/api/mcp",
+      "headers": { "Authorization": "Bearer sk_sc_your_key" }
 
 ```bash
 cd shared-context
