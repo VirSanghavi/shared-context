@@ -82,6 +82,7 @@ name, so each repo maps to its own Axis project automatically. Override only if
 you want to — set `PROJECT_NAME`, or commit a `.axis/axis.json` with `{ "project": "name" }`.
 
 ### Running the Server (local dev)
+
 ```bash
 cd shared-context
 npx tsx src/local/mcp-server.ts
