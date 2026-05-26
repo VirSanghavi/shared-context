@@ -10,6 +10,7 @@ import { logger } from "../utils/logger.js";
  * package.json). This means launching the agent from any subdirectory still
  * resolves to the same project, instead of using whatever subfolder you're in.
  */
+function findProjectRoot(start: string): string {
 function deriveProjectNameFromCwd(): string {
     const base = path.basename(process.cwd()).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
     return base || "default";
