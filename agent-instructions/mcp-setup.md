@@ -97,6 +97,7 @@ args = ["-y", "mcp-remote", "https://useaxis.dev/api/mcp", "--header", "Authoriz
 (nearest `.git`/`package.json` walking up), so every repo maps to its own Axis
 project automatically and launching from a subdirectory still resolves to the
 same project. Override only if you want to — set `PROJECT_NAME`, or commit a
+`.axis/axis.json` with `{ "project": "name" }`.
 ### Running the Server (local dev)
 
 ```bash
