@@ -101,4 +101,5 @@ program
     .option("-p, --project <name>", "Project name (default: auto-detected)")
     .action(async (root: string | undefined, opts: { project?: string }) => {
         const apiKey = process.env.AXIS_API_KEY;
+        if (!apiKey) {
 program.parse();
