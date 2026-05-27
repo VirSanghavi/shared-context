@@ -79,3 +79,4 @@ function isBinaryPath(rel: string): boolean {
 }
 
 function walk(root: string, ignored: (rel: string) => boolean): string[] {
+  const out: string[] = [];
