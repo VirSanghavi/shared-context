@@ -57,3 +57,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
   } catch {
     /* no .gitignore */
   }
+  const exts = patterns.filter((p) => p.startsWith("*.")).map((p) => p.slice(1));
