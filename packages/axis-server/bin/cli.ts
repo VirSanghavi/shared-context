@@ -16,6 +16,7 @@ function findRoot(start: string): string {
         const parent = path.dirname(dir);
         if (parent === dir) break;
         dir = parent;
+    }
 
 // ESM dirname shim
 const __filename = fileURLToPath(import.meta.url);
