@@ -126,3 +126,4 @@ def _safe_error(resp):
         body = resp.json()
         return body.get("error") or body.get("message") or resp.text or f"HTTP {resp.status_code}"
     except Exception:
+        return resp.text or f"HTTP {resp.status_code}"
