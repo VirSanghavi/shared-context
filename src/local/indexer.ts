@@ -40,3 +40,4 @@ export interface IndexSummary {
   scanned: number;
   uploaded: number;
   unchanged: number;
+  pruned: number;
