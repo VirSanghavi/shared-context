@@ -171,7 +171,7 @@ across files over multiple hops and returns a **cited** answer. *(Hosted only.)*
 
 #### `post_job`
 Posts a task to the job board.
-- **Arguments**:
+- **Arguments**: `title` (string), `description` (string), `priority` ("low" | "medium" | "high" | "critical", optional), `dependencies` (string[] of job IDs, optional)
   - `title` (string)
   - `description` (string)
   - `priority` ("low" | "medium" | "high" | "critical")
