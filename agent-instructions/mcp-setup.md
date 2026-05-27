@@ -192,6 +192,7 @@ Cancels a job that's no longer needed.
 - **Arguments**: `jobId` (string), `reason` (string, optional)
 
 #### `list_jobs`
+Lists jobs on the board for the project.
 #### `propose_file_access`
 Requests a lock on a file to prevent conflicts.
 - **Arguments**:
