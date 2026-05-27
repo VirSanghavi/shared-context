@@ -6,3 +6,4 @@
  * costs almost nothing — only changed files are re-embedded server-side.
  */
 
+import * as fs from "fs";
