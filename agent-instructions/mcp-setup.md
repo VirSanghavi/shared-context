@@ -225,7 +225,7 @@ Returns the caller's plan (Pro/Free) and validity period. Resolved from the
 authenticated token — no email argument needed.
 
 #### `get_usage_stats`
-Retrieves API usage metrics for the current billing period.
+Returns the caller's API usage for the current billing period.
 - **Arguments**: `email` (string)
 
 ## Resources
