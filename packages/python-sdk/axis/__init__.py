@@ -75,6 +75,7 @@ class Axis:
         """Hybrid code search (semantic + full-text + trigram), reranked.
 
         Returns the full payload: ``results`` (ranked hits with file:line),
+        ``related`` (files that historically co-change) and ``definitions``
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
