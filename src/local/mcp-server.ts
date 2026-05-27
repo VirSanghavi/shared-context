@@ -710,6 +710,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (name === "index_codebase") {
     if (!manager.apiUrl || !manager.apiSecret) {
+      return { content: [{ type: "text", text: "Indexing requires AXIS_API_KEY (and the hosted API). Not configured." }], isError: true };
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
