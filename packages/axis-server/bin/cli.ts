@@ -112,4 +112,5 @@ program
         console.error(chalk.bold.blue(`Indexing "${projectName}"`) + chalk.gray(` (${rootDir})`));
         try {
             const summary = await indexCodebase(apiUrl, apiKey, projectName, rootDir, {
+                info: (m) => console.error(chalk.gray(`  ${m}`)),
 program.parse();
