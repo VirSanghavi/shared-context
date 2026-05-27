@@ -138,3 +138,4 @@ export async function indexCodebase(
   const contentByPath = new Map<string, string>();
   for (const rel of relPaths) {
     try {
+      const stat = fs.statSync(path.join(rootDir, rel));
