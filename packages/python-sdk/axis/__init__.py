@@ -62,6 +62,7 @@ class Axis:
         if resp.status_code == 429:
             retry = resp.headers.get("Retry-After")
             raise RateLimitError(
+                "Rate limited by Axis.",
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
