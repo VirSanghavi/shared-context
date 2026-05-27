@@ -71,7 +71,7 @@ If the user asks for a specific task OR simply says "help out":
 - **`search_codebase`** — before creating files or refactoring. Hybrid (semantic + full-text + trigram, reranked); returns ranked symbols with `file:line`, plus `related` files that historically change together and `definitions` of what a hit calls. Prefer it over plain text/grep search for "where is X" / discovery.
 - **`deep_search`** — for "how does X work?" / "where is Y handled and why?". An agentic answer engine that reads across files and returns a **cited** answer.
 - **Specific vs. next job**: use `claim_job(jobId)` to take an intended job in a multi-agent run; `claim_next_job` for load-balanced pickup.
-- **After creating/changing files**: Call `index_file` so future searches find them.
+- Use these proactively; the user does not need to mention Axis for you to search.
 
 ## Communication
 - Refer to other agents as "the team" or by name (e.g., "Cursor is handling the DB").
