@@ -160,7 +160,7 @@ Hybrid semantic + full-text + trigram search over the indexed codebase,
 reranked. Returns ranked hits with `file:line`, plus `related` files that
 historically change together and `definitions` of what a top hit calls. Use it
 by default for "where is X" / before creating or refactoring code.
-  - `conventions` (string, optional) — full content for `conventions.md`
+- **Arguments**: `query` (string), `projectName` (string, optional)
 
 #### `update_context`
 Updates any shared context file (for files beyond the soul, or for appending).
