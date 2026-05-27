@@ -730,6 +730,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }],
       };
     } catch (e) {
+      return { content: [{ type: "text", text: `index_codebase failed: ${e instanceof Error ? e.message : String(e)}` }], isError: true };
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
