@@ -2,6 +2,7 @@
 
 Axis is a high-performance orchestration layer that enables **Parallel Agent Workflows**. It allows multiple AI agents (Claude Code, Cursor, Antigravity, Windsurf) to coordinate on the same codebase simultaneously through distributed shared memory and atomic task management.
 
+
 ## Features
 
 1.  **Parallel Agent Orchestration (PAO-1)**: Coordinate agent swarms with a shared Job Board and pessimistic File Locking.
