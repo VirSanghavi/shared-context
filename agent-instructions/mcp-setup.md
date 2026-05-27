@@ -100,6 +100,7 @@ command = "npx"
 args = ["-y", "mcp-remote", "https://useaxis.dev/api/mcp", "--header", "Authorization: Bearer sk_sc_your_key"]
 ```
 
+#### Option C — Local npm server (legacy)
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
