@@ -709,6 +709,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 
   if (name === "index_codebase") {
+    if (!manager.apiUrl || !manager.apiSecret) {
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
