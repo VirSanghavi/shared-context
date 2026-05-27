@@ -128,3 +128,4 @@ export async function indexCodebase(
   projectName: string,
   rootDir: string,
   logger: IndexLogger
+): Promise<IndexSummary> {
