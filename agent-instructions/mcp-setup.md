@@ -46,6 +46,7 @@ For high-fidelity context without token bloat, Axis supports specialized HTTP he
 
 There are three ways to connect, easiest first. **All of them are zero-install
 and nothing to update over time** except the legacy npm option.
+
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
