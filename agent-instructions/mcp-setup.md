@@ -182,6 +182,7 @@ Claims a **specific** job by ID — preferred in multi-agent runs so each agent'
 context stays focused. Rejected if the job's dependencies aren't done
 (`BLOCKED_BY_DEPENDENCIES`).
 - **Arguments**: `jobId` (string), `agentId` (string)
+
 #### `complete_job`
 Marks a job as done.
 - **Arguments**:
