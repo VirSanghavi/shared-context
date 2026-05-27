@@ -72,3 +72,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
 function isBinaryPath(rel: string): boolean {
   const lower = rel.toLowerCase();
   if (SKIP_FILES.has(path.basename(rel))) return true;
+  const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".") + 1) : "";
