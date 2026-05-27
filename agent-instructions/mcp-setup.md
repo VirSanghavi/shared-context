@@ -109,6 +109,7 @@ keys are needed locally (all of that lives server-side). Note this path requires
 `npm` updates to get new tools, and `deep_search` is hosted-only.
 
 ```jsonc
+// .cursor/mcp.json, ~/.claude.json / .mcp.json, or windsurf mcp_config.json
 {
   "mcpServers": {
     "axis": {
