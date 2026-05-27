@@ -98,7 +98,6 @@ class Axis:
         data = self._request("GET", "/context/mirror", params={"path": path})
         return AxisMirror(data)
 
-        except Exception as e:
             print(f"Axis Governance Error: {e}")
             return False
 
