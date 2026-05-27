@@ -69,3 +69,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
   };
 }
 
+function isBinaryPath(rel: string): boolean {
