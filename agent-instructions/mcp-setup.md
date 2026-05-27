@@ -65,6 +65,7 @@ Cursor, etc.). Under the hood Axis is a full OAuth 2.1 authorization server
 (PKCE, dynamic client registration, rotating refresh tokens); your client
 discovers it automatically from `/api/mcp` and stores the resulting token for
 you. For stdio-only clients (incl. Codex), bridge with `mcp-remote` and it will
+run the same OAuth flow:
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
