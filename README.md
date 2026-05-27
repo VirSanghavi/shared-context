@@ -8,6 +8,7 @@ Axis is a high-performance orchestration layer that enables **Parallel Agent Wor
 > - **Free forever:** the orchestration layer — job board, file locking, shared notepad, sessions, project soul. It's just coordination state; it costs nothing to run.
 > - **Paid (hosted):** the intelligence layer — hybrid code search, agentic `deep_search`, and incremental indexing — plus the managed backend, dashboard, and billing. That lives at **[useaxis.dev](https://useaxis.dev)** (closed source) because it carries real embedding/LLM cost.
 >
+> **Quickest start:** sign up at [useaxis.dev](https://useaxis.dev), then point your MCP client at `https://useaxis.dev/api/mcp` and authenticate — no key to paste. See **[agent-instructions/mcp-setup.md](agent-instructions/mcp-setup.md)** for OAuth, API-key, and local-install options.
 
 ## Features
 
