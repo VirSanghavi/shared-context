@@ -86,6 +86,7 @@ class Axis:
         """Agentic answer engine — reads across files and returns a cited answer.
 
         Returns a dict with ``answer``, ``citations`` and ``queriesRun``.
+        """
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
