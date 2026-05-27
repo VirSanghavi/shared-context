@@ -128,3 +128,4 @@ def _safe_error(resp):
     except Exception:
         return resp.text or f"HTTP {resp.status_code}"
 
+
