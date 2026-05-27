@@ -44,6 +44,7 @@ class Axis:
 
     # -- internals ---------------------------------------------------------
 
+    def _headers(self):
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
