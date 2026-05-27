@@ -67,3 +67,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
     if (prefixes.some((p) => rel === p || rel.startsWith(p + "/"))) return true;
     return false;
   };
+}
