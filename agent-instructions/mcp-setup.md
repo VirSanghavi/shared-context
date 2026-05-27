@@ -170,7 +170,7 @@ across files over multiple hops and returns a **cited** answer. *(Hosted only.)*
 ### Task Orchestration (Job Board)
 
 #### `post_job`
-Creates a new task on the job board.
+Posts a task to the job board.
 - **Arguments**:
   - `title` (string)
   - `description` (string)
