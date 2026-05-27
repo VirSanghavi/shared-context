@@ -113,3 +113,4 @@ async function post(url: string, secret: string, body: unknown): Promise<any> {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+    body: JSON.stringify(body),
