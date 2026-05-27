@@ -62,3 +62,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
   const prefixes = patterns.filter((p) => p.includes("/")).map((p) => p.replace(/^\//, "").replace(/\/$/, ""));
   return (rel: string) => {
     const base = path.basename(rel);
+    if (names.has(base)) return true;
