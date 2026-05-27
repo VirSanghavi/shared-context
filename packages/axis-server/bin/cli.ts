@@ -109,4 +109,5 @@ program
         const rootDir = findRoot(path.resolve(root || process.cwd()));
         const projectName = opts.project || deriveProjectName(rootDir);
 
+        console.error(chalk.bold.blue(`Indexing "${projectName}"`) + chalk.gray(` (${rootDir})`));
 program.parse();
