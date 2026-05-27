@@ -60,3 +60,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
   const exts = patterns.filter((p) => p.startsWith("*.")).map((p) => p.slice(1));
   const names = new Set(patterns.filter((p) => !p.includes("/") && !p.startsWith("*")).map((p) => p.replace(/\/$/, "")));
   const prefixes = patterns.filter((p) => p.includes("/")).map((p) => p.replace(/^\//, "").replace(/\/$/, ""));
+  return (rel: string) => {
