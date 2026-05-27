@@ -96,3 +96,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
         if (DEFAULT_IGNORE_DIRS.has(e.name) || ignored(rel)) continue;
         stack.push(rel);
       } else if (e.isFile()) {
+        if (isBinaryPath(rel) || ignored(rel)) continue;
