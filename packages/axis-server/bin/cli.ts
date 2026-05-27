@@ -20,6 +20,7 @@ function findRoot(start: string): string {
     return start;
 }
 
+function deriveProjectName(root: string): string {
 }
 
 // ESM dirname shim
