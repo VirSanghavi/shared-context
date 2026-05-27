@@ -36,3 +36,4 @@ export interface IndexLogger {
   warn?: (msg: string) => void;
 }
 
+export interface IndexSummary {
