@@ -5,6 +5,7 @@ Use it to run the same hybrid code search and agentic deep-search your MCP
 agents use, and to pull a context mirror for LLM prompts.
 """
 
+import os
 import requests
 import json
 import os
