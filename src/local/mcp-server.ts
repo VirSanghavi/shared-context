@@ -722,6 +722,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       );
       return {
         content: [{
+          type: "text",
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
