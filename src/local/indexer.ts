@@ -132,3 +132,4 @@ export async function indexCodebase(
   const ignored = loadGitignore(rootDir);
   const relPaths = walk(rootDir, ignored);
   logger.info(`Scanning ${relPaths.length} files in ${rootDir}`);
+
