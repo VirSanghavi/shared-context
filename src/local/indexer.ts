@@ -93,3 +93,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
     for (const e of entries) {
       const rel = relDir === "." ? e.name : `${relDir}/${e.name}`;
       if (e.isDirectory()) {
+        if (DEFAULT_IGNORE_DIRS.has(e.name) || ignored(rel)) continue;
