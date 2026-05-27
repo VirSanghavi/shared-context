@@ -109,3 +109,4 @@ function indexEndpoint(apiUrl: string, suffix: string): string {
   return `${base}${suffix}`;
 }
 
+async function post(url: string, secret: string, body: unknown): Promise<any> {
