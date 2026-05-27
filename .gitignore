@@ -38,4 +38,4 @@ next-env.d.ts
 # backend
 /supabase
 /sandbox_mcp_test
-/sandbox
+/sandboxpackages/python-sdk/axis/__pycache__/
