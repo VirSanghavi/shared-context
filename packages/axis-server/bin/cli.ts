@@ -19,6 +19,7 @@ function findRoot(start: string): string {
     }
     return start;
 }
+}
 
 // ESM dirname shim
 const __filename = fileURLToPath(import.meta.url);
