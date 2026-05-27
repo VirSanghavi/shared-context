@@ -1,3 +1,4 @@
+"""Python SDK for the Axis Context Protocol.
 
 import requests
 import json
