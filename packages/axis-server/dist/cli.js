@@ -34,6 +34,205 @@ var import_child_process = require("child_process");
 var import_path = __toESM(require("path"));
 var import_url = require("url");
 var import_fs = __toESM(require("fs"));
+
+// ../../src/local/indexer.ts
+var fs = __toESM(require("fs"), 1);
+var path = __toESM(require("path"), 1);
+var import_crypto = require("crypto");
+var DEFAULT_IGNORE_DIRS = /* @__PURE__ */ new Set([
+  ".git",
+  "node_modules",
+  "dist",
+  "build",
+  ".next",
+  "out",
+  "coverage",
+  "venv",
+  ".venv",
+  "__pycache__",
+  ".turbo",
+  ".cache",
+  "vendor",
+  ".idea",
+  ".vscode",
+  "target",
+  "bin",
+  "obj",
+  ".pytest_cache",
+  ".mypy_cache"
+]);
+var BINARY_EXT = /* @__PURE__ */ new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "ico",
+  "bmp",
+  "tiff",
+  "svg",
+  "pdf",
+  "zip",
+  "gz",
+  "tar",
+  "tgz",
+  "rar",
+  "7z",
+  "mp3",
+  "mp4",
+  "mov",
+  "avi",
+  "wav",
+  "woff",
+  "woff2",
+  "ttf",
+  "otf",
+  "eot",
+  "exe",
+  "dll",
+  "so",
+  "dylib",
+  "bin",
+  "wasm",
+  "class",
+  "jar",
+  "pyc",
+  "lock",
+  "min.js",
+  "min.css",
+  "map",
+  "ds_store"
+]);
+var SKIP_FILES = /* @__PURE__ */ new Set([
+  "package-lock.json",
+  "yarn.lock",
+  "pnpm-lock.yaml",
+  "poetry.lock",
+  "Cargo.lock",
+  "composer.lock",
+  ".DS_Store"
+]);
+var MAX_FILE_BYTES = 256 * 1024;
+var UPLOAD_BATCH = 40;
+function loadGitignore(root) {
+  const file = path.join(root, ".gitignore");
+  let patterns = [];
+  try {
+    patterns = fs.readFileSync(file, "utf8").split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+  } catch {
+  }
+  const exts = patterns.filter((p) => p.startsWith("*.")).map((p) => p.slice(1));
+  const names = new Set(patterns.filter((p) => !p.includes("/") && !p.startsWith("*")).map((p) => p.replace(/\/$/, "")));
+  const prefixes = patterns.filter((p) => p.includes("/")).map((p) => p.replace(/^\//, "").replace(/\/$/, ""));
+  return (rel) => {
+    const base = path.basename(rel);
+    if (names.has(base)) return true;
+    if (exts.some((e) => rel.endsWith(e))) return true;
+    if (prefixes.some((p) => rel === p || rel.startsWith(p + "/"))) return true;
+    return false;
+  };
+}
+function isBinaryPath(rel) {
+  const lower = rel.toLowerCase();
+  if (SKIP_FILES.has(path.basename(rel))) return true;
+  const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".") + 1) : "";
+  if (BINARY_EXT.has(ext)) return true;
+  if (lower.endsWith(".min.js") || lower.endsWith(".min.css")) return true;
+  return false;
+}
+function walk(root, ignored) {
+  const out = [];
+  const stack = ["."];
+  while (stack.length) {
+    const relDir = stack.pop();
+    const absDir = path.join(root, relDir);
+    let entries;
+    try {
+      entries = fs.readdirSync(absDir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const e of entries) {
+      const rel = relDir === "." ? e.name : `${relDir}/${e.name}`;
+      if (e.isDirectory()) {
+        if (DEFAULT_IGNORE_DIRS.has(e.name) || ignored(rel)) continue;
+        stack.push(rel);
+      } else if (e.isFile()) {
+        if (isBinaryPath(rel) || ignored(rel)) continue;
+        out.push(rel);
+      }
+    }
+  }
+  return out;
+}
+function indexEndpoint(apiUrl, suffix) {
+  const base = apiUrl.endsWith("/v1") ? apiUrl : `${apiUrl}/v1`;
+  return `${base}${suffix}`;
+}
+async function post(url, secret, body) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`${url} \u2192 ${res.status}: ${await res.text().catch(() => "")}`);
+  return res.json();
+}
+async function indexCodebase(apiUrl, apiSecret, projectName, rootDir, logger) {
+  const ignored = loadGitignore(rootDir);
+  const relPaths = walk(rootDir, ignored);
+  logger.info(`Scanning ${relPaths.length} files in ${rootDir}`);
+  const manifest = [];
+  const contentByPath = /* @__PURE__ */ new Map();
+  for (const rel of relPaths) {
+    try {
+      const stat = fs.statSync(path.join(rootDir, rel));
+      if (stat.size > MAX_FILE_BYTES) continue;
+      const content = fs.readFileSync(path.join(rootDir, rel), "utf8");
+      if (content.includes("\0")) continue;
+      contentByPath.set(rel, content);
+      manifest.push({ path: rel, hash: (0, import_crypto.createHash)("sha256").update(content, "utf8").digest("hex") });
+    } catch {
+    }
+  }
+  const plan = await post(indexEndpoint(apiUrl, "/index/plan"), apiSecret, { projectName, manifest });
+  const toUpload = plan.toUpload || [];
+  logger.info(`${manifest.length - toUpload.length} unchanged, ${toUpload.length} to upload, ${(plan.toDelete || []).length} to prune`);
+  let uploaded = 0;
+  let chunks = 0;
+  for (let i = 0; i < toUpload.length; i += UPLOAD_BATCH) {
+    const batch = toUpload.slice(i, i + UPLOAD_BATCH).map((p) => ({ path: p, content: contentByPath.get(p) || "" }));
+    const r = await post(indexEndpoint(apiUrl, "/index"), apiSecret, { projectName, files: batch });
+    uploaded += r.indexed || 0;
+    chunks += r.totalChunks || 0;
+    logger.info(`Indexed ${Math.min(i + UPLOAD_BATCH, toUpload.length)}/${toUpload.length}`);
+  }
+  const allPaths = manifest.map((m) => m.path);
+  const pruneRes = await post(indexEndpoint(apiUrl, "/index"), apiSecret, { projectName, files: [], prune: true, allPaths });
+  const pruned = (pruneRes.pruned || []).length;
+  return { scanned: manifest.length, uploaded, unchanged: manifest.length - toUpload.length, pruned, chunks };
+}
+
+// bin/cli.ts
+function findRoot(start) {
+  let dir = start;
+  for (let i = 0; i < 20; i++) {
+    if (import_fs.default.existsSync(import_path.default.join(dir, ".git")) || import_fs.default.existsSync(import_path.default.join(dir, "package.json"))) return dir;
+    const parent = import_path.default.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return start;
+}
+function deriveProjectName(root) {
+  if (process.env.PROJECT_NAME) return process.env.PROJECT_NAME;
+  try {
+    const cfg = JSON.parse(import_fs.default.readFileSync(import_path.default.join(root, ".axis", "axis.json"), "utf8"));
+    if (cfg.project) return String(cfg.project);
+  } catch {
+  }
+  return import_path.default.basename(root);
+}
 var __filename2 = (0, import_url.fileURLToPath)(importMetaUrl);
 var __dirname = import_path.default.dirname(__filename2);
 import_commander.program.name("axis-server").description("Start the Axis Shared Context MCP Server").version("1.0.0");
@@ -76,5 +275,27 @@ import_commander.program.argument("[root]", "Project root directory (optional)")
   process.on("SIGTERM", () => {
     proc.kill("SIGTERM");
   });
+});
+import_commander.program.command("index").description("Index the codebase for search_codebase / deep_search (incremental, content-hashed)").argument("[root]", "Project root to index (default: auto-detected repo root)").option("-p, --project <name>", "Project name (default: auto-detected)").action(async (root, opts) => {
+  const apiKey = process.env.AXIS_API_KEY;
+  if (!apiKey) {
+    console.error(import_chalk.default.red("AXIS_API_KEY is required. Set it in your environment."));
+    process.exit(1);
+  }
+  const apiUrl = process.env.SHARED_CONTEXT_API_URL || "https://useaxis.dev/api/v1";
+  const rootDir = findRoot(import_path.default.resolve(root || process.cwd()));
+  const projectName = opts.project || deriveProjectName(rootDir);
+  console.error(import_chalk.default.bold.blue(`Indexing "${projectName}"`) + import_chalk.default.gray(` (${rootDir})`));
+  try {
+    const summary = await indexCodebase(apiUrl, apiKey, projectName, rootDir, {
+      info: (m) => console.error(import_chalk.default.gray(`  ${m}`))
+    });
+    console.error(
+      import_chalk.default.green("\u2713 done \u2014 ") + `${summary.uploaded} updated (${summary.chunks} chunks), ${summary.unchanged} unchanged, ${summary.pruned} pruned`
+    );
+  } catch (e) {
+    console.error(import_chalk.default.red(`Index failed: ${e instanceof Error ? e.message : String(e)}`));
+    process.exit(1);
+  }
 });
 import_commander.program.parse();

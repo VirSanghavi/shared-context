@@ -1293,14 +1293,192 @@ var RagEngine = class {
   }
 };
 
+// ../../src/local/indexer.ts
+import * as fs3 from "fs";
+import * as path3 from "path";
+import { createHash } from "crypto";
+var DEFAULT_IGNORE_DIRS = /* @__PURE__ */ new Set([
+  ".git",
+  "node_modules",
+  "dist",
+  "build",
+  ".next",
+  "out",
+  "coverage",
+  "venv",
+  ".venv",
+  "__pycache__",
+  ".turbo",
+  ".cache",
+  "vendor",
+  ".idea",
+  ".vscode",
+  "target",
+  "bin",
+  "obj",
+  ".pytest_cache",
+  ".mypy_cache"
+]);
+var BINARY_EXT = /* @__PURE__ */ new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "ico",
+  "bmp",
+  "tiff",
+  "svg",
+  "pdf",
+  "zip",
+  "gz",
+  "tar",
+  "tgz",
+  "rar",
+  "7z",
+  "mp3",
+  "mp4",
+  "mov",
+  "avi",
+  "wav",
+  "woff",
+  "woff2",
+  "ttf",
+  "otf",
+  "eot",
+  "exe",
+  "dll",
+  "so",
+  "dylib",
+  "bin",
+  "wasm",
+  "class",
+  "jar",
+  "pyc",
+  "lock",
+  "min.js",
+  "min.css",
+  "map",
+  "ds_store"
+]);
+var SKIP_FILES = /* @__PURE__ */ new Set([
+  "package-lock.json",
+  "yarn.lock",
+  "pnpm-lock.yaml",
+  "poetry.lock",
+  "Cargo.lock",
+  "composer.lock",
+  ".DS_Store"
+]);
+var MAX_FILE_BYTES = 256 * 1024;
+var UPLOAD_BATCH = 40;
+function loadGitignore(root) {
+  const file = path3.join(root, ".gitignore");
+  let patterns = [];
+  try {
+    patterns = fs3.readFileSync(file, "utf8").split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+  } catch {
+  }
+  const exts = patterns.filter((p) => p.startsWith("*.")).map((p) => p.slice(1));
+  const names = new Set(patterns.filter((p) => !p.includes("/") && !p.startsWith("*")).map((p) => p.replace(/\/$/, "")));
+  const prefixes = patterns.filter((p) => p.includes("/")).map((p) => p.replace(/^\//, "").replace(/\/$/, ""));
+  return (rel) => {
+    const base = path3.basename(rel);
+    if (names.has(base)) return true;
+    if (exts.some((e) => rel.endsWith(e))) return true;
+    if (prefixes.some((p) => rel === p || rel.startsWith(p + "/"))) return true;
+    return false;
+  };
+}
+function isBinaryPath(rel) {
+  const lower = rel.toLowerCase();
+  if (SKIP_FILES.has(path3.basename(rel))) return true;
+  const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".") + 1) : "";
+  if (BINARY_EXT.has(ext)) return true;
+  if (lower.endsWith(".min.js") || lower.endsWith(".min.css")) return true;
+  return false;
+}
+function walk(root, ignored) {
+  const out = [];
+  const stack = ["."];
+  while (stack.length) {
+    const relDir = stack.pop();
+    const absDir = path3.join(root, relDir);
+    let entries;
+    try {
+      entries = fs3.readdirSync(absDir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const e of entries) {
+      const rel = relDir === "." ? e.name : `${relDir}/${e.name}`;
+      if (e.isDirectory()) {
+        if (DEFAULT_IGNORE_DIRS.has(e.name) || ignored(rel)) continue;
+        stack.push(rel);
+      } else if (e.isFile()) {
+        if (isBinaryPath(rel) || ignored(rel)) continue;
+        out.push(rel);
+      }
+    }
+  }
+  return out;
+}
+function indexEndpoint(apiUrl2, suffix) {
+  const base = apiUrl2.endsWith("/v1") ? apiUrl2 : `${apiUrl2}/v1`;
+  return `${base}${suffix}`;
+}
+async function post(url, secret, body) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`${url} \u2192 ${res.status}: ${await res.text().catch(() => "")}`);
+  return res.json();
+}
+async function indexCodebase(apiUrl2, apiSecret2, projectName, rootDir, logger2) {
+  const ignored = loadGitignore(rootDir);
+  const relPaths = walk(rootDir, ignored);
+  logger2.info(`Scanning ${relPaths.length} files in ${rootDir}`);
+  const manifest = [];
+  const contentByPath = /* @__PURE__ */ new Map();
+  for (const rel of relPaths) {
+    try {
+      const stat = fs3.statSync(path3.join(rootDir, rel));
+      if (stat.size > MAX_FILE_BYTES) continue;
+      const content = fs3.readFileSync(path3.join(rootDir, rel), "utf8");
+      if (content.includes("\0")) continue;
+      contentByPath.set(rel, content);
+      manifest.push({ path: rel, hash: createHash("sha256").update(content, "utf8").digest("hex") });
+    } catch {
+    }
+  }
+  const plan = await post(indexEndpoint(apiUrl2, "/index/plan"), apiSecret2, { projectName, manifest });
+  const toUpload = plan.toUpload || [];
+  logger2.info(`${manifest.length - toUpload.length} unchanged, ${toUpload.length} to upload, ${(plan.toDelete || []).length} to prune`);
+  let uploaded = 0;
+  let chunks = 0;
+  for (let i = 0; i < toUpload.length; i += UPLOAD_BATCH) {
+    const batch = toUpload.slice(i, i + UPLOAD_BATCH).map((p) => ({ path: p, content: contentByPath.get(p) || "" }));
+    const r = await post(indexEndpoint(apiUrl2, "/index"), apiSecret2, { projectName, files: batch });
+    uploaded += r.indexed || 0;
+    chunks += r.totalChunks || 0;
+    logger2.info(`Indexed ${Math.min(i + UPLOAD_BATCH, toUpload.length)}/${toUpload.length}`);
+  }
+  const allPaths = manifest.map((m) => m.path);
+  const pruneRes = await post(indexEndpoint(apiUrl2, "/index"), apiSecret2, { projectName, files: [], prune: true, allPaths });
+  const pruned = (pruneRes.pruned || []).length;
+  return { scanned: manifest.length, uploaded, unchanged: manifest.length - toUpload.length, pruned, chunks };
+}
+
 // ../../src/local/mcp-server.ts
-import path4 from "path";
-import fs4 from "fs";
+import path5 from "path";
+import fs5 from "fs";
 
 // ../../src/local/local-search.ts
-import fs3 from "fs/promises";
+import fs4 from "fs/promises";
 import fsSync2 from "fs";
-import path3 from "path";
+import path4 from "path";
 import { spawnSync } from "child_process";
 var SKIP_DIRS = /* @__PURE__ */ new Set([
   "node_modules",
@@ -1489,17 +1667,17 @@ var PROJECT_ROOT_MARKERS = [
   "AGENTS.md"
 ];
 function detectProjectRoot(startDir) {
-  let current = path3.resolve(startDir);
-  const root = path3.parse(current).root;
+  let current = path4.resolve(startDir);
+  const root = path4.parse(current).root;
   while (current !== root) {
     for (const marker of PROJECT_ROOT_MARKERS) {
       try {
-        fsSync2.accessSync(path3.join(current, marker));
+        fsSync2.accessSync(path4.join(current, marker));
         return current;
       } catch {
       }
     }
-    const parent = path3.dirname(current);
+    const parent = path4.dirname(current);
     if (parent === current) break;
     current = parent;
   }
@@ -1511,7 +1689,7 @@ async function walkDir(dir, maxDepth = 12) {
     if (depth > maxDepth) return;
     let entries;
     try {
-      entries = await fs3.readdir(current, { withFileTypes: true });
+      entries = await fs4.readdir(current, { withFileTypes: true });
     } catch {
       return;
     }
@@ -1519,16 +1697,16 @@ async function walkDir(dir, maxDepth = 12) {
       if (entry.name.startsWith(".") && entry.name !== ".env.example") {
         if (SKIP_DIRS.has(entry.name) || entry.isDirectory()) continue;
       }
-      const fullPath = path3.join(current, entry.name);
+      const fullPath = path4.join(current, entry.name);
       if (entry.isDirectory()) {
         if (SKIP_DIRS.has(entry.name)) continue;
         await recurse(fullPath, depth + 1);
       } else if (entry.isFile()) {
         if (SKIP_FILENAMES.has(entry.name)) continue;
-        const ext = path3.extname(entry.name).toLowerCase();
+        const ext = path4.extname(entry.name).toLowerCase();
         if (SKIP_EXTENSIONS.has(ext)) continue;
         try {
-          const stat = await fs3.stat(fullPath);
+          const stat = await fs4.stat(fullPath);
           if (stat.size > MAX_FILE_SIZE || stat.size === 0) continue;
         } catch {
           continue;
@@ -1543,12 +1721,12 @@ async function walkDir(dir, maxDepth = 12) {
 async function searchFile(filePath, rootDir, keywords) {
   let content;
   try {
-    content = await fs3.readFile(filePath, "utf-8");
+    content = await fs4.readFile(filePath, "utf-8");
   } catch {
     return null;
   }
   const contentLower = content.toLowerCase();
-  const relativePath = path3.relative(rootDir, filePath);
+  const relativePath = path4.relative(rootDir, filePath);
   const matchedKeywords = keywords.filter((kw) => contentLower.includes(kw));
   if (matchedKeywords.length === 0) return null;
   const coverage = matchedKeywords.length / keywords.length;
@@ -1640,7 +1818,7 @@ function runRipgrep(pattern, cwd) {
     const match = line.match(/^(.+?):(\d+):(.+)$/);
     if (match) {
       const [, file, lineNum, content] = match;
-      const relPath = path3.relative(cwd, file);
+      const relPath = path4.relative(cwd, file);
       hits.push({
         file: relPath,
         line: parseInt(lineNum, 10),
@@ -1806,16 +1984,16 @@ if (process.env.SHARED_CONTEXT_API_URL || process.env.AXIS_API_KEY) {
 } else {
   const cwd = process.cwd();
   const possiblePaths = [
-    path4.join(cwd, ".env.local"),
-    path4.join(cwd, "..", ".env.local"),
-    path4.join(cwd, "..", "..", ".env.local"),
-    path4.join(cwd, "shared-context", ".env.local"),
-    path4.join(cwd, "..", "shared-context", ".env.local")
+    path5.join(cwd, ".env.local"),
+    path5.join(cwd, "..", ".env.local"),
+    path5.join(cwd, "..", "..", ".env.local"),
+    path5.join(cwd, "shared-context", ".env.local"),
+    path5.join(cwd, "..", "shared-context", ".env.local")
   ];
   let envLoaded = false;
   for (const envPath of possiblePaths) {
     try {
-      if (fs4.existsSync(envPath)) {
+      if (fs5.existsSync(envPath)) {
         logger.info(`[Fallback] Loading .env.local from: ${envPath}`);
         dotenv2.config({ path: envPath });
         envLoaded = true;
@@ -1995,21 +2173,21 @@ if (!useRemoteApiOnly && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUP
 }
 async function ensureFileSystem() {
   try {
-    const fs5 = await import("fs/promises");
-    const path5 = await import("path");
+    const fs6 = await import("fs/promises");
+    const path6 = await import("path");
     const fsSync3 = await import("fs");
     const cwd = process.cwd();
     logger.info(`Server CWD: ${cwd}`);
-    const historyDir = path5.join(cwd, "history");
-    await fs5.mkdir(historyDir, { recursive: true }).catch(() => {
+    const historyDir = path6.join(cwd, "history");
+    await fs6.mkdir(historyDir, { recursive: true }).catch(() => {
     });
-    const axisDir = path5.join(cwd, ".axis");
-    const axisInstructions = path5.join(axisDir, "instructions");
-    const legacyInstructions = path5.join(cwd, "agent-instructions");
+    const axisDir = path6.join(cwd, ".axis");
+    const axisInstructions = path6.join(axisDir, "instructions");
+    const legacyInstructions = path6.join(cwd, "agent-instructions");
     if (fsSync3.existsSync(legacyInstructions) && !fsSync3.existsSync(axisDir)) {
       logger.info("Using legacy agent-instructions directory");
     } else {
-      await fs5.mkdir(axisInstructions, { recursive: true }).catch(() => {
+      await fs6.mkdir(axisInstructions, { recursive: true }).catch(() => {
       });
       const defaults = [
         ["context.md", `# Project Context
@@ -2061,11 +2239,11 @@ force_unlock is a LAST RESORT \u2014 only for locks >25 min old from a crashed a
         ["activity.md", "# Activity Log\n\n"]
       ];
       for (const [file, content] of defaults) {
-        const p = path5.join(axisInstructions, file);
+        const p = path6.join(axisInstructions, file);
         try {
-          await fs5.access(p);
+          await fs6.access(p);
         } catch {
-          await fs5.writeFile(p, content);
+          await fs6.writeFile(p, content);
           logger.info(`Created default context file: ${file}`);
         }
       }
@@ -2206,6 +2384,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
         required: ["query"]
       }
+    },
+    {
+      name: "index_codebase",
+      description: "**INDEX THE REPO FOR SEARCH**: Walk the project, content-hash every file, and sync changed files into the searchable index so `search_codebase`/`deep_search` work and stay fresh.\n- Incremental: unchanged files are skipped (no re-embedding), deleted files are pruned. Safe and cheap to run often.\n- Run this once to set up search on a new project, and after large changes (e.g. a git pull) to refresh. Single-file edits are picked up by `index_file`.\n- Respects .gitignore and skips binaries/large files. Takes no arguments \u2014 it indexes the current project root.",
+      inputSchema: { type: "object", properties: {}, required: [] }
     },
     {
       name: "search_docs",
@@ -2392,6 +2575,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [{ type: "text", text: `Error updating file: ${err}` }],
         isError: true
       };
+    }
+  }
+  if (name === "index_codebase") {
+    if (!manager.apiUrl || !manager.apiSecret) {
+      return { content: [{ type: "text", text: "Indexing requires AXIS_API_KEY (and the hosted API). Not configured." }], isError: true };
+    }
+    try {
+      const summary = await indexCodebase(
+        manager.apiUrl,
+        manager.apiSecret,
+        nerveCenter.currentProjectName,
+        process.cwd(),
+        { info: (m) => logger.info(`[index_codebase] ${m}`) }
+      );
+      return {
+        content: [{
+          type: "text",
+          text: `Indexed project "${nerveCenter.currentProjectName}". ${summary.uploaded} file(s) updated (${summary.chunks} chunks), ${summary.unchanged} unchanged, ${summary.pruned} pruned. search_codebase and deep_search are now up to date.`
+        }]
+      };
+    } catch (e) {
+      return { content: [{ type: "text", text: `index_codebase failed: ${e instanceof Error ? e.message : String(e)}` }], isError: true };
     }
   }
   if (name === "index_file") {
