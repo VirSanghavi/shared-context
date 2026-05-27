@@ -31,7 +31,7 @@ class RateLimitError(AxisError):
 
 
 class Axis:
-    """
+    """The main client for interacting with the Axis Context Protocol."""
     The main client for interacting with the Axis Context Protocol.
     """
     def __init__(self, api_key=None, base_url="https://api.axis.sh/v1"):
