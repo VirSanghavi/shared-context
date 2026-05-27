@@ -97,3 +97,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
         stack.push(rel);
       } else if (e.isFile()) {
         if (isBinaryPath(rel) || ignored(rel)) continue;
+        out.push(rel);
