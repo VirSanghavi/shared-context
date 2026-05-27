@@ -9,6 +9,7 @@ import fs from 'fs';
 import { indexCodebase } from "../../../src/local/indexer";
 
 /** Walk up for the repo root (nearest .git/package.json), like the server does. */
+function findRoot(start: string): string {
 
 // ESM dirname shim
 const __filename = fileURLToPath(import.meta.url);
