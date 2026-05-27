@@ -154,7 +154,6 @@ project-soul/context helpers (`get_project_soul`, `update_project_soul`,
 `release_file_access` — use the hosted server for the full set.
 
 ### Search & Discovery
-Reads a file from the shared context directory (`agent-instructions/`).
 - **Arguments**: `filename` (string) - e.g., `context.md`
 
 #### `update_project_soul`
