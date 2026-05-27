@@ -123,3 +123,4 @@ class AxisNode:
 
 def _safe_error(resp):
     try:
+        body = resp.json()
