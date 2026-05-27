@@ -110,4 +110,5 @@ program
         const projectName = opts.project || deriveProjectName(rootDir);
 
         console.error(chalk.bold.blue(`Indexing "${projectName}"`) + chalk.gray(` (${rootDir})`));
+        try {
 program.parse();
