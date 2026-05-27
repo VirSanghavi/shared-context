@@ -23,6 +23,7 @@ class AxisError(Exception):
 
 
 class RateLimitError(AxisError):
+    """Raised on HTTP 429. ``retry_after`` is seconds to wait, if provided."""
 class Axis:
     """
     The main client for interacting with the Axis Context Protocol.
