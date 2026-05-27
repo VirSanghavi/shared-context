@@ -6,6 +6,7 @@ import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import { indexCodebase } from "../../../src/local/indexer";
 
 // ESM dirname shim
 const __filename = fileURLToPath(import.meta.url);
