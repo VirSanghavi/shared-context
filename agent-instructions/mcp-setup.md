@@ -204,6 +204,7 @@ directory). Use a descriptive `intent`.
 - **Arguments**: `filePath` (string), `agentId` (string), `intent` (string)
 
 #### `release_file_access`
+Releases a lock you hold.
 
 #### `get_subscription_status`
 Checks if a user has an active Pro subscription.
