@@ -59,6 +59,7 @@ claude mcp add --scope project --transport http axis https://useaxis.dev/api/mcp
 # 2. Authenticate — run in a real terminal (not the IDE extension)
 claude /mcp        # select "axis" → Authenticate → log in in the browser
 ```
+
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
