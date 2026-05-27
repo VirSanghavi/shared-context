@@ -24,3 +24,4 @@ const BINARY_EXT = new Set([
 ]);
 
 const SKIP_FILES = new Set([
+  "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "poetry.lock",
