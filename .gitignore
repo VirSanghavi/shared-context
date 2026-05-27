@@ -41,3 +41,6 @@ next-env.d.ts
 /sandboxpackages/python-sdk/axis/__pycache__/
 sandbox/
 **/__pycache__/
+
+# Frontend moved to private repo VirSanghavi/axis-frontend — never re-track here
+frontend/
