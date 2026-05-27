@@ -71,6 +71,7 @@ Execute this sequence automatically. Do not wait for the user to walk you throug
 | \`post_job\` | IMMEDIATELY when you receive a non-trivial task |
 | \`claim_next_job\` | Load-balanced pickup of the next job |
 | \`claim_job\` | Claim a SPECIFIC job by ID — preferred in multi-agent runs |
+| \`list_jobs\` | See the board before claiming |
 | \`cancel_job\` | Remove jobs no longer needed |
 | \`propose_file_access\` | Before EVERY file edit |
 | \`force_unlock\` | LAST RESORT — crashed agent only |
