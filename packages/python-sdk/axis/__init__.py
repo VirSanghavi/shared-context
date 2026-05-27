@@ -58,6 +58,7 @@ class Axis:
             )
         except requests.RequestException as e:
             raise AxisError(f"Network error contacting Axis: {e}")
+
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
