@@ -198,7 +198,7 @@ Lists jobs on the board for the project.
 ### File Locking
 
 #### `propose_file_access`
-Requests a lock on a file to prevent conflicts.
+Requests a lock on a single file before editing. Returns `GRANTED`,
 - **Arguments**:
   - `agentId` (string)
   - `filePath` (string)
