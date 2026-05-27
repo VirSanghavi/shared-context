@@ -12,6 +12,7 @@ __version__ = "1.0.1"
 
 DEFAULT_BASE_URL = "https://useaxis.dev/api/v1"
 
+
 class Axis:
     """
     The main client for interacting with the Axis Context Protocol.
