@@ -78,6 +78,7 @@ class Axis:
         ``related`` (files that historically co-change) and ``definitions``
         (symbols a top hit calls).
         """
+        return self._request(
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
