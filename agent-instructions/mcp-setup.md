@@ -167,7 +167,6 @@ Agentic answer engine for "how does X work / where is Y handled and why" — rea
 across files over multiple hops and returns a **cited** answer. *(Hosted only.)*
 - **Arguments**: `query` (string), `projectName` (string, optional)
 
-
 ### Task Orchestration (Job Board)
 
 #### `post_job`
