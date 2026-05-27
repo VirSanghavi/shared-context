@@ -728,6 +728,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             `${summary.unchanged} unchanged, ${summary.pruned} pruned. ` +
             `search_codebase and deep_search are now up to date.`,
         }],
+      };
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
