@@ -68,6 +68,7 @@ you. For stdio-only clients (incl. Codex), bridge with `mcp-remote` and it will
 run the same OAuth flow:
 
 ```toml
+# ~/.codex/config.toml — Codex via the mcp-remote bridge (OAuth, no key)
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
