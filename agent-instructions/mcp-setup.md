@@ -102,6 +102,7 @@ args = ["-y", "mcp-remote", "https://useaxis.dev/api/mcp", "--header", "Authoriz
 
 #### Option C — Local npm server (legacy)
 
+Runs the server on your machine via stdio. **You only need your Axis API key** —
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
