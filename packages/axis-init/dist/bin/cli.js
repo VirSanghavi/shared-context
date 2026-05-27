@@ -60,13 +60,18 @@ Execute this sequence automatically. Do not wait for the user to walk you throug
 |------|------|
 | \`get_project_soul\` | FIRST action in every session — non-negotiable |
 | \`read_context\` | Check goals, conventions, architecture |
-| \`search_codebase\` | Before creating new files — find existing patterns |
+| \`search_codebase\` | Before creating new files — find existing patterns ("where is X") |
+| \`deep_search\` | "How does X work / why" — cited, cross-file answer (hosted) |
 | \`search_docs\` | Look up Axis feature usage |
 | \`post_job\` | IMMEDIATELY when you receive a non-trivial task |
-| \`claim_next_job\` | Before starting each job |
-| \`complete_job\` | IMMEDIATELY after finishing each job |
+| \`claim_next_job\` | Load-balanced pickup of the next job |
+| \`claim_job\` | Claim a SPECIFIC job by ID — preferred in multi-agent runs |
+| \`list_jobs\` | See the board before claiming |
+| \`complete_job\` | IMMEDIATELY after finishing each job (releases locks) |
 | \`cancel_job\` | Remove jobs no longer needed |
 | \`propose_file_access\` | Before EVERY file edit |
+| \`release_file_access\` | Release a lock you hold |
+| \`list_locks\` | See active locks before editing |
 | \`force_unlock\` | LAST RESORT — crashed agent only |
 | \`update_shared_context\` | After every meaningful step |
 | \`index_file\` | After creating or significantly changing a file |
