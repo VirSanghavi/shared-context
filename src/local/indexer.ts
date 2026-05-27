@@ -115,3 +115,4 @@ async function post(url: string, secret: string, body: unknown): Promise<any> {
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
     body: JSON.stringify(body),
   });
+  if (!res.ok) throw new Error(`${url} → ${res.status}: ${await res.text().catch(() => "")}`);
