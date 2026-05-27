@@ -114,4 +114,5 @@ program
             const summary = await indexCodebase(apiUrl, apiKey, projectName, rootDir, {
                 info: (m) => console.error(chalk.gray(`  ${m}`)),
             });
+            console.error(
 program.parse();
