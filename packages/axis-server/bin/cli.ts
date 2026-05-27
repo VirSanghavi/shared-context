@@ -98,4 +98,5 @@ program
     .command("index")
     .description("Index the codebase for search_codebase / deep_search (incremental, content-hashed)")
     .argument("[root]", "Project root to index (default: auto-detected repo root)")
+    .option("-p, --project <name>", "Project name (default: auto-detected)")
 program.parse();
