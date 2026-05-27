@@ -156,7 +156,7 @@ project-soul/context helpers (`get_project_soul`, `update_project_soul`,
 ### Search & Discovery
 
 #### `search_codebase`
-Updates the project soul in a single call.
+Hybrid semantic + full-text + trigram search over the indexed codebase,
 - The project soul = `context.md` (goals, architecture, features) + `conventions.md` (coding standards, agent norms).
 - **Arguments**:
   - `context` (string, optional) — full content for `context.md`
