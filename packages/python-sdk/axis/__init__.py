@@ -52,6 +52,7 @@ class Axis:
 
     def _request(self, method, path, *, params=None, json=None):
         url = f"{self.base_url}{path}"
+        try:
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
