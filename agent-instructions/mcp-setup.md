@@ -149,6 +149,7 @@ index once (and refresh after big changes) with the CLI — it walks the repo,
 respects `.gitignore`, and is **incremental + content-hashed**, so re-runs only
 upload changed files:
 
+```bash
 ## Tools Reference
 
 The hosted server (`https://useaxis.dev/api/mcp`) exposes **14 tools** — the
