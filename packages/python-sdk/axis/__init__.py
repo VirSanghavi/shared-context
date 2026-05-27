@@ -50,6 +50,7 @@ class Axis:
             "Content-Type": "application/json",
         }
 
+    def _request(self, method, path, *, params=None, json=None):
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
