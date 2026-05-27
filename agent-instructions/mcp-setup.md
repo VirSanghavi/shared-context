@@ -129,7 +129,6 @@ args = ["-y", "@virsanghavi/axis-server"]
 env = { AXIS_API_KEY = "sk_sc_your_key" }
 ```
 
-[mcp_servers.axis]
 command = "npx"
 args = ["-y", "mcp-remote", "https://useaxis.dev/api/mcp", "--header", "Authorization: Bearer sk_sc_your_key"]
 ```
