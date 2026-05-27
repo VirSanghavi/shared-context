@@ -98,7 +98,6 @@ class Axis:
         data = self._request("GET", "/context/mirror", params={"path": path})
         return AxisMirror(data)
 
-            return False
 
 class AxisMirror:
     def __init__(self, data):
