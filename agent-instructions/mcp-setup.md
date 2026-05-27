@@ -76,6 +76,7 @@ args = ["-y", "mcp-remote", "https://useaxis.dev/api/mcp"]
 
 #### Option B — Hosted with an API key (no OAuth client needed)
 
+If your client doesn't do OAuth, point it at the same URL and pass your key as a
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
