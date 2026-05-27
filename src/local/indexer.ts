@@ -124,3 +124,4 @@ async function post(url: string, secret: string, body: unknown): Promise<any> {
  */
 export async function indexCodebase(
   apiUrl: string,
+  apiSecret: string,
