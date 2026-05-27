@@ -119,4 +119,5 @@ program
                 `${summary.uploaded} updated (${summary.chunks} chunks), ${summary.unchanged} unchanged, ${summary.pruned} pruned`
             );
         } catch (e) {
+            console.error(chalk.red(`Index failed: ${e instanceof Error ? e.message : String(e)}`));
 program.parse();
