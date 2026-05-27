@@ -129,7 +129,6 @@ args = ["-y", "@virsanghavi/axis-server"]
 env = { AXIS_API_KEY = "sk_sc_your_key" }
 ```
 
-```
 
 **Project auto-detection:** the project name is derived from your **repo root**
 (nearest `.git`/`package.json` walking up), so every repo maps to its own Axis
