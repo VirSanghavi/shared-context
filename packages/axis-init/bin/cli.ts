@@ -69,7 +69,7 @@ Execute this sequence automatically. Do not wait for the user to walk you throug
 | \`deep_search\` | "How does X work / why" — cited, cross-file answer (hosted) |
 | \`search_docs\` | Look up Axis feature usage |
 | \`post_job\` | IMMEDIATELY when you receive a non-trivial task |
-| \`claim_next_job\` | Before starting each job |
+| \`claim_next_job\` | Load-balanced pickup of the next job |
 | \`complete_job\` | IMMEDIATELY after finishing each job |
 | \`cancel_job\` | Remove jobs no longer needed |
 | \`propose_file_access\` | Before EVERY file edit |
