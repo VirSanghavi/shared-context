@@ -42,3 +42,4 @@ export interface IndexSummary {
   unchanged: number;
   pruned: number;
   chunks: number;
+}
