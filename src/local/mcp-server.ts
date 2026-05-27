@@ -720,6 +720,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         process.cwd(),
         { info: (m) => logger.info(`[index_codebase] ${m}`) }
       );
+      return {
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
