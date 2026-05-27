@@ -129,3 +129,4 @@ export async function indexCodebase(
   rootDir: string,
   logger: IndexLogger
 ): Promise<IndexSummary> {
+  const ignored = loadGitignore(rootDir);
