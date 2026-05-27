@@ -69,6 +69,7 @@ class Axis:
             raise AxisError(_safe_error(resp), status_code=resp.status_code)
         return resp.json() if resp.content else {}
 
+    # -- search ------------------------------------------------------------
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
