@@ -107,7 +107,6 @@ class AxisMirror:
 
     def to_prompt(self):
         """Convert the mirror into a condensed text block for LLM prompts."""
-        Converts the mirror into a condensed text block for LLM prompts.
         """
         output = "Axis Context Mirror:\n"
         for node in self.nodes:
