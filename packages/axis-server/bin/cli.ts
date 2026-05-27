@@ -23,6 +23,7 @@ function findRoot(start: string): string {
 function deriveProjectName(root: string): string {
     if (process.env.PROJECT_NAME) return process.env.PROJECT_NAME;
     try {
+        const cfg = JSON.parse(fs.readFileSync(path.join(root, ".axis", "axis.json"), "utf8"));
 }
 
 // ESM dirname shim
