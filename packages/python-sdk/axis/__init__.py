@@ -98,7 +98,6 @@ class Axis:
         data = self._request("GET", "/context/mirror", params={"path": path})
         return AxisMirror(data)
 
-                f"{self.base_url}/governance/check", 
                 json=payload,
                 headers=headers
             )
