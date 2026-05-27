@@ -186,7 +186,6 @@ context stays focused. Rejected if the job's dependencies aren't done
 #### `complete_job`
 Marks a job done and releases its file locks.
 - **Arguments**: `jobId` (string), `agentId` (string, optional), `outcome` (string, optional)
-  - `outcome` (string)
 
 ### Governance & Billing
 
