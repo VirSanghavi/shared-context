@@ -195,6 +195,7 @@ Cancels a job that's no longer needed.
 Lists jobs on the board for the project.
 - **Arguments**: `projectName` (string, optional)
 
+### File Locking
 #### `propose_file_access`
 Requests a lock on a file to prevent conflicts.
 - **Arguments**:
