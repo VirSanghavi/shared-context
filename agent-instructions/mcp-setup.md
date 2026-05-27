@@ -148,6 +148,7 @@ The hosted server (`https://useaxis.dev/api/mcp`) exposes **14 tools** — the
 canonical set. Every tool is scoped to your account by your OAuth token or API
 key, and most accept an optional `projectName` (defaults to the auto-detected
 project). The legacy local npm server exposes the same orchestration core plus
+project-soul/context helpers (`get_project_soul`, `update_project_soul`,
 
 #### `read_context`
 Reads a file from the shared context directory (`agent-instructions/`).
