@@ -87,3 +87,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
     let entries: fs.Dirent[];
     try {
       entries = fs.readdirSync(absDir, { withFileTypes: true });
+    } catch {
