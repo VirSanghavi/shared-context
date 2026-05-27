@@ -38,3 +38,4 @@ export interface IndexLogger {
 
 export interface IndexSummary {
   scanned: number;
+  uploaded: number;
