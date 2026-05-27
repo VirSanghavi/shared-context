@@ -715,6 +715,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     try {
       const summary = await indexCodebase(
         manager.apiUrl,
+        manager.apiSecret,
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
