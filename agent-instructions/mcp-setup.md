@@ -121,7 +121,6 @@ keys are needed locally (all of that lives server-side). Note this path requires
 }
 ```
 
-MCP servers):
 
 ```toml
 [mcp_servers.axis]
