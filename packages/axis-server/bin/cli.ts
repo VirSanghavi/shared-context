@@ -118,4 +118,5 @@ program
                 chalk.green("✓ done — ") +
                 `${summary.uploaded} updated (${summary.chunks} chunks), ${summary.unchanged} unchanged, ${summary.pruned} pruned`
             );
+        } catch (e) {
 program.parse();
