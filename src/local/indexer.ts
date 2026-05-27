@@ -56,3 +56,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
       .filter((l) => l && !l.startsWith("#"));
   } catch {
     /* no .gitignore */
+  }
