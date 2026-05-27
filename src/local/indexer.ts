@@ -10,3 +10,4 @@ import * as fs from "fs";
 import * as path from "path";
 import { createHash } from "crypto";
 
+const DEFAULT_IGNORE_DIRS = new Set([
