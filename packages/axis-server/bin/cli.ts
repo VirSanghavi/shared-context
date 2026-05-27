@@ -13,6 +13,7 @@ function findRoot(start: string): string {
     let dir = start;
     for (let i = 0; i < 20; i++) {
         if (fs.existsSync(path.join(dir, ".git")) || fs.existsSync(path.join(dir, "package.json"))) return dir;
+        const parent = path.dirname(dir);
 
 // ESM dirname shim
 const __filename = fileURLToPath(import.meta.url);
