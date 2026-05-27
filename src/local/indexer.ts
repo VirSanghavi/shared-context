@@ -23,3 +23,4 @@ const BINARY_EXT = new Set([
   "min.js","min.css","map","ds_store",
 ]);
 
+const SKIP_FILES = new Set([
