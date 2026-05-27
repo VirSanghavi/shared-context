@@ -76,6 +76,7 @@ Execute this sequence automatically. Do not wait for the user to walk you throug
 | \`cancel_job\` | Remove jobs no longer needed |
 | \`propose_file_access\` | Before EVERY file edit |
 | \`release_file_access\` | Release a lock you hold |
+| \`list_locks\` | See active locks before editing |
 | \`force_unlock\` | LAST RESORT — crashed agent only |
 | \`update_shared_context\` | After every meaningful step |
 | \`index_file\` | After creating or significantly changing a file |
