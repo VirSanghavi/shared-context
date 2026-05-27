@@ -82,6 +82,7 @@ class Axis:
             "POST", "/search", json={"query": query, "projectName": project_name}
         )
 
+    def deep_search(self, query, project_name="default"):
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
