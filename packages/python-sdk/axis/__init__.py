@@ -94,7 +94,7 @@ class Axis:
     # -- context mirror ----------------------------------------------------
 
     def get_mirror(self, path="."):
-        """
+        """Retrieve the high-fidelity context mirror for a given path."""
         Retrieves the high-fidelity context mirror for a given path.
         """
         headers = {
