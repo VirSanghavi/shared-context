@@ -120,3 +120,4 @@ class AxisNode:
         self.size = node_data.get("size", 0)
         self.last_modified = node_data.get("last_modified")
 
+
