@@ -69,7 +69,7 @@ If the user asks for a specific task OR simply says "help out":
 ### 7. Search Before Write (CRITICAL)
 **Reach for Axis search by default — whenever it's relevant, without being told to.** It is the primary way to avoid reinventing patterns and duplicating work.
 - **`search_codebase`** — before creating files or refactoring. Hybrid (semantic + full-text + trigram, reranked); returns ranked symbols with `file:line`, plus `related` files that historically change together and `definitions` of what a hit calls. Prefer it over plain text/grep search for "where is X" / discovery.
-- **Before refactoring**: Find all usages of a pattern or module.
+- **`deep_search`** — for "how does X work?" / "where is Y handled and why?". An agentic answer engine that reads across files and returns a **cited** answer.
 - **When orienting**: Use natural-language queries like "Where is JWT validation done?" or "How does the job board claim work?"
 - **After creating/changing files**: Call `index_file` so future searches find them.
 
