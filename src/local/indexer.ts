@@ -77,3 +77,4 @@ function isBinaryPath(rel: string): boolean {
   if (lower.endsWith(".min.js") || lower.endsWith(".min.css")) return true;
   return false;
 }
+
