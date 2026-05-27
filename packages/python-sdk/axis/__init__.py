@@ -95,7 +95,7 @@ class Axis:
 
     def get_mirror(self, path="."):
         """Retrieve the high-fidelity context mirror for a given path."""
-        Retrieves the high-fidelity context mirror for a given path.
+        data = self._request("GET", "/context/mirror", params={"path": path})
         """
         headers = {
             "Authorization": f"Bearer {self.api_key}",
