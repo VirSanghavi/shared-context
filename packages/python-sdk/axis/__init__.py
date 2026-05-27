@@ -21,6 +21,7 @@ class AxisError(Exception):
         self.message = message
         self.status_code = status_code
 
+
 class Axis:
     """
     The main client for interacting with the Axis Context Protocol.
