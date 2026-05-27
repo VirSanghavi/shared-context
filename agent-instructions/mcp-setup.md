@@ -160,7 +160,7 @@ write files. Great as a pre-commit/CI step too — it's cheap when nothing chang
 
 ## Tools Reference
 
-The hosted server (`https://useaxis.dev/api/mcp`) exposes **14 tools** — the
+The hosted server (`https://useaxis.dev/api/mcp`) exposes **15 tools** — the
 canonical set. Every tool is scoped to your account by your OAuth token or API
 key, and most accept an optional `projectName` (defaults to the auto-detected
 project). The legacy local npm server exposes the same orchestration core plus
