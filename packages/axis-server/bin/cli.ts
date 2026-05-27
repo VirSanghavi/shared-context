@@ -95,4 +95,5 @@ program
     });
 
 program
+    .command("index")
 program.parse();
