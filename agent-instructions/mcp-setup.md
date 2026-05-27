@@ -216,6 +216,7 @@ Lists active file locks for the project.
 #### `finalize_session`
 **Mandatory cleanup** when the user's request is fully complete — clears ALL
 remaining locks and archives the session. Never end a session holding locks.
+- **Arguments**: `content` (string, optional summary)
 #### `get_subscription_status`
 Checks if a user has an active Pro subscription.
 - **Arguments**: `email` (string)
