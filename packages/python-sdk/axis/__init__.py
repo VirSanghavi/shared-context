@@ -38,6 +38,7 @@ class Axis:
         self.base_url = base_url.rstrip("/")
         if not self.api_key:
             raise ValueError(
+                "AXIS_API_KEY is required. Pass it to the constructor or set it "
 
     def get_mirror(self, path="."):
         """
