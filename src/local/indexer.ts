@@ -137,3 +137,4 @@ export async function indexCodebase(
   const manifest: { path: string; hash: string }[] = [];
   const contentByPath = new Map<string, string>();
   for (const rel of relPaths) {
+    try {
