@@ -126,3 +126,4 @@ export async function indexCodebase(
   apiUrl: string,
   apiSecret: string,
   projectName: string,
+  rootDir: string,
