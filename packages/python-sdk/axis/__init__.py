@@ -40,6 +40,7 @@ class Axis:
             raise ValueError(
                 "AXIS_API_KEY is required. Pass it to the constructor or set it "
                 "as an environment variable."
+            )
 
     def get_mirror(self, path="."):
         """
