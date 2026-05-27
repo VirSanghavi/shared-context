@@ -63,3 +63,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
   return (rel: string) => {
     const base = path.basename(rel);
     if (names.has(base)) return true;
+    if (exts.some((e) => rel.endsWith(e))) return true;
