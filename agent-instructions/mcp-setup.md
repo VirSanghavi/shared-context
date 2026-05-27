@@ -162,7 +162,7 @@ historically change together and `definitions` of what a top hit calls. Use it
 by default for "where is X" / before creating or refactoring code.
 - **Arguments**: `query` (string), `projectName` (string, optional)
 
-#### `update_context`
+#### `deep_search`
 Updates any shared context file (for files beyond the soul, or for appending).
 - **Arguments**:
   - `filename` (string) — e.g., `"activity.md"`
