@@ -187,7 +187,7 @@ context stays focused. Rejected if the job's dependencies aren't done
 Marks a job done and releases its file locks.
 - **Arguments**: `jobId` (string), `agentId` (string, optional), `outcome` (string, optional)
 
-### Governance & Billing
+#### `cancel_job`
 
 #### `propose_file_access`
 Requests a lock on a file to prevent conflicts.
