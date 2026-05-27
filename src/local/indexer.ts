@@ -58,3 +58,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
     /* no .gitignore */
   }
   const exts = patterns.filter((p) => p.startsWith("*.")).map((p) => p.slice(1));
+  const names = new Set(patterns.filter((p) => !p.includes("/") && !p.startsWith("*")).map((p) => p.replace(/\/$/, "")));
