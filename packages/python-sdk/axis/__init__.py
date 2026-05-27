@@ -122,3 +122,4 @@ class AxisNode:
 
 
 def _safe_error(resp):
+    try:
