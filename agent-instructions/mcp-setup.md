@@ -188,6 +188,7 @@ Marks a job done and releases its file locks.
 - **Arguments**: `jobId` (string), `agentId` (string, optional), `outcome` (string, optional)
 
 #### `cancel_job`
+Cancels a job that's no longer needed.
 
 #### `propose_file_access`
 Requests a lock on a file to prevent conflicts.
