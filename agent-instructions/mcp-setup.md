@@ -164,7 +164,7 @@ by default for "where is X" / before creating or refactoring code.
 
 #### `deep_search`
 Agentic answer engine for "how does X work / where is Y handled and why" — reads
-- **Arguments**:
+across files over multiple hops and returns a **cited** answer. *(Hosted only.)*
   - `filename` (string) — e.g., `"activity.md"`
   - `content` (string) — the full file content (or text to append)
   - `append` (boolean, default: false)
