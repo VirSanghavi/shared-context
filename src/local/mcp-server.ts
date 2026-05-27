@@ -10,6 +10,7 @@ import dotenv from "dotenv";
 import { ContextManager } from "./context-manager.js";
 import { NerveCenter } from "./nerve-center.js";
 import { RagEngine } from "./rag-engine.js";
+import { indexCodebase } from "./indexer.js";
 import { logger } from "../utils/logger.js";
 import path from "path";
 import fs from "fs";
