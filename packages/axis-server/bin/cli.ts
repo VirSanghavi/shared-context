@@ -11,6 +11,7 @@ import { indexCodebase } from "../../../src/local/indexer";
 /** Walk up for the repo root (nearest .git/package.json), like the server does. */
 function findRoot(start: string): string {
     let dir = start;
+    for (let i = 0; i < 20; i++) {
 
 // ESM dirname shim
 const __filename = fileURLToPath(import.meta.url);
