@@ -134,3 +134,4 @@ export async function indexCodebase(
   logger.info(`Scanning ${relPaths.length} files in ${rootDir}`);
 
   // Build manifest (path + content hash), skipping oversized files.
+  const manifest: { path: string; hash: string }[] = [];
