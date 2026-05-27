@@ -49,3 +49,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
   const file = path.join(root, ".gitignore");
   let patterns: string[] = [];
   try {
+    patterns = fs
