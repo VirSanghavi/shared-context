@@ -147,6 +147,7 @@ AXIS_API_KEY=sk_sc_your_key npx tsx src/local/mcp-server.ts
 `search_codebase`/`deep_search` only return what's been indexed. Populate the
 index once (and refresh after big changes) with the CLI — it walks the repo,
 respects `.gitignore`, and is **incremental + content-hashed**, so re-runs only
+upload changed files:
 ## Tools Reference
 
 The hosted server (`https://useaxis.dev/api/mcp`) exposes **14 tools** — the
