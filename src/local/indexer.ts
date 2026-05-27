@@ -28,3 +28,4 @@ const SKIP_FILES = new Set([
   "Cargo.lock", "composer.lock", ".DS_Store",
 ]);
 
+const MAX_FILE_BYTES = 256 * 1024; // skip files larger than 256KB
