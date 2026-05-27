@@ -716,6 +716,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const summary = await indexCodebase(
         manager.apiUrl,
         manager.apiSecret,
+        nerveCenter.currentProjectName,
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
