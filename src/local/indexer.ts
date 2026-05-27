@@ -89,3 +89,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
       entries = fs.readdirSync(absDir, { withFileTypes: true });
     } catch {
       continue;
+    }
