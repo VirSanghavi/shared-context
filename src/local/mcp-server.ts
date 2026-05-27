@@ -729,6 +729,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             `search_codebase and deep_search are now up to date.`,
         }],
       };
+    } catch (e) {
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
