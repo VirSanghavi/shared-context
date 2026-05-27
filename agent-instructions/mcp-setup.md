@@ -166,7 +166,6 @@ by default for "where is X" / before creating or refactoring code.
 Agentic answer engine for "how does X work / where is Y handled and why" — reads
 across files over multiple hops and returns a **cited** answer. *(Hosted only.)*
 - **Arguments**: `query` (string), `projectName` (string, optional)
-  - `append` (boolean, default: false)
 
 #### `search_context` / `search_docs`
 Semantically searches the project context or documentation.
