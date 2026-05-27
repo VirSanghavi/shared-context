@@ -22,6 +22,7 @@ class AxisError(Exception):
         self.status_code = status_code
 
 
+class RateLimitError(AxisError):
 class Axis:
     """
     The main client for interacting with the Axis Context Protocol.
