@@ -4,6 +4,7 @@ Thin, typed wrapper over the hosted Axis REST API (https://useaxis.dev/api/v1).
 Use it to run the same hybrid code search and agentic deep-search your MCP
 agents use, and to pull a context mirror for LLM prompts.
 """
+
 import requests
 import json
 import os
