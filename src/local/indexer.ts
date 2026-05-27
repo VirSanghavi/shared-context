@@ -11,3 +11,4 @@ import * as path from "path";
 import { createHash } from "crypto";
 
 const DEFAULT_IGNORE_DIRS = new Set([
+  ".git", "node_modules", "dist", "build", ".next", "out", "coverage",
