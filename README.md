@@ -6,6 +6,7 @@ Axis is a high-performance orchestration layer that enables **Parallel Agent Wor
 > This repository is the **free, open-source orchestration core** of Axis (AGPL-3.0): the MCP server, the `axis` CLI, the Python SDK, and the agent protocol — everything your agents use to coordinate.
 >
 > - **Free forever:** the orchestration layer — job board, file locking, shared notepad, sessions, project soul. It's just coordination state; it costs nothing to run.
+> - **Paid (hosted):** the intelligence layer — hybrid code search, agentic `deep_search`, and incremental indexing — plus the managed backend, dashboard, and billing. That lives at **[useaxis.dev](https://useaxis.dev)** (closed source) because it carries real embedding/LLM cost.
 
 ## Features
 
