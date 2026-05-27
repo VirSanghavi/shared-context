@@ -78,3 +78,4 @@ function isBinaryPath(rel: string): boolean {
   return false;
 }
 
+function walk(root: string, ignored: (rel: string) => boolean): string[] {
