@@ -104,3 +104,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
   return out;
 }
 
+function indexEndpoint(apiUrl: string, suffix: string): string {
