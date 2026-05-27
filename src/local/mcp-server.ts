@@ -723,6 +723,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return {
         content: [{
           type: "text",
+          text: `Indexed project "${nerveCenter.currentProjectName}". ` +
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
