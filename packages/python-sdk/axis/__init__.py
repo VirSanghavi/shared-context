@@ -106,7 +106,7 @@ class AxisMirror:
         self.metadata = data.get("metadata", {})
 
     def to_prompt(self):
-        """
+        """Convert the mirror into a condensed text block for LLM prompts."""
         Converts the mirror into a condensed text block for LLM prompts.
         """
         output = "Axis Context Mirror:\n"
