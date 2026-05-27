@@ -91,3 +91,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
       continue;
     }
     for (const e of entries) {
+      const rel = relDir === "." ? e.name : `${relDir}/${e.name}`;
