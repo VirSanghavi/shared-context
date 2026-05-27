@@ -50,3 +50,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
   let patterns: string[] = [];
   try {
     patterns = fs
+      .readFileSync(file, "utf8")
