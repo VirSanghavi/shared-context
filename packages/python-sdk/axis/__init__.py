@@ -56,6 +56,7 @@ class Axis:
             resp = requests.request(
                 method, url, params=params, json=json, headers=self._headers(), timeout=60
             )
+        except requests.RequestException as e:
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
