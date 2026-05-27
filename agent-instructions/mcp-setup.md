@@ -184,6 +184,7 @@ across files over multiple hops and returns a **cited** answer. *(Hosted only.)*
 - **Arguments**: `query` (string), `projectName` (string, optional)
 
 #### `index_codebase`
+Index files so search works and stays fresh. **Incremental + content-hashed** —
 ### Task Orchestration (Job Board)
 
 #### `post_job`
