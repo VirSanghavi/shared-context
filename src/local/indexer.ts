@@ -131,3 +131,4 @@ export async function indexCodebase(
 ): Promise<IndexSummary> {
   const ignored = loadGitignore(rootDir);
   const relPaths = walk(rootDir, ignored);
+  logger.info(`Scanning ${relPaths.length} files in ${rootDir}`);
