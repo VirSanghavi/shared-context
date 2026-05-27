@@ -157,7 +157,7 @@ project-soul/context helpers (`get_project_soul`, `update_project_soul`,
 
 #### `search_codebase`
 Hybrid semantic + full-text + trigram search over the indexed codebase,
-- The project soul = `context.md` (goals, architecture, features) + `conventions.md` (coding standards, agent norms).
+reranked. Returns ranked hits with `file:line`, plus `related` files that
 - **Arguments**:
   - `context` (string, optional) — full content for `context.md`
   - `conventions` (string, optional) — full content for `conventions.md`
