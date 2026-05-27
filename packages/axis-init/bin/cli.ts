@@ -66,6 +66,7 @@ Execute this sequence automatically. Do not wait for the user to walk you throug
 | \`get_project_soul\` | FIRST action in every session — non-negotiable |
 | \`read_context\` | Check goals, conventions, architecture |
 | \`search_codebase\` | Before creating new files — find existing patterns ("where is X") |
+| \`deep_search\` | "How does X work / why" — cited, cross-file answer (hosted) |
 | \`search_docs\` | Look up Axis feature usage |
 | \`post_job\` | IMMEDIATELY when you receive a non-trivial task |
 | \`claim_next_job\` | Before starting each job |
