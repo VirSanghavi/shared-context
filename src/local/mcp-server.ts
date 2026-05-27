@@ -501,6 +501,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
           required: ["query"]
         }
+      },
         name: "search_docs",
         description: "**DOCUMENTATION SEARCH**: Searches the official Axis documentation (if indexed).\n- Use this when you need info on *how* to use Axis features, not just codebase structure.\n- Falls back to local RAG search if the remote API is unavailable.",
         inputSchema: {
