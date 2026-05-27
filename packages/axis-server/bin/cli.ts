@@ -14,6 +14,7 @@ function findRoot(start: string): string {
     for (let i = 0; i < 20; i++) {
         if (fs.existsSync(path.join(dir, ".git")) || fs.existsSync(path.join(dir, "package.json"))) return dir;
         const parent = path.dirname(dir);
+        if (parent === dir) break;
 
 // ESM dirname shim
 const __filename = fileURLToPath(import.meta.url);
