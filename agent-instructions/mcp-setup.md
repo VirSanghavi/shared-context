@@ -154,6 +154,7 @@ AXIS_API_KEY=sk_sc_your_key npx @virsanghavi/axis-server index
 # optional: index a specific path / project
 AXIS_API_KEY=sk_sc_your_key npx @virsanghavi/axis-server index ./packages/api --project my-api
 ```
+
 ## Tools Reference
 
 The hosted server (`https://useaxis.dev/api/mcp`) exposes **14 tools** — the
