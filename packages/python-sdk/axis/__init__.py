@@ -46,6 +46,7 @@ class Axis:
 
     def _headers(self):
         return {
+            "Authorization": f"Bearer {self.api_key}",
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
