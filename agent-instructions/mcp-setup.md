@@ -97,6 +97,7 @@ claude mcp add --transport http axis https://useaxis.dev/api/mcp \
 # Codex via mcp-remote bridge with a key
 [mcp_servers.axis]
 command = "npx"
+args = ["-y", "mcp-remote", "https://useaxis.dev/api/mcp", "--header", "Authorization: Bearer sk_sc_your_key"]
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
