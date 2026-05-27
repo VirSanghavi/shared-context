@@ -221,7 +221,7 @@ remaining locks and archives the session. Never end a session holding locks.
 ### Billing
 
 #### `get_subscription_status`
-Checks if a user has an active Pro subscription.
+Returns the caller's plan (Pro/Free) and validity period. Resolved from the
 - **Arguments**: `email` (string)
 - **Returns**: Plan status ("Pro" or "Free"), validity period.
 
