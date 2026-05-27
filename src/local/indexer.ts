@@ -94,3 +94,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
       const rel = relDir === "." ? e.name : `${relDir}/${e.name}`;
       if (e.isDirectory()) {
         if (DEFAULT_IGNORE_DIRS.has(e.name) || ignored(rel)) continue;
+        stack.push(rel);
