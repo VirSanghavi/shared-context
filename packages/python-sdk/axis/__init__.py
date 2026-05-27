@@ -98,7 +98,6 @@ class Axis:
         data = self._request("GET", "/context/mirror", params={"path": path})
         return AxisMirror(data)
 
-            "Content-Type": "application/json"
         }
         payload = {
             "agent_id": agent_id,
