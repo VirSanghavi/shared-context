@@ -8,7 +8,7 @@ agents use, and to pull a context mirror for LLM prompts.
 import os
 import requests
 
-import os
+__version__ = "1.0.1"
 
 class Axis:
     """
