@@ -121,3 +121,4 @@ async function post(url: string, secret: string, body: unknown): Promise<any> {
 
 /**
  * Walk `rootDir`, sync changed files to the index, and prune deleted ones.
+ */
