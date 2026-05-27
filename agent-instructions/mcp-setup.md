@@ -107,7 +107,6 @@ the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side). Note this path requires
 `npm` updates to get new tools, and `deep_search` is hosted-only.
-**Cursor / Claude Code / Windsurf** — add to your MCP config (`.cursor/mcp.json`,
 `~/.claude.json` / `.mcp.json`, or `~/.codeium/windsurf/mcp_config.json`):
 
 ```jsonc
