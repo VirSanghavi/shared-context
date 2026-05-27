@@ -83,3 +83,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
   const stack = ["."];
   while (stack.length) {
     const relDir = stack.pop()!;
+    const absDir = path.join(root, relDir);
