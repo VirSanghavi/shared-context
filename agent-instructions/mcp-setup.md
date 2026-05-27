@@ -212,6 +212,7 @@ Lists active file locks for the project.
 - **Arguments**: `projectName` (string, optional)
 
 ### Session
+
 #### `get_subscription_status`
 Checks if a user has an active Pro subscription.
 - **Arguments**: `email` (string)
