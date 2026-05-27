@@ -222,7 +222,7 @@ remaining locks and archives the session. Never end a session holding locks.
 
 #### `get_subscription_status`
 Returns the caller's plan (Pro/Free) and validity period. Resolved from the
-- **Arguments**: `email` (string)
+authenticated token — no email argument needed.
 - **Returns**: Plan status ("Pro" or "Free"), validity period.
 
 #### `get_usage_stats`
