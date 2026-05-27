@@ -72,6 +72,7 @@ class Axis:
     # -- search ------------------------------------------------------------
 
     def search(self, query, project_name="default"):
+        """Hybrid code search (semantic + full-text + trigram), reranked.
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
