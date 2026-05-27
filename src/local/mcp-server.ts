@@ -724,6 +724,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [{
           type: "text",
           text: `Indexed project "${nerveCenter.currentProjectName}". ` +
+            `${summary.uploaded} file(s) updated (${summary.chunks} chunks), ` +
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
