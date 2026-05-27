@@ -74,3 +74,4 @@ function isBinaryPath(rel: string): boolean {
   if (SKIP_FILES.has(path.basename(rel))) return true;
   const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".") + 1) : "";
   if (BINARY_EXT.has(ext)) return true;
+  if (lower.endsWith(".min.js") || lower.endsWith(".min.css")) return true;
