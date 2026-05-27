@@ -85,3 +85,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
     const relDir = stack.pop()!;
     const absDir = path.join(root, relDir);
     let entries: fs.Dirent[];
+    try {
