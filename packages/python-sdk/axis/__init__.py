@@ -98,7 +98,6 @@ class Axis:
         data = self._request("GET", "/context/mirror", params={"path": path})
         return AxisMirror(data)
 
-        Validates if an agent is permitted to perform an action on a file path.
         """
         headers = {
             "Authorization": f"Bearer {self.api_key}",
