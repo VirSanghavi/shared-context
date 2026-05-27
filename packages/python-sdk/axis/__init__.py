@@ -1,6 +1,7 @@
 """Python SDK for the Axis Context Protocol.
 
 Thin, typed wrapper over the hosted Axis REST API (https://useaxis.dev/api/v1).
+Use it to run the same hybrid code search and agentic deep-search your MCP
 import requests
 import json
 import os
