@@ -51,3 +51,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
   try {
     patterns = fs
       .readFileSync(file, "utf8")
+      .split("\n")
