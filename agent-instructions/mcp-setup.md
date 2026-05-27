@@ -201,7 +201,7 @@ Lists jobs on the board for the project.
 Requests a lock on a single file before editing. Returns `GRANTED`,
 `REQUIRES_ORCHESTRATION` (another agent holds it), or `REJECTED` (e.g. a
 directory). Use a descriptive `intent`.
-  - `filePath` (string)
+- **Arguments**: `filePath` (string), `agentId` (string), `intent` (string)
   - `intent` (string)
   - `userPrompt` (string)
 
