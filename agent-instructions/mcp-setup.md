@@ -105,7 +105,7 @@ args = ["-y", "mcp-remote", "https://useaxis.dev/api/mcp", "--header", "Authoriz
 Runs the server on your machine via stdio. **You only need your Axis API key** —
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
-keys are needed locally (all of that lives server-side).
+keys are needed locally (all of that lives server-side). Note this path requires
 
 **Cursor / Claude Code / Windsurf** — add to your MCP config (`.cursor/mcp.json`,
 `~/.claude.json` / `.mcp.json`, or `~/.codeium/windsurf/mcp_config.json`):
