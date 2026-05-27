@@ -107,4 +107,5 @@ program
         }
         const apiUrl = process.env.SHARED_CONTEXT_API_URL || "https://useaxis.dev/api/v1";
         const rootDir = findRoot(path.resolve(root || process.cwd()));
+        const projectName = opts.project || deriveProjectName(rootDir);
 program.parse();
