@@ -114,3 +114,4 @@ async function post(url: string, secret: string, body: unknown): Promise<any> {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
     body: JSON.stringify(body),
+  });
