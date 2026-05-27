@@ -140,3 +140,4 @@ export async function indexCodebase(
     try {
       const stat = fs.statSync(path.join(rootDir, rel));
       if (stat.size > MAX_FILE_BYTES) continue;
+      const content = fs.readFileSync(path.join(rootDir, rel), "utf8");
