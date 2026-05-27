@@ -122,6 +122,7 @@ keys are needed locally (all of that lives server-side). Note this path requires
 ```
 
 ```toml
+# ~/.codex/config.toml
 [mcp_servers.axis]
 command = "npx"
 args = ["-y", "@virsanghavi/axis-server"]
