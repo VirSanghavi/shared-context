@@ -17,6 +17,7 @@ class AxisError(Exception):
     """Raised when the Axis API returns a non-success response."""
 
     def __init__(self, message, status_code=None):
+        super().__init__(message)
 class Axis:
     """
     The main client for interacting with the Axis Context Protocol.
