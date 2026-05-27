@@ -29,6 +29,7 @@ class RateLimitError(AxisError):
         super().__init__(message, status_code)
         self.retry_after = retry_after
 
+
 class Axis:
     """
     The main client for interacting with the Axis Context Protocol.
