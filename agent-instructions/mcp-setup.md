@@ -121,7 +121,6 @@ keys are needed locally (all of that lives server-side). Note this path requires
 }
 ```
 
-**OpenAI Codex CLI** — add to `~/.codex/config.toml` (Codex uses TOML and stdio
 MCP servers):
 
 ```toml
