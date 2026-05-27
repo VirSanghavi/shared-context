@@ -60,6 +60,7 @@ claude mcp add --scope project --transport http axis https://useaxis.dev/api/mcp
 claude /mcp        # select "axis" → Authenticate → log in in the browser
 ```
 
+This works in any MCP client that supports remote-server OAuth (Claude Code,
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
