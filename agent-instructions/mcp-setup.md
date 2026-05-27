@@ -163,7 +163,7 @@ by default for "where is X" / before creating or refactoring code.
 - **Arguments**: `query` (string), `projectName` (string, optional)
 
 #### `deep_search`
-Updates any shared context file (for files beyond the soul, or for appending).
+Agentic answer engine for "how does X work / where is Y handled and why" — reads
 - **Arguments**:
   - `filename` (string) — e.g., `"activity.md"`
   - `content` (string) — the full file content (or text to append)
