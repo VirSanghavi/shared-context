@@ -26,6 +26,7 @@ class RateLimitError(AxisError):
     """Raised on HTTP 429. ``retry_after`` is seconds to wait, if provided."""
 
     def __init__(self, message, status_code=429, retry_after=None):
+        super().__init__(message, status_code)
 class Axis:
     """
     The main client for interacting with the Axis Context Protocol.
