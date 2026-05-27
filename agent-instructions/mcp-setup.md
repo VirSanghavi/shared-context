@@ -174,7 +174,7 @@ Posts a task to the job board.
 - **Arguments**: `title` (string), `description` (string), `priority` ("low" | "medium" | "high" | "critical", optional), `dependencies` (string[] of job IDs, optional)
 
 #### `claim_next_job`
-Auto-assigns the highest priority available job to the agent.
+Claims the highest-priority unblocked job (load-balanced pickup across agents).
 - **Arguments**: `agentId` (string)
 
 #### `complete_job`
