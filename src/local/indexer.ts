@@ -33,3 +33,4 @@ const UPLOAD_BATCH = 40; // files per /index call
 
 export interface IndexLogger {
   info: (msg: string) => void;
+  warn?: (msg: string) => void;
