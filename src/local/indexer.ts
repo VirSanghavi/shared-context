@@ -136,3 +136,4 @@ export async function indexCodebase(
   // Build manifest (path + content hash), skipping oversized files.
   const manifest: { path: string; hash: string }[] = [];
   const contentByPath = new Map<string, string>();
+  for (const rel of relPaths) {
