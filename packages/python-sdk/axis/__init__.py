@@ -66,6 +66,7 @@ class Axis:
                 retry_after=int(retry) if retry and retry.isdigit() else None,
             )
         if not resp.ok:
+            raise AxisError(_safe_error(resp), status_code=resp.status_code)
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
