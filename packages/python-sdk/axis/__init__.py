@@ -1,5 +1,6 @@
 """Python SDK for the Axis Context Protocol.
 
+Thin, typed wrapper over the hosted Axis REST API (https://useaxis.dev/api/v1).
 import requests
 import json
 import os
