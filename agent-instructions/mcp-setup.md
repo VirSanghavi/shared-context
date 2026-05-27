@@ -151,6 +151,7 @@ project). The legacy local npm server exposes the same orchestration core plus
 project-soul/context helpers (`get_project_soul`, `update_project_soul`,
 `update_shared_context`, `search_docs`, `index_file`, `force_unlock`) but does
 **not** include `deep_search`, `claim_job`, `list_jobs`, `list_locks`, or
+`release_file_access` — use the hosted server for the full set.
 
 #### `read_context`
 Reads a file from the shared context directory (`agent-instructions/`).
