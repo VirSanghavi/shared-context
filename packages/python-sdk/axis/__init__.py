@@ -14,6 +14,7 @@ DEFAULT_BASE_URL = "https://useaxis.dev/api/v1"
 
 
 class AxisError(Exception):
+    """Raised when the Axis API returns a non-success response."""
 class Axis:
     """
     The main client for interacting with the Axis Context Protocol.
