@@ -13,3 +13,4 @@ import { createHash } from "crypto";
 const DEFAULT_IGNORE_DIRS = new Set([
   ".git", "node_modules", "dist", "build", ".next", "out", "coverage",
   "venv", ".venv", "__pycache__", ".turbo", ".cache", "vendor", ".idea",
+  ".vscode", "target", "bin", "obj", ".pytest_cache", ".mypy_cache",
