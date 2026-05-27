@@ -96,4 +96,5 @@ program
 
 program
     .command("index")
+    .description("Index the codebase for search_codebase / deep_search (incremental, content-hashed)")
 program.parse();
