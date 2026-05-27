@@ -111,3 +111,4 @@ function indexEndpoint(apiUrl: string, suffix: string): string {
 
 async function post(url: string, secret: string, body: unknown): Promise<any> {
   const res = await fetch(url, {
+    method: "POST",
