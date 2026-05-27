@@ -218,6 +218,7 @@ Lists active file locks for the project.
 remaining locks and archives the session. Never end a session holding locks.
 - **Arguments**: `content` (string, optional summary)
 
+### Billing
 #### `get_subscription_status`
 Checks if a user has an active Pro subscription.
 - **Arguments**: `email` (string)
