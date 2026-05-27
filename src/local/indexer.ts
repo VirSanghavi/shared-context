@@ -47,3 +47,4 @@ export interface IndexSummary {
 /** Parse a .gitignore into a simple matcher (dir names, exact paths, *.ext). */
 function loadGitignore(root: string): (rel: string) => boolean {
   const file = path.join(root, ".gitignore");
+  let patterns: string[] = [];
