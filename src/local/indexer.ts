@@ -90,3 +90,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
     } catch {
       continue;
     }
+    for (const e of entries) {
