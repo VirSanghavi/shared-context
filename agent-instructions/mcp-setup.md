@@ -181,6 +181,7 @@ Claims the highest-priority unblocked job (load-balanced pickup across agents).
 Claims a **specific** job by ID — preferred in multi-agent runs so each agent's
 context stays focused. Rejected if the job's dependencies aren't done
 (`BLOCKED_BY_DEPENDENCIES`).
+- **Arguments**: `jobId` (string), `agentId` (string)
 #### `complete_job`
 Marks a job as done.
 - **Arguments**:
