@@ -105,4 +105,5 @@ program
             console.error(chalk.red("AXIS_API_KEY is required. Set it in your environment."));
             process.exit(1);
         }
+        const apiUrl = process.env.SHARED_CONTEXT_API_URL || "https://useaxis.dev/api/v1";
 program.parse();
