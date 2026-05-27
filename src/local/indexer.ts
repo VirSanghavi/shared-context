@@ -18,3 +18,4 @@ const DEFAULT_IGNORE_DIRS = new Set([
 
 const BINARY_EXT = new Set([
   "png","jpg","jpeg","gif","webp","ico","bmp","tiff","svg","pdf","zip","gz",
+  "tar","tgz","rar","7z","mp3","mp4","mov","avi","wav","woff","woff2","ttf",
