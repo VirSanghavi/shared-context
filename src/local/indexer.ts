@@ -16,3 +16,4 @@ const DEFAULT_IGNORE_DIRS = new Set([
   ".vscode", "target", "bin", "obj", ".pytest_cache", ".mypy_cache",
 ]);
 
+const BINARY_EXT = new Set([
