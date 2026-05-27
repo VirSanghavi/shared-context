@@ -22,6 +22,7 @@ function findRoot(start: string): string {
 
 function deriveProjectName(root: string): string {
     if (process.env.PROJECT_NAME) return process.env.PROJECT_NAME;
+    try {
 }
 
 // ESM dirname shim
