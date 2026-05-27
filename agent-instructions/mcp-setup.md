@@ -205,6 +205,7 @@ directory). Use a descriptive `intent`.
 
 #### `release_file_access`
 Releases a lock you hold.
+- **Arguments**: `filePath` (string), `reason` (string, optional)
 
 #### `get_subscription_status`
 Checks if a user has an active Pro subscription.
