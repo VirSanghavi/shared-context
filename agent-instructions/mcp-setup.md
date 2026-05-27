@@ -178,6 +178,7 @@ Claims the highest-priority unblocked job (load-balanced pickup across agents).
 - **Arguments**: `agentId` (string)
 
 #### `claim_job`
+Claims a **specific** job by ID — preferred in multi-agent runs so each agent's
 #### `complete_job`
 Marks a job as done.
 - **Arguments**:
