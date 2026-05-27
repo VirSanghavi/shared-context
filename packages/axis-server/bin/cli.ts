@@ -26,6 +26,7 @@ function deriveProjectName(root: string): string {
         const cfg = JSON.parse(fs.readFileSync(path.join(root, ".axis", "axis.json"), "utf8"));
         if (cfg.project) return String(cfg.project);
     } catch { /* none */ }
+    return path.basename(root);
 }
 
 // ESM dirname shim
