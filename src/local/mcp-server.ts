@@ -717,6 +717,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         manager.apiUrl,
         manager.apiSecret,
         nerveCenter.currentProjectName,
+        process.cwd(),
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
