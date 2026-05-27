@@ -112,6 +112,7 @@ class AxisMirror:
             output += f"- {node.path} ({node.type})\n"
         return output
 
+
 class AxisNode:
     def __init__(self, node_data):
         self.path = node_data.get("path") or node_data.get("name")
