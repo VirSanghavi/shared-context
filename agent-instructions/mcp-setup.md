@@ -199,7 +199,7 @@ Lists jobs on the board for the project.
 
 #### `propose_file_access`
 Requests a lock on a single file before editing. Returns `GRANTED`,
-- **Arguments**:
+`REQUIRES_ORCHESTRATION` (another agent holds it), or `REJECTED` (e.g. a
   - `agentId` (string)
   - `filePath` (string)
   - `intent` (string)
