@@ -139,3 +139,4 @@ export async function indexCodebase(
   for (const rel of relPaths) {
     try {
       const stat = fs.statSync(path.join(rootDir, rel));
+      if (stat.size > MAX_FILE_BYTES) continue;
