@@ -208,6 +208,7 @@ Releases a lock you hold.
 - **Arguments**: `filePath` (string), `reason` (string, optional)
 
 #### `list_locks`
+Lists active file locks for the project.
 #### `get_subscription_status`
 Checks if a user has an active Pro subscription.
 - **Arguments**: `email` (string)
