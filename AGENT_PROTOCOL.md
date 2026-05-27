@@ -67,7 +67,7 @@ If the user asks for a specific task OR simply says "help out":
 - Maintain the "Project Soul" so other agents don't have to guess.
 
 ### 7. Search Before Write (CRITICAL)
-**Agents MUST call `search_codebase` before writing new code.** It is the primary way to avoid reinventing patterns and duplicating work.
+**Reach for Axis search by default — whenever it's relevant, without being told to.** It is the primary way to avoid reinventing patterns and duplicating work.
 - **Before creating new files**: Search for similar implementations (e.g. "authentication middleware", "user model").
 - **Before refactoring**: Find all usages of a pattern or module.
 - **When orienting**: Use natural-language queries like "Where is JWT validation done?" or "How does the job board claim work?"
