@@ -190,6 +190,7 @@ repeatedly; pass `prune: true` + `allPaths` to drop deleted files. Agents pass
 the files they edited as `files: [{path, content}]`. For a full initial index of
 a repo, the `axis index` CLI (below) is faster — it walks the repo and uploads
 only deltas.
+- **Arguments**: `files` ([{path, content}]), `prune` (bool, optional), `allPaths` (string[], optional), `projectName` (string, optional)
 ### Task Orchestration (Job Board)
 
 #### `post_job`
