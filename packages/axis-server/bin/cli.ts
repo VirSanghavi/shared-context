@@ -104,4 +104,5 @@ program
         if (!apiKey) {
             console.error(chalk.red("AXIS_API_KEY is required. Set it in your environment."));
             process.exit(1);
+        }
 program.parse();
