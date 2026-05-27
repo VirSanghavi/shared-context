@@ -100,4 +100,5 @@ program
     .argument("[root]", "Project root to index (default: auto-detected repo root)")
     .option("-p, --project <name>", "Project name (default: auto-detected)")
     .action(async (root: string | undefined, opts: { project?: string }) => {
+        const apiKey = process.env.AXIS_API_KEY;
 program.parse();
