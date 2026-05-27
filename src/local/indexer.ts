@@ -54,3 +54,4 @@ function loadGitignore(root: string): (rel: string) => boolean {
       .split("\n")
       .map((l) => l.trim())
       .filter((l) => l && !l.startsWith("#"));
+  } catch {
