@@ -189,6 +189,7 @@ Marks a job done and releases its file locks.
 
 #### `cancel_job`
 Cancels a job that's no longer needed.
+- **Arguments**: `jobId` (string), `reason` (string, optional)
 
 #### `propose_file_access`
 Requests a lock on a file to prevent conflicts.
