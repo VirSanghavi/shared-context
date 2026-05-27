@@ -106,3 +106,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
 
 function indexEndpoint(apiUrl: string, suffix: string): string {
   const base = apiUrl.endsWith("/v1") ? apiUrl : `${apiUrl}/v1`;
+  return `${base}${suffix}`;
