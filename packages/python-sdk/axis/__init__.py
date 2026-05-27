@@ -124,3 +124,4 @@ class AxisNode:
 def _safe_error(resp):
     try:
         body = resp.json()
+        return body.get("error") or body.get("message") or resp.text or f"HTTP {resp.status_code}"
