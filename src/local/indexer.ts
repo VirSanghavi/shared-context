@@ -32,3 +32,4 @@ const MAX_FILE_BYTES = 256 * 1024; // skip files larger than 256KB
 const UPLOAD_BATCH = 40; // files per /index call
 
 export interface IndexLogger {
+  info: (msg: string) => void;
