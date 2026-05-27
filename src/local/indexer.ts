@@ -86,3 +86,4 @@ function walk(root: string, ignored: (rel: string) => boolean): string[] {
     const absDir = path.join(root, relDir);
     let entries: fs.Dirent[];
     try {
+      entries = fs.readdirSync(absDir, { withFileTypes: true });
