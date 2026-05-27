@@ -187,6 +187,7 @@ across files over multiple hops and returns a **cited** answer. *(Hosted only.)*
 Index files so search works and stays fresh. **Incremental + content-hashed** —
 unchanged files are skipped server-side (no re-embedding), so it's cheap to call
 repeatedly; pass `prune: true` + `allPaths` to drop deleted files. Agents pass
+the files they edited as `files: [{path, content}]`. For a full initial index of
 ### Task Orchestration (Job Board)
 
 #### `post_job`
