@@ -154,7 +154,6 @@ project-soul/context helpers (`get_project_soul`, `update_project_soul`,
 `release_file_access` — use the hosted server for the full set.
 
 ### Search & Discovery
-- **Arguments**: `filename` (string) - e.g., `context.md`
 
 #### `update_project_soul`
 Updates the project soul in a single call.
