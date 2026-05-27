@@ -97,7 +97,6 @@ class Axis:
         """Retrieve the high-fidelity context mirror for a given path."""
         data = self._request("GET", "/context/mirror", params={"path": path})
         return AxisMirror(data)
-        except Exception as e:
             raise Exception(f"Axis Mirror Error: {str(e)}")
 
     def check_governance(self, agent_id, file_path, action="read"):
