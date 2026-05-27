@@ -144,7 +144,7 @@ AXIS_API_KEY=sk_sc_your_key npx tsx src/local/mcp-server.ts
 
 ## Tools Reference
 
-### Context & Memory
+The hosted server (`https://useaxis.dev/api/mcp`) exposes **14 tools** — the
 
 #### `read_context`
 Reads a file from the shared context directory (`agent-instructions/`).
