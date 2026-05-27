@@ -75,3 +75,4 @@ function isBinaryPath(rel: string): boolean {
   const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".") + 1) : "";
   if (BINARY_EXT.has(ext)) return true;
   if (lower.endsWith(".min.js") || lower.endsWith(".min.css")) return true;
+  return false;
