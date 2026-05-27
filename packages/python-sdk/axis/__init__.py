@@ -88,6 +88,7 @@ class Axis:
         Returns a dict with ``answer``, ``citations`` and ``queriesRun``.
         """
         return self._request(
+            "POST", "/deep-search", json={"query": query, "projectName": project_name}
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
