@@ -203,7 +203,7 @@ Requests a lock on a single file before editing. Returns `GRANTED`,
 directory). Use a descriptive `intent`.
 - **Arguments**: `filePath` (string), `agentId` (string), `intent` (string)
 
-  - `userPrompt` (string)
+#### `release_file_access`
 
 #### `get_subscription_status`
 Checks if a user has an active Pro subscription.
