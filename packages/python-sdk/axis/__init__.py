@@ -98,7 +98,6 @@ class Axis:
         data = self._request("GET", "/context/mirror", params={"path": path})
         return AxisMirror(data)
 
-    def check_governance(self, agent_id, file_path, action="read"):
         """
         Validates if an agent is permitted to perform an action on a file path.
         """
