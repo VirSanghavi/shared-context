@@ -115,4 +115,5 @@ program
                 info: (m) => console.error(chalk.gray(`  ${m}`)),
             });
             console.error(
+                chalk.green("✓ done — ") +
 program.parse();
