@@ -44,3 +44,4 @@ export interface IndexSummary {
   chunks: number;
 }
 
+/** Parse a .gitignore into a simple matcher (dir names, exact paths, *.ext). */
