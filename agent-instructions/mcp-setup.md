@@ -156,6 +156,7 @@ AXIS_API_KEY=sk_sc_your_key npx @virsanghavi/axis-server index ./packages/api --
 ```
 
 Agents keep it fresh in-session by calling the `index_codebase` tool after they
+write files. Great as a pre-commit/CI step too — it's cheap when nothing changed.
 ## Tools Reference
 
 The hosted server (`https://useaxis.dev/api/mcp`) exposes **14 tools** — the
