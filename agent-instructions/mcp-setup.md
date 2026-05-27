@@ -145,6 +145,7 @@ AXIS_API_KEY=sk_sc_your_key npx tsx src/local/mcp-server.ts
 ## Tools Reference
 
 The hosted server (`https://useaxis.dev/api/mcp`) exposes **14 tools** — the
+canonical set. Every tool is scoped to your account by your OAuth token or API
 
 #### `read_context`
 Reads a file from the shared context directory (`agent-instructions/`).
