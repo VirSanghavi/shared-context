@@ -4,6 +4,7 @@ Axis is a high-performance orchestration layer that enables **Parallel Agent Wor
 
 > ### Open-core
 > This repository is the **free, open-source orchestration core** of Axis (AGPL-3.0): the MCP server, the `axis` CLI, the Python SDK, and the agent protocol — everything your agents use to coordinate.
+>
 
 ## Features
 
