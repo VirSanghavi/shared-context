@@ -102,4 +102,5 @@ program
     .action(async (root: string | undefined, opts: { project?: string }) => {
         const apiKey = process.env.AXIS_API_KEY;
         if (!apiKey) {
+            console.error(chalk.red("AXIS_API_KEY is required. Set it in your environment."));
 program.parse();
