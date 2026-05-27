@@ -97,7 +97,6 @@ class Axis:
         """Retrieve the high-fidelity context mirror for a given path."""
         data = self._request("GET", "/context/mirror", params={"path": path})
         return AxisMirror(data)
-                params={"path": path},
                 headers=headers
             )
             response.raise_for_status()
