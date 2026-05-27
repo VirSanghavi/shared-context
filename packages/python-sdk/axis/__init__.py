@@ -121,3 +121,4 @@ class AxisNode:
         self.last_modified = node_data.get("last_modified")
 
 
+def _safe_error(resp):
