@@ -50,6 +50,7 @@ and nothing to update over time** except the legacy npm option.
 #### Option A — One-click OAuth (recommended, no API key)
 
 Connect by URL and log in through the browser — the same flow as Supabase's MCP.
+You never paste or manage a key.
 the API URL defaults to the hosted backend (`https://useaxis.dev/api/v1`), the
 project name is auto-derived from the working directory, and no Supabase/OpenAI
 keys are needed locally (all of that lives server-side).
