@@ -721,6 +721,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         { info: (m) => logger.info(`[index_codebase] ${m}`) }
       );
       return {
+        content: [{
   if (name === "index_file") {
     const filePath = String(args?.filePath);
     const content = String(args?.content);
