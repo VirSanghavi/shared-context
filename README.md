@@ -7,6 +7,7 @@ Axis is a high-performance orchestration layer that enables **Parallel Agent Wor
 >
 > - **Free forever:** the orchestration layer — job board, file locking, shared notepad, sessions, project soul. It's just coordination state; it costs nothing to run.
 > - **Paid (hosted):** the intelligence layer — hybrid code search, agentic `deep_search`, and incremental indexing — plus the managed backend, dashboard, and billing. That lives at **[useaxis.dev](https://useaxis.dev)** (closed source) because it carries real embedding/LLM cost.
+>
 
 ## Features
 
