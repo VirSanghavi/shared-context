@@ -159,7 +159,7 @@ project-soul/context helpers (`get_project_soul`, `update_project_soul`,
 Hybrid semantic + full-text + trigram search over the indexed codebase,
 reranked. Returns ranked hits with `file:line`, plus `related` files that
 historically change together and `definitions` of what a top hit calls. Use it
-  - `context` (string, optional) — full content for `context.md`
+by default for "where is X" / before creating or refactoring code.
   - `conventions` (string, optional) — full content for `conventions.md`
 
 #### `update_context`
