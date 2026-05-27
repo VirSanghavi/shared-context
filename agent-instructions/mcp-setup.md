@@ -153,7 +153,7 @@ project-soul/context helpers (`get_project_soul`, `update_project_soul`,
 **not** include `deep_search`, `claim_job`, `list_jobs`, `list_locks`, or
 `release_file_access` — use the hosted server for the full set.
 
-#### `read_context`
+### Search & Discovery
 Reads a file from the shared context directory (`agent-instructions/`).
 - **Arguments**: `filename` (string) - e.g., `context.md`
 
