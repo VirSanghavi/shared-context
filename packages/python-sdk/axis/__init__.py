@@ -77,6 +77,7 @@ class Axis:
         Returns the full payload: ``results`` (ranked hits with file:line),
         ``related`` (files that historically co-change) and ``definitions``
         (symbols a top hit calls).
+        """
     def get_mirror(self, path="."):
         """
         Retrieves the high-fidelity context mirror for a given path.
