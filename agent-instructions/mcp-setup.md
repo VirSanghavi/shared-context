@@ -213,6 +213,7 @@ Lists active file locks for the project.
 
 ### Session
 
+#### `finalize_session`
 #### `get_subscription_status`
 Checks if a user has an active Pro subscription.
 - **Arguments**: `email` (string)
