@@ -17,7 +17,7 @@ This protocol is **automatically in effect whenever the Axis MCP tools are avail
 - **Do** handle orchestration silently and efficiently.
 
 ## Implementation Notes
-- MCP tools are exposed by the Nerve Center in [src/local/server.ts](src/local/server.ts).
+- The hosted MCP server (`https://useaxis.dev/api/mcp`) is the recommended surface — connect by URL and authenticate via OAuth (no API key to manage); see [agent-instructions/mcp-setup.md](agent-instructions/mcp-setup.md).
 - Orchestration + locking logic lives in [src/local/nerve-center.ts](src/local/nerve-center.ts).
 - Billing & Usage checks are available via `get_subscription_status` and `get_usage_stats`.
 - RAG requires `SHARED_CONTEXT_API_URL` and `SHARED_CONTEXT_API_SECRET` to be configured.
