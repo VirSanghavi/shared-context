@@ -177,6 +177,7 @@ Posts a task to the job board.
 Claims the highest-priority unblocked job (load-balanced pickup across agents).
 - **Arguments**: `agentId` (string)
 
+#### `claim_job`
 #### `complete_job`
 Marks a job as done.
 - **Arguments**:
