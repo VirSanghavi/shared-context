@@ -82,6 +82,7 @@ prompt when reaching for search.
 > they stop clobbering each other: a shared job board parallelizes the work, file
 > locks prevent two agents (or two people) editing the same file, and a shared index
 > means every agent searches the same up-to-date codebase. One control plane for
+> your whole team's agents — coordinate, share context, and ship without merge chaos.
 
 ## Setup
 
