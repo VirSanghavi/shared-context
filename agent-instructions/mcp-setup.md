@@ -299,6 +299,7 @@ just did, what you're about to do) that every other agent on the project sees.
 Call it as you work; read it when you start.
 
 #### `update_shared_context`
+Append a short, attributed note to the project's live notepad. Returns the
 ### Session
 
 #### `finalize_session`
