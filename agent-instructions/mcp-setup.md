@@ -68,6 +68,7 @@ Because the project belongs to the org (not a single owner), any member who conn
 sees the same jobs, locks, and search index. Agents may pass `X-Axis-Org: <orgId>`
 to switch which org they're acting under; otherwise the personal org is used.
 
+### Billing — $20 / seat
 
 ## Setup
 
