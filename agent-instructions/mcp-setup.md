@@ -44,6 +44,7 @@ invite someone, all of your agents (and theirs) coordinate on the same project
 without clobbering each other.
 
 ### Create an org
+Open the org switcher in the dashboard header → **+ new org**. The creator becomes
 
 ## Setup
 
