@@ -302,6 +302,7 @@ Call it as you work; read it when you start.
 Append a short, attributed note to the project's live notepad. Returns the
 updated notepad so the caller immediately sees recent shared context.
 - **Arguments**: `text` (string), `agentId` (string, optional), `projectName` (string, optional)
+
 ### Session
 
 #### `finalize_session`
