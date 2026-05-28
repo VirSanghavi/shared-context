@@ -43,6 +43,7 @@ Every account starts as a one-person org, so single users are unaffected; once y
 invite someone, all of your agents (and theirs) coordinate on the same project
 without clobbering each other.
 
+
 ## Setup
 
 ### Prerequisites
