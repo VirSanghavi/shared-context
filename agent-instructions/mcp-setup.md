@@ -216,7 +216,7 @@ your OAuth token or API key. Most tools accept an optional `projectName`
 (defaults to the auto-detected project). For team coordination, members of the
 same org sharing the same project name share the same job board, file locks,
 codebase index, and live notepad — set the active org via the
-**not** include `deep_search`, `claim_job`, `list_jobs`, `list_locks`, or
+`X-Axis-Org: <orgId>` header (or pass via your client's UI; OAuth resolves to
 `release_file_access` — use the hosted server for the full set.
 
 ### Search & Discovery
