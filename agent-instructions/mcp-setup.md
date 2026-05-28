@@ -55,6 +55,7 @@ table. An org always keeps at least one admin.
 
 ### Commit a shared project so agents auto-coordinate
 Check a `.axis/axis.json` into the repo naming the shared project. Every teammate's
+agent reads it on startup and coordinates on the same board, locks, and index — no
 
 ## Setup
 
