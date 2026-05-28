@@ -522,16 +522,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       // --- Decision & Orchestration ---
       {
         name: "propose_file_access",
-        description: "**CRITICAL: REQUEST FILE LOCK** — call this before EVERY file edit, no exceptions.\n- Checks if another agent currently holds a lock on the same file.\n- Returns `GRANTED` if safe to proceed, `REQUIRES_ORCHESTRATION` if another agent has the file locked, or `REJECTED` if you tried to lock a directory.\n- **File-only locks**: You MUST lock individual files, not directories. Directory locks are rejected because they block all agents from the entire tree, preventing parallel work on different features. Lock each file you edit separately.\n- Paths are normalized relative to the project root, so absolute and relative paths are treated equivalently.\n- Usage: Provide your `agentId` (e.g., 'cursor-agent'), `filePath` (absolute or relative to a specific file), and `intent` (descriptive — e.g. 'Refactor auth to use JWT', NOT 'editing file').\n- Locks expire after 30 minutes. Use `force_unlock` only as a last resort for crashed agents.\n- **IMPORTANT**: Every lock you acquire MUST be released. Call `complete_job` when done with each task, and `finalize_session` before ending your session. Dangling locks block all other agents.",
+        description: "**CRITICAL: REQUEST FILE LOCK** — call this before EVERY file edit, no exceptions.\n- Returns `GRANTED` if safe to proceed, `REQUIRES_ORCHESTRATION` if another agent holds the lock, or `REJECTED` if you tried to lock a directory.\n- **Lock individual files, not directories.** Directory locks block parallel work and are rejected.\n- Paths can be absolute or relative — they're normalized against the project root.\n- Required: `agentId` (e.g. 'cursor-agent'), `filePath`, and `intent` (descriptive — 'Refactor auth to use JWT', NOT 'editing file').\n- Locks expire after 30 minutes. Use `force_unlock` only as a last resort for crashed agents.\n- **Every lock MUST be released.** `complete_job` releases the locks for that job; `finalize_session` releases everything. Dangling locks block all other agents.",
         inputSchema: {
           type: "object",
           properties: {
             agentId: { type: "string" },
             filePath: { type: "string" },
             intent: { type: "string" },
-            userPrompt: { type: "string", description: "The full prompt provided by the user that initiated this action." }
+            userPrompt: { type: "string", description: "Optional. The user prompt that triggered this lock, for audit trails. Server captures it best-effort if omitted." }
           },
-          required: ["agentId", "filePath", "intent", "userPrompt"]
+          required: ["agentId", "filePath", "intent"]
         }
       },
       {
