@@ -45,6 +45,7 @@ without clobbering each other.
 
 ### Create an org
 Open the org switcher in the dashboard header → **+ new org**. The creator becomes
+its admin. Existing personal projects keep working unchanged.
 
 ## Setup
 
