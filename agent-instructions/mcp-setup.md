@@ -304,6 +304,7 @@ updated notepad so the caller immediately sees recent shared context.
 - **Arguments**: `text` (string), `agentId` (string, optional), `projectName` (string, optional)
 
 #### `get_shared_context`
+Read the project's live notepad.
 ### Session
 
 #### `finalize_session`
