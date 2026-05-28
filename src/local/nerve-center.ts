@@ -1168,15 +1168,40 @@ export class NerveCenter {
             couldNotRead = true;
             soul += "\n(Could not read local context files)";
         }
-        const unfilled =
-            couldNotRead ||
-            /Describe your project|<!-- Describe|This project uses Axis/i.test(context) ||
-            (context.trim().length < 450 && /# Project Context/i.test(context));
-        if (unfilled) {
+        // Distinguish three states:
+        // - uninit: no .axis/instructions/ directory at all (fresh customer)
+        // - placeholder: file exists but still has the template "Describe your project" body
+        // - filled: real content (no nag)
+        const uninit = couldNotRead;
+        const placeholder =
+            !uninit && (
+                /Describe your project|<!-- Describe|This project uses Axis/i.test(context) ||
+                (context.trim().length < 450 && /# Project Context/i.test(context))
+            );
+
+        if (uninit) {
+            soul += `
+
+### MANDATORY: This project has not been initialized for Axis
+There is no \`.axis/instructions/\` directory yet, so the project soul, the IDE rule files (CLAUDE.md, AGENTS.md, .cursorrules, .windsurfrules), and the agent protocol have not been installed.
+
+**Fastest path — one command:**
+\`\`\`
+npx @virsanghavi/axis-init
+\`\`\`
+This creates the \`.axis/\` directory, installs the rule files in the repo root, and seeds template soul files. Then call \`update_project_soul\` to fill in the project-specific content.
+
+**Manual path** (if the user doesn't want the init CLI):
+1. Use \`search_codebase\` to explore the repo and infer what this project is about.
+2. Call \`update_project_soul\` with \`context\` (overview, architecture, features) and \`conventions\` (language standards, agent norms).
+3. If the codebase is empty: ask the user what the project is, then call \`update_project_soul\`.
+
+Do NOT proceed with other work until one of these paths runs. Working without a soul means every decision lacks project context.`;
+        } else if (placeholder) {
             soul += `
 
 ### MANDATORY: Project soul is not yet filled
-You MUST fill the project soul before doing any other work. Do not proceed with other tasks until it is filled.
+The \`.axis/\` directory exists but \`context.md\` still has placeholder/template content. Fill it before doing any other work.
 
 **How to fill the project soul:**
 1. Use \`search_codebase\` to explore the repo and infer what this project is about.
