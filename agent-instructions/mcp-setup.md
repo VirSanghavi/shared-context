@@ -62,6 +62,7 @@ per-machine setup:
 {
   "projectName": "acme-app"
 }
+```
 
 ## Setup
 
