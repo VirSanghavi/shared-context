@@ -215,7 +215,7 @@ canonical set. Every tool is scoped to your account (and active **org**) by
 your OAuth token or API key. Most tools accept an optional `projectName`
 (defaults to the auto-detected project). For team coordination, members of the
 same org sharing the same project name share the same job board, file locks,
-`update_shared_context`, `search_docs`, `index_file`, `force_unlock`) but does
+codebase index, and live notepad — set the active org via the
 **not** include `deep_search`, `claim_job`, `list_jobs`, `list_locks`, or
 `release_file_access` — use the hosted server for the full set.
 
