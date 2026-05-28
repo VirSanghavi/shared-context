@@ -73,6 +73,7 @@ Orgs are billed per active member: **$20/seat/month**, quantity = active member
 count. Adding a member adds a seat; removing one frees it (prorated via Stripe).
 Admins manage it from **/billing**.
 
+
 ## Setup
 
 ### Prerequisites
