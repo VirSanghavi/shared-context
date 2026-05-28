@@ -303,6 +303,7 @@ Append a short, attributed note to the project's live notepad. Returns the
 updated notepad so the caller immediately sees recent shared context.
 - **Arguments**: `text` (string), `agentId` (string, optional), `projectName` (string, optional)
 
+#### `get_shared_context`
 ### Session
 
 #### `finalize_session`
