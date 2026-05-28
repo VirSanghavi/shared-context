@@ -54,6 +54,7 @@ joins by opening it and logging in. Change roles or remove members from the same
 table. An org always keeps at least one admin.
 
 ### Commit a shared project so agents auto-coordinate
+Check a `.axis/axis.json` into the repo naming the shared project. Every teammate's
 
 ## Setup
 
