@@ -59,6 +59,7 @@ agent reads it on startup and coordinates on the same board, locks, and index â€
 per-machine setup:
 
 ```json
+{
 
 ## Setup
 
