@@ -295,6 +295,7 @@ Lists active file locks for the project.
 ### Shared Context (Live Notepad)
 
 The notepad is the team's shared scratchpad — short status notes (what you
+just did, what you're about to do) that every other agent on the project sees.
 ### Session
 
 #### `finalize_session`
