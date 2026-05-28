@@ -298,6 +298,7 @@ The notepad is the team's shared scratchpad — short status notes (what you
 just did, what you're about to do) that every other agent on the project sees.
 Call it as you work; read it when you start.
 
+#### `update_shared_context`
 ### Session
 
 #### `finalize_session`
