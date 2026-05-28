@@ -58,6 +58,7 @@ Check a `.axis/axis.json` into the repo naming the shared project. Every teammat
 agent reads it on startup and coordinates on the same board, locks, and index — no
 per-machine setup:
 
+```json
 
 ## Setup
 
