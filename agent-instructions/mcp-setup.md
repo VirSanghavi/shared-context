@@ -79,6 +79,7 @@ for everyone. The intelligence layer (`search_codebase`, `deep_search`,
 prompt when reaching for search.
 
 > **For engineering teams.** Point every engineer's agents at one Axis project and
+> they stop clobbering each other: a shared job board parallelizes the work, file
 
 ## Setup
 
