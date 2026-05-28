@@ -69,6 +69,7 @@ sees the same jobs, locks, and search index. Agents may pass `X-Axis-Org: <orgId
 to switch which org they're acting under; otherwise the personal org is used.
 
 ### Billing — $20 / seat
+Orgs are billed per active member: **$20/seat/month**, quantity = active member
 
 ## Setup
 
