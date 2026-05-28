@@ -35,6 +35,7 @@ For high-fidelity context without token bloat, Axis supports specialized HTTP he
 - `X-Axis-Soul`: Injects the high-level project goals and conventions.
 - `X-Axis-Org`: Selects the active org to scope coordination + search to (see Teams).
 
+## Teams
 
 ## Setup
 
