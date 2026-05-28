@@ -38,6 +38,7 @@ For high-fidelity context without token bloat, Axis supports specialized HTTP he
 ## Teams
 
 An **org** is the unit of collaboration and billing. Members of an org share its
+projects — and therefore the same **job board, file locks, and codebase index**.
 
 ## Setup
 
