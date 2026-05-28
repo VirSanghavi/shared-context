@@ -33,6 +33,7 @@ Agents shouldn't just run wild. Axis provides a structured **Job Board** to main
 For high-fidelity context without token bloat, Axis supports specialized HTTP headers (if supported by your agent client):
 - `X-Axis-Context`: Injects the "Live Notepad" summary directly into the system prompt.
 - `X-Axis-Soul`: Injects the high-level project goals and conventions.
+- `X-Axis-Org`: Selects the active org to scope coordination + search to (see Teams).
 
 ## Setup
 
