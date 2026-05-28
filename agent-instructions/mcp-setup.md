@@ -64,6 +64,7 @@ per-machine setup:
 }
 ```
 
+Because the project belongs to the org (not a single owner), any member who connects
 
 ## Setup
 
