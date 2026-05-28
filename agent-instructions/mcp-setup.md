@@ -49,6 +49,7 @@ its admin. Existing personal projects keep working unchanged.
 
 ### Invite teammates
 On the **/team** page, enter a teammate's email, choose `member` or `admin`, and
+send. You get a shareable invite link immediately (`/invite/<token>`); the teammate
 
 ## Setup
 
