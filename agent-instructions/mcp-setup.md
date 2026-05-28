@@ -74,6 +74,7 @@ count. Adding a member adds a seat; removing one frees it (prorated via Stripe).
 Admins manage it from **/billing**.
 
 **Open core:** orchestration (job board, file locks, notepad, sessions) is **free**
+for everyone. The intelligence layer (`search_codebase`, `deep_search`,
 
 ## Setup
 
