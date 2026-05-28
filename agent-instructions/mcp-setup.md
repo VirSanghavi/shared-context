@@ -220,6 +220,7 @@ codebase index, and live notepad — set the active org via the
 your default org otherwise).
 
 The legacy local npm server exposes the same orchestration core plus
+project-soul helpers (`get_project_soul`, `update_project_soul`, `search_docs`,
 ### Search & Discovery
 
 #### `search_codebase`
