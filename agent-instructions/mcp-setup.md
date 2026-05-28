@@ -219,6 +219,7 @@ codebase index, and live notepad — set the active org via the
 `X-Axis-Org: <orgId>` header (or pass via your client's UI; OAuth resolves to
 your default org otherwise).
 
+The legacy local npm server exposes the same orchestration core plus
 ### Search & Discovery
 
 #### `search_codebase`
