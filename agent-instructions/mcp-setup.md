@@ -78,6 +78,7 @@ for everyone. The intelligence layer (`search_codebase`, `deep_search`,
 `index_codebase`) is the paid tier. Free orgs coordinate fully; they get an upgrade
 prompt when reaching for search.
 
+
 ## Setup
 
 ### Prerequisites
