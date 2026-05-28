@@ -224,6 +224,7 @@ project-soul helpers (`get_project_soul`, `update_project_soul`, `search_docs`,
 `index_file`, `force_unlock`) but does **not** include `deep_search`,
 `claim_job`, `list_jobs`, `list_locks`, or `release_file_access` — use the
 hosted server for the full set.
+
 ### Search & Discovery
 
 #### `search_codebase`
