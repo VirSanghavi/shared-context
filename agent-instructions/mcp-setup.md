@@ -293,6 +293,7 @@ Lists active file locks for the project.
 - **Arguments**: `projectName` (string, optional)
 
 ### Shared Context (Live Notepad)
+
 ### Session
 
 #### `finalize_session`
