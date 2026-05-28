@@ -1,36 +1,8 @@
 import { Mutex } from "async-mutex";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import fs from "fs/promises";
-import { existsSync } from "fs";
 import path from "path";
 import { logger } from "../utils/logger.js";
-
-/**
- * Walk up from `start` to the repository root (nearest dir with .git or
- * package.json). This means launching the agent from any subdirectory still
- * resolves to the same project, instead of using whatever subfolder you're in.
- */
-function findProjectRoot(start: string): string {
-    let dir = start;
-    for (let i = 0; i < 40; i++) {
-        if (existsSync(path.join(dir, ".git")) || existsSync(path.join(dir, "package.json"))) return dir;
-        const parent = path.dirname(dir);
-        if (parent === dir) break;
-        dir = parent;
-    }
-    return start;
-}
-
-/**
- * Derive a project name from the repo root so each project maps to its own Axis
- * project automatically — no PROJECT_NAME env var required. Sanitized to a safe
- * slug; falls back to "default" for odd/edge cases (e.g. filesystem root).
- */
-function deriveProjectNameFromCwd(): string {
-    const root = findProjectRoot(process.cwd());
-    const base = path.basename(root).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
-    return base || "default";
-}
 
 // Interfaces
 interface FileLock {
@@ -108,7 +80,6 @@ export class NerveCenter {
     private supabase?: SupabaseClient;
     private _projectId?: string; // Renamed backing field
     private projectName: string;
-    private projectNameExplicit: boolean = false;
     private useSupabase: boolean;
     private _circuitFailures: number = 0;
     private _circuitOpenUntil: number = 0;
@@ -152,10 +123,12 @@ export class NerveCenter {
         // Project name: prioritize explicit option, then env var, then detect from .axis/axis.json, then default
         // But if remote API is configured (customer mode), prefer env var over detected name
         const explicitProjectName = options.projectName || process.env.PROJECT_NAME;
-        this.projectNameExplicit = !!explicitProjectName;
-        // Default to the working-directory name so each project gets its own Axis
-        // project with zero config. .axis/axis.json (checked in init) still wins.
-        this.projectName = explicitProjectName || deriveProjectNameFromCwd();
+        if (explicitProjectName) {
+            this.projectName = explicitProjectName;
+        } else {
+            // Will be set by detectProjectName() in init() if needed, or default to "default"
+            this.projectName = "default";
+        }
 
         this.state = {
             locks: {},
@@ -175,9 +148,11 @@ export class NerveCenter {
     async init() {
         await this.loadState();
 
-        // If the caller didn't pin a project name, let a checked-in .axis/axis.json
-        // override the directory-derived default (works in remote mode too).
-        if (!this.projectNameExplicit) {
+        // Only detect project name from .axis/axis.json if:
+        // 1. Project name is still "default" (wasn't set explicitly)
+        // 2. We're in dev mode (not using remote API only)
+        // This ensures customer mode uses consistent project names from env vars
+        if (this.projectName === "default" && (this.useSupabase || !this.contextManager.apiUrl)) {
             await this.detectProjectName();
         }
 
@@ -1168,10 +1143,10 @@ export class NerveCenter {
             couldNotRead = true;
             soul += "\n(Could not read local context files)";
         }
-        // Distinguish three states:
-        // - uninit: no .axis/instructions/ directory at all (fresh customer)
-        // - placeholder: file exists but still has the template "Describe your project" body
-        // - filled: real content (no nag)
+        // Distinguish three states so fresh customers get the right next step:
+        //   uninit     — no .axis/instructions/ at all → point them at axis-init
+        //   placeholder — file exists but still has template text → fill it
+        //   filled     — real content, no nag
         const uninit = couldNotRead;
         const placeholder =
             !uninit && (
