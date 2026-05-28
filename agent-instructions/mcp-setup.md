@@ -51,6 +51,7 @@ its admin. Existing personal projects keep working unchanged.
 On the **/team** page, enter a teammate's email, choose `member` or `admin`, and
 send. You get a shareable invite link immediately (`/invite/<token>`); the teammate
 joins by opening it and logging in. Change roles or remove members from the same
+table. An org always keeps at least one admin.
 
 ## Setup
 
