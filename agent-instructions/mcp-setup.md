@@ -210,20 +210,32 @@ write files. Great as a pre-commit/CI step too — it's cheap when nothing chang
 
 ## Tools Reference
 
-The hosted server (`https://useaxis.dev/api/mcp`) exposes **17 tools** — the
-canonical set. Every tool is scoped to your account (and active **org**) by
-your OAuth token or API key. Most tools accept an optional `projectName`
-(defaults to the auto-detected project). For team coordination, members of the
-same org sharing the same project name share the same job board, file locks,
-codebase index, and live notepad — set the active org via the
-`X-Axis-Org: <orgId>` header (or pass via your client's UI; OAuth resolves to
-your default org otherwise).
+Axis exposes two MCP surfaces. **They are not the same tool set** — pick the
+one that matches how your agent connects, and don't be surprised when your
+client shows a different number than the other side of this doc claims.
 
-The legacy local npm server exposes the same orchestration core plus
-project-soul helpers (`get_project_soul`, `update_project_soul`, `search_docs`,
-`index_file`, `force_unlock`) but does **not** include `deep_search`,
-`claim_job`, `list_jobs`, `list_locks`, or `release_file_access` — use the
-hosted server for the full set.
+| Surface | Endpoint | Tool count | Recommended for |
+|---------|----------|------------|-----------------|
+| **Hosted** | `https://useaxis.dev/api/mcp` (HTTP MCP, OAuth or API key) | **17** | Paying companies / teams. Includes `deep_search`, `claim_job`, `list_jobs`, `list_locks`, `release_file_access`, `get_shared_context`. |
+| **Local npx wrapper** | `npx @virsanghavi/axis-server` (stdio) | **18** | Solo dev / offline / legacy. Includes `get_project_soul`, `update_project_soul`, `read_context`, `update_context`, `search_docs`, `index_file`, `force_unlock`. |
+
+The two surfaces share 11 tools (the orchestration + billing core). The rest
+differ. If your `/mcp` client shows ~16, you're on the local wrapper (and
+possibly on `< 1.12.0` which had a duplicate `search_codebase` registration
+that clients dedupe down to 17 instead of 18 — `npm i -g @virsanghavi/axis-server@latest` to fix).
+
+Every tool is scoped to your account (and active **org**) by your OAuth token
+or API key. Most hosted tools accept an optional `projectName` (defaults to
+the auto-detected project). For team coordination, members of the same org
+sharing the same project name share the same job board, file locks, codebase
+index, and live notepad — set the active org via the `X-Axis-Org: <orgId>`
+header (or pass via your client's UI; OAuth resolves to your default org
+otherwise).
+
+**For companies on useaxis.dev**: prefer the hosted endpoint. Org switching,
+seat billing, audit trails, and the agentic `deep_search` only live there.
+The local wrapper is most useful for solo work or as a fallback when an
+agent's MCP client doesn't support HTTP MCP yet.
 
 ### Search & Discovery
 

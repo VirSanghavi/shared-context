@@ -460,17 +460,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["filename", "content"],
         },
       },
-      {
-        name: SEARCH_CONTEXT_TOOL,
-        description: "**CODEBASE SEARCH** — search the entire project by natural language or keywords.\n- Scans all source files on disk. Always returns results if matching code exists — no setup required.\n- Best for: 'Where is the auth logic?', 'How do I handle billing?', 'Find the database connection code'.\n- Also checks the RAG vector index if available, but the local filesystem search always works.\n- Use this INSTEAD of grep/ripgrep to stay within the Axis workflow. This tool searches file contents directly.",
-        inputSchema: {
-          type: "object",
-          properties: {
-            query: { type: "string", description: "Natural language search query." },
-          },
-          required: ["query"],
-        },
-      },
+      // NOTE: search_codebase is defined further below with the updated
+      // "CODE INTELLIGENCE SEARCH" description. The older entry that used the
+      // SEARCH_CONTEXT_TOOL constant lived here and had the same `name`, which
+      // caused MCP clients to dedupe and lose a tool slot (16 visible instead
+      // of 17). Removed; the dispatch handler at the bottom still references
+      // SEARCH_CONTEXT_TOOL since the constant resolves to the same string.
       // --- Billing & Usage ---
       {
         name: "get_subscription_status",
