@@ -80,6 +80,7 @@ prompt when reaching for search.
 
 > **For engineering teams.** Point every engineer's agents at one Axis project and
 > they stop clobbering each other: a shared job board parallelizes the work, file
+> locks prevent two agents (or two people) editing the same file, and a shared index
 
 ## Setup
 
