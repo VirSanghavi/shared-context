@@ -211,7 +211,7 @@ write files. Great as a pre-commit/CI step too — it's cheap when nothing chang
 ## Tools Reference
 
 The hosted server (`https://useaxis.dev/api/mcp`) exposes **17 tools** — the
-canonical set. Every tool is scoped to your account by your OAuth token or API
+canonical set. Every tool is scoped to your account (and active **org**) by
 key, and most accept an optional `projectName` (defaults to the auto-detected
 project). The legacy local npm server exposes the same orchestration core plus
 project-soul/context helpers (`get_project_soul`, `update_project_soul`,
