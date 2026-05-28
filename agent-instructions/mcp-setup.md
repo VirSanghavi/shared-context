@@ -48,6 +48,7 @@ Open the org switcher in the dashboard header → **+ new org**. The creator bec
 its admin. Existing personal projects keep working unchanged.
 
 ### Invite teammates
+On the **/team** page, enter a teammate's email, choose `member` or `admin`, and
 
 ## Setup
 
