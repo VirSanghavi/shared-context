@@ -60,6 +60,7 @@ per-machine setup:
 
 ```json
 {
+  "projectName": "acme-app"
 
 ## Setup
 
