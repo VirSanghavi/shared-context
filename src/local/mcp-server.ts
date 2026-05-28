@@ -635,14 +635,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "index_file",
-        description: "**UPDATE SEARCH INDEX**: Add a file's content to the RAG vector database.\n- Call this *immediately* after creating a new file or significantly refactoring an existing one.\n- Ensures future `search_codebase` calls return up-to-date results.",
+        description: "**UPDATE SEARCH INDEX**: Add or refresh a single file in the RAG vector database.\n- Call this immediately after creating a new file or significantly refactoring an existing one — keeps `search_codebase` results fresh.\n- Only `filePath` is required. If you omit `content`, the server reads the file from disk itself — preferred, since it avoids round-tripping large file bodies through the tool call.\n- Pass `content` explicitly only when indexing material that doesn't live on disk (e.g. in-memory generated source).",
         inputSchema: {
           type: "object",
           properties: {
-            filePath: { type: "string" },
-            content: { type: "string" }
+            filePath: { type: "string", description: "Absolute or project-relative path." },
+            content: { type: "string", description: "Optional. Omit to have the server read filePath from disk." }
           },
-          required: ["filePath", "content"]
+          required: ["filePath"]
         }
       }
     ];
@@ -736,7 +736,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (name === "index_file") {
     const filePath = String(args?.filePath);
-    const content = String(args?.content);
+    // Content is optional — if omitted, read from disk. Lets the agent skip
+    // round-tripping large file bodies through the tool call.
+    let content: string;
+    if (args?.content !== undefined && args?.content !== null) {
+      content = String(args.content);
+    } else {
+      try {
+        const resolved = path.isAbsolute(filePath)
+          ? filePath
+          : path.join(process.cwd(), filePath);
+        content = await fs.promises.readFile(resolved, "utf-8");
+      } catch (e) {
+        return {
+          content: [{
+            type: "text",
+            text: `index_file: no content provided and could not read ${filePath} from disk: ${e instanceof Error ? e.message : String(e)}`,
+          }],
+          isError: true,
+        };
+      }
+    }
     // Prefer remote embedding via API
     try {
       await manager.embedContent([{ content, metadata: { filePath } }], nerveCenter.currentProjectName);
