@@ -494,11 +494,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "search_codebase",
-        description: "**CODEBASE SEARCH (use by default, no need to be asked)**: Hybrid semantic + full-text + trigram search over the indexed codebase, reranked, returning ranked symbols with `file:line` plus `related` files that historically change together and `definitions` of what a top hit calls.\n- Reach for this BEFORE creating files or refactoring, and for any 'where is X / how is Y done' discovery. Prefer it over plain grep/text search.\n- Runs an instant local search first, then enriches with the remote hybrid index; works even offline (local fallback).",
+        description: "**CODE INTELLIGENCE SEARCH** — does what plain grep can't: returns ranked `file:line` hits PLUS `related` files that historically co-change with each hit, PLUS `definitions` of what the top result calls.\n- Use for 'where is X', 'how is Y done', anything before refactoring, and any time you need to know what code is structurally connected to a match (not just textually present).\n- Hybrid: semantic + full-text + trigram, reranked. Falls back to instant local search offline.\n- For pure literal-string lookups (a specific token or filename), grep is fine — this tool's edge is the related/definitions enrichment.",
         inputSchema: {
           type: "object",
           properties: {
-            query: { type: "string", description: "Natural language or code query (symbol, behavior, or question)." }
+            query: { type: "string", description: "Natural-language question or code query (symbol, behavior, or 'where is X done')." }
           },
           required: ["query"]
         }
