@@ -306,6 +306,7 @@ updated notepad so the caller immediately sees recent shared context.
 #### `get_shared_context`
 Read the project's live notepad.
 - **Arguments**: `projectName` (string, optional)
+
 ### Session
 
 #### `finalize_session`
