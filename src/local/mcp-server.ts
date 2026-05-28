@@ -651,10 +651,36 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return { tools };
 });
 
+// Optional tool-call audit log. Set AXIS_TOOL_LOG to a writable path (.jsonl)
+// to record every tool invocation with timestamp, name, arg keys (not values),
+// and session id. Used by scripts/analyze-tool-log.mjs to compute per-agent
+// tool pickup rates. Off by default — zero overhead in production.
+const TOOL_LOG_PATH = process.env.AXIS_TOOL_LOG;
+const TOOL_LOG_SESSION = process.env.AXIS_TOOL_LOG_SESSION ||
+  `${process.pid}-${Date.now()}`;
+function recordToolCall(name: string, args: unknown): void {
+  if (!TOOL_LOG_PATH) return;
+  try {
+    const entry = {
+      ts: new Date().toISOString(),
+      session: TOOL_LOG_SESSION,
+      tool: name,
+      // Arg keys only, never values (privacy + log size).
+      argKeys: args && typeof args === "object"
+        ? Object.keys(args as Record<string, unknown>)
+        : [],
+    };
+    fs.appendFileSync(TOOL_LOG_PATH, JSON.stringify(entry) + "\n");
+  } catch {
+    // Best-effort. Never throw from the audit log.
+  }
+}
+
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   logger.info("Tool call", { name });
+  recordToolCall(name, args);
 
   // ── Subscription gate (runs before ANY tool logic) ──
   // AXIS_SKIP_SUBSCRIPTION_CHECK=1 skips gate (for local/testing only)
@@ -736,16 +762,59 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (name === "index_file") {
     const filePath = String(args?.filePath);
-    // Content is optional — if omitted, read from disk. Lets the agent skip
-    // round-tripping large file bodies through the tool call.
+    // Content is optional — if omitted, read from disk. The disk-read path is
+    // constrained to project root + sensitive-file blocklist + size cap so an
+    // attacker (e.g. via prompt injection that crafts the filePath argument)
+    // cannot use this tool to exfiltrate arbitrary files via the remote
+    // embedding API. The original behavior (agent supplies content) is
+    // unchanged and always wins.
     let content: string;
     if (args?.content !== undefined && args?.content !== null) {
       content = String(args.content);
     } else {
       try {
-        const resolved = path.isAbsolute(filePath)
-          ? filePath
-          : path.join(process.cwd(), filePath);
+        const projectRoot = path.resolve(process.cwd());
+        // Always resolve against the project root. Absolute paths get rebased
+        // there too — if a caller passes /etc/passwd, we resolve it to
+        // {root}/etc/passwd, which won't exist (or won't escape).
+        const rebased = path.isAbsolute(filePath)
+          ? path.join(projectRoot, filePath.replace(/^\/+/, ""))
+          : path.resolve(projectRoot, filePath);
+        const resolved = await fs.promises.realpath(rebased).catch(() => rebased);
+        const rel = path.relative(projectRoot, resolved);
+        if (rel.startsWith("..") || path.isAbsolute(rel)) {
+          return {
+            content: [{ type: "text", text: `index_file: refusing to read ${filePath} — outside project root` }],
+            isError: true,
+          };
+        }
+        // Block known-sensitive basenames and dirs even inside the project.
+        const SENSITIVE = [
+          /(^|\/)\.env(\.|$)/,        // .env, .env.local, .env.production…
+          /(^|\/)\.git(\/|$)/,
+          /(^|\/)\.ssh(\/|$)/,
+          /(^|\/)\.npmrc$/,
+          /(^|\/)\.pypirc$/,
+          /(^|\/)id_(rsa|ed25519|ecdsa)/,
+          /(^|\/)credentials(\.|$)/,
+          /(^|\/)secrets(\.|$)/,
+        ];
+        if (SENSITIVE.some(rx => rx.test(rel))) {
+          return {
+            content: [{ type: "text", text: `index_file: refusing to index ${rel} — matches sensitive-file pattern` }],
+            isError: true,
+          };
+        }
+        // Cap read size at 1 MiB — embedding huge blobs is wasteful and a
+        // narrow exfil ceiling matters here.
+        const stat = await fs.promises.stat(resolved);
+        const MAX_BYTES = 1024 * 1024;
+        if (stat.size > MAX_BYTES) {
+          return {
+            content: [{ type: "text", text: `index_file: ${rel} is ${stat.size} bytes, exceeds ${MAX_BYTES} byte cap — pass content explicitly if you really want to index this` }],
+            isError: true,
+          };
+        }
         content = await fs.promises.readFile(resolved, "utf-8");
       } catch (e) {
         return {
@@ -757,14 +826,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
     }
-    // Prefer remote embedding via API
+    // Prefer remote embedding via API. metadata.filePath stays as the
+    // agent-supplied path (relative form) so we don't leak the user's FS layout.
+    const metaPath = path.isAbsolute(filePath)
+      ? path.basename(filePath)
+      : filePath;
     try {
-      await manager.embedContent([{ content, metadata: { filePath } }], nerveCenter.currentProjectName);
+      await manager.embedContent([{ content, metadata: { filePath: metaPath } }], nerveCenter.currentProjectName);
       return { content: [{ type: "text", text: "Indexed via Remote API." }] };
     } catch (e) {
       // Fallback to local if available?
       if (ragEngine) {
-        const success = await ragEngine.indexContent(filePath, content);
+        const success = await ragEngine.indexContent(metaPath, content);
         return { content: [{ type: "text", text: success ? "Indexed locally." : "Local index failed." }] };
       }
       return { content: [{ type: "text", text: `Indexing failed: ${e}` }], isError: true };
