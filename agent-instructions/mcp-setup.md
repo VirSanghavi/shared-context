@@ -217,7 +217,7 @@ your OAuth token or API key. Most tools accept an optional `projectName`
 same org sharing the same project name share the same job board, file locks,
 codebase index, and live notepad — set the active org via the
 `X-Axis-Org: <orgId>` header (or pass via your client's UI; OAuth resolves to
-`release_file_access` — use the hosted server for the full set.
+your default org otherwise).
 
 ### Search & Discovery
 
