@@ -213,7 +213,7 @@ write files. Great as a pre-commit/CI step too — it's cheap when nothing chang
 The hosted server (`https://useaxis.dev/api/mcp`) exposes **17 tools** — the
 canonical set. Every tool is scoped to your account (and active **org**) by
 your OAuth token or API key. Most tools accept an optional `projectName`
-project). The legacy local npm server exposes the same orchestration core plus
+(defaults to the auto-detected project). For team coordination, members of the
 project-soul/context helpers (`get_project_soul`, `update_project_soul`,
 `update_shared_context`, `search_docs`, `index_file`, `force_unlock`) but does
 **not** include `deep_search`, `claim_job`, `list_jobs`, `list_locks`, or
