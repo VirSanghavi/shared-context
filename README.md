@@ -49,13 +49,13 @@ PROJECT_NAME=default
     ```
   This stdio server exposes the full Nerve Center toolset (job board, locks, notepad).
     
-    *Address for MCP Clients*: Since it runs on stdio, you typically configure your agent (e.g., in `claude_desktop_config.json` or Cursor settings) to run:
+    *Address for MCP Clients*: Since it runs on stdio, configure your agent (e.g., in `claude_desktop_config.json` or Cursor settings) to launch the published wrapper — no local checkout required:
     ```json
     {
       "mcpServers": {
-        "shared-context": {
-          "command": "bun",
-          "args": ["run", "/path/to/shared-context/src/local/mcp-server.ts"]
+        "axis": {
+          "command": "npx",
+          "args": ["-y", "@virsanghavi/axis-server"]
         }
       }
     }
@@ -77,33 +77,46 @@ The key to Axis is the **Parallel Sprints**. You no longer have to manage a sing
 4.  **Synchronized Execution**: While agents work in parallel, they stay in sync via the **Live Notepad**, ensuring that if one agent changes an API signature, the others adjust their code in real-time.
 
 ### Local Integration (MCP)
-Configure your IDE (Claude Desktop, Cursor, etc.) to point to the local server script:
+Configure your IDE (Claude Desktop, Cursor, etc.) to launch the published wrapper over stdio:
 ```json
 {
   "mcpServers": {
-    "shared-context": {
-      "command": "bun",
-      "args": ["run", "/absolute/path/to/shared-context/src/local/mcp-server.ts"]
+    "axis": {
+      "command": "npx",
+      "args": ["-y", "@virsanghavi/axis-server"]
     }
   }
 }
 ```
+For the **hosted** backend (recommended for teams), point at `https://useaxis.dev/api/mcp` with a Bearer key instead — see [agent-instructions/mcp-setup.md](agent-instructions/mcp-setup.md).
 
 ### MCP Tooling
-The server exposes these orchestration tools to agents:
+The server exposes these tools to agents (16 total, as of `@virsanghavi/axis-server@1.12.0`).
 
-- `propose_file_access`
-- `update_shared_context`
-- `post_job`
-- `claim_next_job`
-- `complete_job`
-- `cancel_job`
-- `force_unlock`
-- `finalize_session`
-- `get_project_soul`
-- `get_subscription_status`
-- `get_usage_stats`
-- `search_docs`
+**Coordination (free, open-core):**
+
+- `get_project_soul` — load project context, goals, and conventions
+- `update_project_soul` — write or refresh the project soul
+- `post_job` — add a job to the distributed Job Board
+- `claim_next_job` — atomically claim the next available job
+- `complete_job` — report a job outcome and release its file locks
+- `cancel_job` — withdraw a posted job
+- `propose_file_access` — pessimistically lock files before editing
+- `force_unlock` — admin override for stale locks from crashed agents
+- `update_shared_context` — append to the Live Notepad
+- `finalize_session` — archive the session and clear all remaining locks
+
+**Intelligence (hosted, paid):**
+
+- `index_codebase` — build the searchable index for a project
+- `index_file` — index a single file (reads from disk if content is omitted)
+- `search_codebase` — hybrid code search with `related` files + `definitions` enrichment
+- `search_docs` — search indexed documentation
+
+**Account:**
+
+- `get_subscription_status` — current plan and entitlements
+- `get_usage_stats` — usage against plan limits
 
 ### Agent Integration Examples
 
